@@ -1,0 +1,562 @@
+/* Advanced Industrial SCADA Theme */
+* {
+    box-sizing: border-box;
+}
+
+:root {
+    /* Base Dark Mode Colors */
+    --bg-color: #0a0a0a;
+    --text-main: #e0e0e0;
+    --text-dim: #888;
+    --highlight: #00e5ff;
+    /* Cyan Neon */
+    --success: #00ff00;
+    --warning: #ffcc00;
+    --danger: #ff3300;
+
+    /* Component Backgrounds */
+    --nav-bg: #111;
+    --card-bg: #161616;
+    --card-header-bg: #222;
+    --card-border: #333;
+    --input-bg: rgba(0, 0, 0, 0.5);
+
+    /* Login Specific */
+    --login-overlay: rgba(0, 0, 0, 0.8);
+    --login-grid-line: #111;
+    --login-panel-bg: rgba(20, 20, 20, 0.85);
+
+    /* Fonts */
+    --font-main: 'Segoe UI', sans-serif;
+    --font-digital: 'Courier New', monospace;
+}
+
+body.light-mode {
+    /* Light Mode Overrides */
+    --bg-color: #f4f4f9;
+    --text-main: #333;
+    --text-dim: #666;
+    --highlight: #007acc;
+    /* Professional Blue */
+
+    /* Component Backgrounds */
+    --nav-bg: #ffffff;
+    --card-bg: #ffffff;
+    --card-header-bg: #f5f5f5;
+    --card-border: #e0e0e0;
+    --input-bg: #ffffff;
+
+    /* Login Specific */
+    --login-overlay: rgba(255, 255, 255, 0.8);
+    --login-grid-line: #e0e0e0;
+    --login-panel-bg: rgba(255, 255, 255, 0.9);
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    font-family: var(--font-main);
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* Global Interactivity */
+button,
+a,
+.clickable {
+    cursor: pointer !important;
+}
+
+/* --- Buttons --- */
+button {
+    border: none;
+    outline: none;
+    font-family: var(--font-main);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 4px;
+}
+
+button.primary {
+    background: var(--highlight);
+    color: #000;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+button.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    filter: brightness(1.1);
+}
+
+body.light-mode button.primary {
+    color: white;
+}
+
+button.warning {
+    background: var(--warning);
+    color: #000;
+}
+
+button.warning:hover {
+    filter: brightness(1.1);
+}
+
+button.danger {
+    background: var(--danger);
+    color: white;
+}
+
+button.danger:hover {
+    filter: brightness(1.1);
+}
+
+button.ghost {
+    background: transparent;
+    border: 1px solid var(--text-dim);
+    color: var(--text-dim);
+}
+
+button.ghost:hover {
+    border-color: var(--text-main);
+    color: var(--text-main);
+}
+
+/* --- Premium Tables --- */
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 20px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+th {
+    background: var(--card-header-bg);
+    color: var(--highlight);
+    padding: 15px 25px;
+    /* Increased side padding */
+    text-align: left;
+    font-size: 0.85rem;
+    border-bottom: 2px solid var(--card-border);
+    white-space: nowrap;
+    /* Prevent header wrapping */
+}
+
+td {
+    padding: 15px 25px;
+    /* Increased side padding */
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--card-border);
+    color: var(--text-main);
+    font-size: 0.9rem;
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+tr:hover td {
+    background: rgba(0, 229, 255, 0.02);
+}
+
+body.light-mode tr:hover td {
+    background: rgba(0, 122, 204, 0.05);
+}
+
+/* Form inputs cleanup */
+input,
+select {
+    border-radius: 4px;
+    border: 1px solid var(--card-border);
+    background: var(--input-bg);
+    color: var(--text-main);
+    padding: 15px;
+    width: 100%;
+    font-family: var(--font-digital);
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+    transition: all 0.3s;
+}
+
+input:focus,
+select:focus {
+    outline: none;
+    border-color: var(--highlight);
+    box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.1);
+}
+
+body.light-mode input:focus,
+body.light-mode select:focus {
+    box-shadow: 0 0 0 3px rgba(0, 122, 204, 0.1);
+}
+
+/* --- Animated Background for Login --- */
+#login-view {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background:
+        linear-gradient(var(--login-overlay), var(--login-overlay)),
+        repeating-linear-gradient(0deg, transparent, transparent 19px, var(--login-grid-line) 20px),
+        repeating-linear-gradient(90deg, transparent, transparent 19px, var(--login-grid-line) 20px);
+    background-size: 100% 100%, 40px 40px, 40px 40px;
+    animation: bgScan 10s linear infinite;
+}
+
+/* Multi-Directional Scanning Lines */
+.scan-line {
+    position: absolute;
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0.4;
+}
+
+/* Horizontal line: Top → Bottom */
+.scan-line.scan-down {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: var(--highlight);
+    box-shadow: 0 0 15px var(--highlight);
+    animation: scanDown 4s ease-in-out infinite;
+}
+
+@keyframes scanDown {
+    0% {
+        top: -5%;
+    }
+
+    100% {
+        top: 105%;
+    }
+}
+
+/* Horizontal line: Bottom → Top */
+.scan-line.scan-up {
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: var(--highlight);
+    box-shadow: 0 0 15px var(--highlight);
+    animation: scanUp 5s ease-in-out infinite;
+    animation-delay: 1s;
+}
+
+@keyframes scanUp {
+    0% {
+        bottom: -5%;
+    }
+
+    100% {
+        bottom: 105%;
+    }
+}
+
+/* Vertical line: Left → Right */
+.scan-line.scan-right {
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--highlight);
+    box-shadow: 0 0 15px var(--highlight);
+    animation: scanRight 6s ease-in-out infinite;
+    animation-delay: 0.5s;
+}
+
+@keyframes scanRight {
+    0% {
+        left: -5%;
+    }
+
+    100% {
+        left: 105%;
+    }
+}
+
+/* Vertical line: Right → Left */
+.scan-line.scan-left {
+    top: 0;
+    right: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--highlight);
+    box-shadow: 0 0 15px var(--highlight);
+    animation: scanLeft 5.5s ease-in-out infinite;
+    animation-delay: 2s;
+}
+
+@keyframes scanLeft {
+    0% {
+        right: -5%;
+    }
+
+    100% {
+        right: 105%;
+    }
+}
+
+/* Glassmorphism Login Panel */
+.login-panel {
+    background: var(--login-panel-bg);
+    backdrop-filter: blur(10px);
+    padding: 50px;
+    border: 1px solid var(--highlight);
+    box-shadow: 0 0 30px rgba(0, 122, 204, 0.2);
+    width: 400px;
+    z-index: 10;
+    transform: perspective(1000px) rotateX(10deg);
+    animation: panelEnter 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    opacity: 0;
+}
+
+@keyframes panelEnter {
+    to {
+        opacity: 1;
+        transform: perspective(1000px) rotateX(0deg);
+    }
+}
+
+.login-panel h2 {
+    color: var(--highlight);
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    text-align: center;
+    border-bottom: 2px solid var(--highlight);
+    padding-bottom: 15px;
+    margin-bottom: 30px;
+
+    /* Only visible in dark mode really */
+}
+
+body.light-mode .login-panel h2 {}
+
+/* --- Dashboard & Navbar --- */
+nav {
+    background: var(--nav-bg);
+    border-bottom: 2px solid var(--highlight);
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+}
+
+.brand {
+    font-size: 1.8rem;
+    color: var(--text-main);
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.brand span {
+    color: var(--highlight);
+}
+
+/* Dashboard Container */
+.container {
+    padding: 30px;
+    flex: 1;
+    overflow-y: auto;
+    background: var(--bg-color);
+    /* Simplified background for flexibility */
+}
+
+/* Re-add radial gradient only for dark mode if desired, or stick to solid/subtle */
+body:not(.light-mode) .container {
+    background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
+}
+
+.dashboard-header {
+    background: linear-gradient(90deg, rgba(0, 229, 255, 0.1) 0%, transparent 100%);
+    border-left: 5px solid var(--highlight);
+    padding: 20px;
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+body.light-mode .dashboard-header {
+    background: linear-gradient(90deg, rgba(0, 122, 204, 0.1) 0%, transparent 100%);
+}
+
+.dashboard-header h1 {
+    color: white;
+}
+
+body.light-mode .dashboard-header h1 {
+    color: var(--text-main);
+}
+
+/* Cards */
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--highlight), transparent);
+}
+
+.card-header {
+    background: var(--card-header-bg);
+    padding: 15px 20px;
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--card-border);
+}
+
+.card-body {
+    padding: 30px;
+    text-align: center;
+}
+
+.digital-value {
+    font-family: var(--font-digital);
+    font-size: 4rem;
+    color: var(--text-main);
+
+}
+
+body.light-mode .digital-value {
+
+    font-weight: bold;
+}
+
+.unit {
+    color: var(--highlight);
+    font-size: 1rem;
+    margin-top: 5px;
+    letter-spacing: 2px;
+}
+
+/* Dashboard Grid - Fixed */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+    width: 100%;
+}
+
+/* Status Lights */
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #ccc;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.status-indicator.on {
+    background: var(--success);
+    box-shadow: 0 0 15px var(--success);
+}
+
+.status-indicator.off {
+    background: var(--danger);
+    box-shadow: 0 0 15px var(--danger);
+}
+
+/* Alarm Animation */
+@keyframes alarmPulse {
+    0% {
+        background-color: var(--card-bg);
+        border-color: var(--card-border);
+    }
+
+    50% {
+        background-color: rgba(255, 51, 0, 0.1);
+        border-color: var(--danger);
+    }
+
+    100% {
+        background-color: var(--card-bg);
+        border-color: var(--card-border);
+    }
+}
+
+.card.alarm {
+    animation: alarmPulse 1s infinite;
+}
+
+.card.alarm .digital-value {
+    color: var(--danger);
+}
+
+/* Navbar Links */
+nav a {
+    color: var(--text-dim);
+    text-decoration: none;
+    margin-left: 20px;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    transition: 0.3s;
+    padding-bottom: 5px;
+    border-bottom: 2px solid transparent;
+}
+
+nav a:hover,
+nav a.active {
+    color: var(--text-main);
+
+    border-bottom-color: var(--highlight);
+}
+
+body.light-mode nav a:hover,
+body.light-mode nav a.active {
+
+    color: var(--highlight);
+    border-bottom-color: var(--highlight);
+}
+
+/* Utility */
+.form-group label {
+    color: var(--highlight);
+    font-size: 0.8rem;
+    margin-bottom: 8px;
+    display: block;
+}
+
+/* View Toggling */
+.view {
+    display: none;
+    min-height: 100%;
+}
+
+.view.active {
+    display: block;
+}

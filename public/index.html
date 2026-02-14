@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FACTORY CONTROL | SCADA SYSTEM</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+    <nav id="navbar" style="display:none;">
+        <div class="brand">Factory<span>One</span> // Monitor</div>
+        <div class="right">
+            <button onclick="toggleTheme()"
+                style="background:none; border:none; color:var(--highlight); margin-right:15px; font-size:1.2rem;"
+                title="Toggle Theme">☀/☾</button>
+            <span id="user-display" style="margin-right: 20px; color: #888;"></span>
+            <a onclick="showView('dashboard')">Overview</a>
+            <a onclick="showView('admin')" id="admin-link" style="display:none;">User Management</a>
+            <a onclick="logout()" style="border: 1px solid #555; padding: 5px 15px;">Logout</a>
+        </div>
+    </nav>
+
+    <!-- Full Screen Container for Login Background -->
+    <div id="login-view" class="view active">
+        <!-- Scan Lines -->
+        <div class="scan-line scan-down"></div>
+        <div class="scan-line scan-up"></div>
+        <div class="scan-line scan-right"></div>
+        <div class="scan-line scan-left"></div>
+
+        <!-- Absolute Position Toggle for Login -->
+        <button onclick="toggleTheme()"
+            style="position:absolute; top:20px; right:20px; background:none; border:none; color:var(--highlight); z-index:20; font-size:1.5rem;"
+            title="Toggle Theme">☀/☾</button>
+
+        <div class="login-panel">
+            <h2>System Access</h2>
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="login-username" placeholder="ENTER USERNAME"
+                    onkeyup="if(event.key === 'Enter') login()">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="login-password" placeholder="••••••••"
+                    onkeyup="if(event.key === 'Enter') login()">
+            </div>
+            <button class="primary" onclick="login()">LOGIN</button>
+            <p id="login-error" style="color: #ff3300; margin-top:10px; text-align:center; min-height:20px;"></p>
+        </div>
+    </div>
+
+    <!-- Main Content Container -->
+    <div class="container" id="main-container" style="display:none;">
+
+        <!-- Dashboard View -->
+        <div id="dashboard-view" class="view">
+            <div class="dashboard-header">
+                <div>
+                    <h1 style="margin:0; font-size:1.5rem; text-transform:uppercase; color: white;">Line 1 Status</h1>
+                    <span style="color:#666; font-size:0.8rem; letter-spacing: 1px;">OP: UNIT-01 // LOC: A-WING</span>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:0.8rem; color:#888; letter-spacing: 2px;">SYSTEM CONNECTION</div>
+                    <div style="color:var(--success); font-weight:bold; letter-spacing: 1px;">
+                        ONLINE_ACTIVE</div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <!-- Pressure Gauge -->
+                <div class="card" id="card-pressure">
+                    <div class="card-header">
+                        <span>Hydraulic Pressure</span>
+                        <span class="status-indicator on"></span>
+                    </div>
+                    <div class="card-body">
+                        <div class="digital-value" id="pressure">00.00</div>
+                        <div class="unit">BAR</div>
+                    </div>
+                </div>
+
+                <!-- Temp Gauge -->
+                <div class="card" id="card-temp">
+                    <div class="card-header">
+                        <span>Core Temperature</span>
+                        <span class="status-indicator on"></span>
+                    </div>
+                    <div class="card-body">
+                        <div class="digital-value" id="temperature">00.0</div>
+                        <div class="unit">CELSIUS</div>
+                    </div>
+                </div>
+
+                <!-- Flow Gauge -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>Flow Rate</span>
+                        <span class="status-indicator on"></span>
+                    </div>
+                    <div class="card-body">
+                        <div class="digital-value" id="flow">000</div>
+                        <div class="unit">LITERS / HOUR</div>
+                    </div>
+                </div>
+
+                <!-- Status Panel -->
+                <div class="card" id="card-status">
+                    <div class="card-header">
+                        <span>Unit Status</span>
+                        <span id="status-light" class="status-indicator on"></span>
+                    </div>
+                    <div class="card-body">
+                        <div class="status-text" id="status"
+                            style="color: var(--success); font-size: 2rem; font-weight: bold; margin-top:10px;">
+                            INIT</div>
+                        <div style="margin-top:10px; font-size:0.8rem; color:#666; letter-spacing: 1px;">AUTO-MODE
+                            ENGAGED</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin View -->
+        <div id="admin-view" class="view">
+            <div class="dashboard-header">
+                <h1 style="margin:0; color: white;">USER ADMINISTRATION</h1>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 2fr; gap:30px;">
+                <div class="card">
+                    <div class="card-header">Add Operator</div>
+                    <div style="padding:30px;">
+                        <input type="hidden" id="user-id">
+                        <div class="form-group">
+                            <label>Username</label>
+                            <input type="text" id="user-username" placeholder="USERNAME">
+                        </div>
+                        <div class="form-group">
+                            <label>Email Address</label>
+                            <input type="email" id="user-email" placeholder="EMAIL">
+                        </div>
+                        <div class="form-group">
+                            <label>Password (Leave blank to keep current)</label>
+                            <input type="password" id="user-password" placeholder="PASSWORD">
+                        </div>
+                        <div class="form-group">
+                            <label>Role</label>
+                            <select id="user-role"
+                                style="width:100%; padding:15px; background:var(--input-bg); border:1px solid var(--card-border); color:var(--text-main); font-family:var(--font-digital); margin-bottom:20px;">
+                                <option value="user">User</option>
+                                <option value="moderator">Moderator</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        <button class="primary" onclick="saveUser()" id="save-btn">GRANT ACCESS</button>
+                        <button class="ghost" onclick="resetForm()" style="width:100%; margin-top:10px;">CANCEL /
+                            RESET</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">Authorized Personnel</div>
+                    <div style="padding:0;">
+                        <table id="users-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>User</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
