@@ -13,6 +13,15 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(express.static('public'));
 
+// Download route for OPC-UA client certificate (needed for KEPServer trust)
+app.get('/download/client-cert', (req, res) => {
+    const certPath = require('path').join(__dirname, 'pki', 'own', 'certs', 'client_certificate.pem');
+    const derPath = require('path').join(__dirname, 'public', 'client_certificate.der');
+    const format = req.query.format || 'der';
+    const filePath = format === 'pem' ? certPath : derPath;
+    res.download(filePath, `client_certificate.${format}`);
+});
+
 const db = require("./models");
 const Role = db.role;
 
@@ -36,23 +45,40 @@ app.get('/', (req, res) => {
 // Routes
 require('./routes/auth.routes')(app);
 require('./routes/user.routes')(app);
-
+require('./routes/scada.routes')(app);
+require('./routes/settings.routes')(app);
+require('./routes/opcua.routes')(app);
+const scadaController = require("./controllers/scada.controller");
+const opcuaManager = require("./utils/opcua.manager");
+const scadaSim = scadaController.scadaSim;
 
 io.on('connection', (socket) => {
-    console.log('a user connected');
+    console.log('User connected to SCADA dashboard');
 
-    // Simulate SCADA Data
-    setInterval(() => {
-        const data = {
-            pressure: (Math.random() * 10 + 20).toFixed(2), // 20-30 bar
-            temperature: (Math.random() * 5 + 60).toFixed(1), // 60-65 C
-            flowRate: (Math.floor(Math.random() * 100) + 500), // 500-600 L/h
-            status: Math.random() > 0.9 ? 'WARNING' : 'NORMAL'
-        };
-        socket.emit('scada-update', data);
-    }, 1000);
+    // Send initial state
+    socket.emit('init', scadaController.getSnapshot());
+
+    // Subscribe this socket to simulator updates
+    const subscriptionId = `socket-${socket.id}`;
+    scadaController.subscribe(subscriptionId, (updates) => {
+        socket.emit('carousel-update', updates);
+    });
+
+    // Subscribe to OPC-UA events
+    const opcuaSubId = `opcua-${socket.id}`;
+    opcuaManager.subscribe(opcuaSubId, (event, data) => {
+        socket.emit(event, data);
+    });
+    socket.emit('opcua-status', opcuaManager.getStatus());
+
+    socket.on('disconnect', () => {
+        console.log('User disconnected');
+        scadaController.unsubscribe(subscriptionId);
+        opcuaManager.unsubscribe(opcuaSubId);
+    });
 });
 
-server.listen(3000, () => {
-    console.log('listening on *:3000');
+server.listen(3001, () => {
+    console.log('listening on *:3001');
+    opcuaManager.autoConnect();
 });

@@ -1,67 +1,95 @@
-const API_URL = '/api';
-let currentUser = null;
-let socket = null; // Initialize only after login
+/**
+ * SCADA Unified - Carousel Logic
+ */
 
-// Check if already logged in
-const storedUser = localStorage.getItem('user');
-if (storedUser) {
-    currentUser = JSON.parse(storedUser);
-    setupApp();
+let socket = null;
+let currentUser = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    checkAuth();
+    startClock();
+    loadTheme();
+});
+
+// --- Theme Toggle ---
+function loadTheme() {
+    const saved = localStorage.getItem('scada_theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+    const icon = document.getElementById('theme-icon');
+    if (icon) icon.innerText = saved === 'light' ? '☀️' : '🌙';
 }
 
 function toggleTheme() {
-    document.body.classList.toggle('light-mode');
-    localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('scada_theme', next);
+    const icon = document.getElementById('theme-icon');
+    if (icon) icon.innerText = next === 'light' ? '☀️' : '🌙';
 }
 
-// Load theme preference
-if (localStorage.getItem('theme') === 'light') {
-    document.body.classList.add('light-mode');
+// --- Mobile Card Switcher ---
+let activeCard = 1;
+
+function showCard(num) {
+    activeCard = num;
+    const cards = document.querySelectorAll('#view-home .carousel-col');
+    cards.forEach((card, idx) => {
+        card.classList.toggle('mobile-active', idx === num - 1);
+    });
+    // Update picker buttons
+    document.querySelectorAll('.picker-btn').forEach((btn, idx) => {
+        btn.classList.toggle('active', idx === num - 1);
+    });
 }
 
-function setupApp() {
-    document.getElementById('login-view').style.display = 'none';
-    document.getElementById('main-container').style.display = 'block';
-
-    document.getElementById('login-view').classList.remove('active');
-    document.getElementById('navbar').style.display = 'flex';
-    document.getElementById('user-display').innerText = `Hello, ${currentUser.username}`;
-
-    console.log("Roles:", currentUser.roles); // Debug
-
-    // Show Admin link if role is admin OR username is 'admin' (fallback)
-    if ((currentUser.roles && currentUser.roles.includes('ROLE_ADMIN')) || currentUser.username === 'admin') {
-        document.getElementById('admin-link').style.display = 'inline-block';
-    }
-
-    showView('dashboard');
-    connectSocket();
-}
-
-function showView(viewName) {
-    // Hide all
-    document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-    // Show target
-    document.getElementById(`${viewName}-view`).classList.add('active');
-
-    // Update Navbar Active State
-    document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
-    // Find link calling this view (heuristic match or ID based)
-    if (viewName === 'dashboard') document.querySelector('nav a[onclick*="dashboard"]').classList.add('active');
-    if (viewName === 'admin') document.querySelector('nav a[onclick*="admin"]').classList.add('active');
-
-    if (viewName === 'admin') {
-        loadUsers();
+function activateMobileCard() {
+    if (window.innerWidth <= 768) {
+        showCard(activeCard);
     }
 }
 
-async function login() {
-    const username = document.getElementById('login-username').value;
-    constpassword = document.getElementById('login-password').value;
-    const password = document.getElementById('login-password').value;
+function startClock() {
+    setInterval(() => {
+        const now = new Date();
+        document.getElementById('clock-time').innerText = now.toLocaleTimeString('en-GB', { hour12: false });
+        const options = { day: 'numeric', month: 'long', year: 'numeric' };
+        document.getElementById('clock-date').innerText = now.toLocaleDateString('en-GB', options);
+    }, 1000);
+}
+
+function checkAuth() {
+    const user = localStorage.getItem('scada_user');
+    if (user) {
+        try {
+            currentUser = JSON.parse(user);
+            // Validate session integrity (fresh login required for roles)
+            if (!currentUser.roles || !currentUser.accessToken) {
+                console.log("Invalid session detected, forcing logout");
+                handleLogout();
+                return;
+            }
+            initApp();
+        } catch (e) {
+            handleLogout();
+        }
+    } else {
+        document.getElementById('login-view').style.display = 'flex';
+    }
+}
+
+async function handleLogin() {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const errorMsg = document.getElementById('login-error');
+
+    if (!username || !password) {
+        errorMsg.innerText = "Please enter username and password";
+        return;
+    }
 
     try {
-        const res = await fetch(`${API_URL}/auth/signin`, {
+        const res = await fetch('/api/auth/signin', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })
@@ -70,181 +98,630 @@ async function login() {
         const data = await res.json();
 
         if (res.ok) {
-            currentUser = data;
-            localStorage.setItem('user', JSON.stringify(data));
-            setupApp();
+            currentUser = data; // Contains accessToken and roles
+            localStorage.setItem('scada_user', JSON.stringify(currentUser));
+            initApp();
         } else {
-            document.getElementById('login-error').innerText = data.message || 'Login failed';
+            errorMsg.innerText = data.message || "Login failed";
         }
-    } catch (err) {
-        document.getElementById('login-error').innerText = 'Network error';
+    } catch (e) {
+        errorMsg.innerText = "Network error";
+        console.error(e);
     }
 }
 
-function logout() {
-    localStorage.removeItem('user');
+function handleLogout() {
+    localStorage.removeItem('scada_user');
     location.reload();
 }
 
-function connectSocket() {
-    if (socket) return;
+function initApp() {
+    document.getElementById('login-view').style.display = 'none';
+    document.querySelector('.app-wrapper').style.display = 'flex';
+
+    if (currentUser && currentUser.username) {
+        document.getElementById('current-user-display').innerText = currentUser.username;
+    }
+
+    // Connect Socket
     socket = io();
 
-    socket.on('scada-update', (data) => {
-        // Only update if dashboard is active or we want background updates
-        if (document.getElementById('pressure')) {
-            const pressureEl = document.getElementById('pressure');
-            const tempEl = document.getElementById('temperature');
-            const flowEl = document.getElementById('flow');
+    socket.on('init', (data) => {
+        console.log("Init Data", data);
+        renderCarousels(data);
+    });
 
-            pressureEl.innerText = data.pressure;
-            tempEl.innerText = data.temperature;
-            flowEl.innerText = data.flowRate;
-
-            // Status Logic
-            const statusEl = document.getElementById('status');
-            const statusLight = document.getElementById('status-light');
-            const statusCard = document.getElementById('card-status');
-
-            statusEl.innerText = data.status;
-
-            if (data.status === 'WARNING') {
-                statusEl.style.color = 'var(--danger)';
-                statusLight.className = 'status-indicator off';
-                statusCard.classList.add('alarm');
-            } else {
-                statusEl.style.color = 'var(--success)';
-                statusLight.className = 'status-indicator on';
-                statusCard.classList.remove('alarm');
-            }
-
-            // Pressure Alarm Logic
-            const pressureCard = document.getElementById('card-pressure');
-            if (parseFloat(data.pressure) > 28) {
-                pressureCard.classList.add('alarm');
-            } else {
-                pressureCard.classList.remove('alarm');
-            }
+    socket.on('carousel-update', (data) => {
+        if (currentView === 'home') {
+            renderCarousels(data);
         }
+    });
+
+    // OPC-UA events
+    socket.on('opcua-status', (status) => updateOpcUaStatusUI(status));
+    socket.on('opcua-value', (data) => updateOpcUaLiveValue(data));
+
+    // Load initial settings
+    loadSettings();
+}
+
+let currentView = 'home';
+let appSettings = {};
+
+function navigate(view) {
+    currentView = view;
+    // Hide all views
+    document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
+
+    // Show/hide card picker
+    const picker = document.getElementById('card-picker');
+    const isMobile = window.innerWidth <= 768;
+    if (picker) picker.style.display = view === 'home' ? '' : 'none';
+
+    // Show selected
+    if (view === 'home') {
+        document.getElementById('view-home').style.display = isMobile ? 'flex' : 'grid';
+    } else if (view === 'config') {
+        document.getElementById('view-config').style.display = 'flex';
+        loadSettings();
+    } else if (view === 'users') {
+        // Role Check
+        if (!currentUser || !currentUser.roles || !currentUser.roles.includes('ROLE_ADMIN')) {
+            alert("Access Denied: Admin privileges required.");
+            navigate('home');
+            return;
+        }
+        document.getElementById('view-users').style.display = 'flex';
+        loadUsers();
+    } else if (view === 'opcua') {
+        if (!currentUser || !currentUser.roles || !currentUser.roles.includes('ROLE_ADMIN')) {
+            alert("Access Denied: Admin privileges required.");
+            navigate('home');
+            return;
+        }
+        document.getElementById('view-opcua').style.display = 'flex';
+        loadOpcUaConfig();
+    }
+
+    // Update Nav Active State
+    document.querySelectorAll('.nav-btn').forEach((btn, idx) => {
+        btn.classList.remove('active');
+        const views = ['home', 'config', 'users', 'opcua'];
+        if (views[idx] === view) btn.classList.add('active');
     });
 }
 
-// Admin Functions
-async function loadUsers() {
-    if (!currentUser || !currentUser.accessToken) return;
 
+// --- Settings Logic ---
+async function loadSettings() {
     try {
-        const res = await fetch(`${API_URL}/users`, {
-            headers: { 'x-access-token': currentUser.accessToken }
+        const token = currentUser.accessToken;
+        const res = await fetch('/api/settings', {
+            headers: { 'x-access-token': token }
         });
-        const users = await res.json();
-
-        const tbody = document.querySelector('#users-table tbody');
-        tbody.innerHTML = '';
-
-        users.forEach(user => {
-            const tr = document.createElement('tr');
-            const roles = user.roles.map(r => r.name).join(', ');
-            tr.innerHTML = `
-                <td>${user.id}</td>
-                <td>${user.username}</td>
-                <td>${user.email}</td>
-                <td>${roles}</td>
-                <td>
-                    <button class="warning" onclick="editUser(${user.id}, '${user.username}', '${user.email}', '${roles}')" style="margin-right: 10px;">Edit</button>
-                    <button class="danger" onclick="deleteUser(${user.id})">Delete</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-    } catch (err) {
-        console.error('Failed to load users', err);
+        if (res.ok) {
+            appSettings = await res.json();
+            renderSettings();
+        }
+    } catch (e) {
+        console.error("Failed to load settings", e);
     }
 }
 
-// Edit User
-function editUser(id, username, email, rolesString) {
-    document.getElementById('user-id').value = id;
-    document.getElementById('user-username').value = username;
-    document.getElementById('user-email').value = email;
-    document.getElementById('user-password').value = ''; // Don't show password
+function renderSettings() {
+    // SQL Inputs
+    document.getElementById('cfg-server').value = appSettings.sql_server || '';
+    document.getElementById('cfg-uid').value = appSettings.sql_uid || '';
+    document.getElementById('cfg-pass').value = appSettings.sql_pass || '';
+    document.getElementById('cfg-db').value = appSettings.sql_db || '';
+    document.getElementById('cfg-table-zero').value = appSettings.table_zeroing || '';
+    document.getElementById('cfg-table-weight').value = appSettings.table_weight || '';
+    document.getElementById('cfg-table-main').value = appSettings.table_main || '';
 
-    // Set role select
-    const roleSelect = document.getElementById('user-role');
-    if (rolesString.includes('admin')) roleSelect.value = 'admin';
-    else if (rolesString.includes('moderator')) roleSelect.value = 'moderator';
-    else roleSelect.value = 'user';
+    // Interlocks
+    const container = document.getElementById('interlock-settings');
+    container.innerHTML = '';
 
-    document.getElementById('save-btn').innerText = 'UPDATE USER';
+    for (let i = 1; i <= 5; i++) {
+        const key = `carousel${i}`;
+        const isInterlocked = appSettings.interlocks ? appSettings.interlocks[key] : false;
+
+        const row = document.createElement('div');
+        row.className = 'interlock-row';
+        row.innerHTML = `
+            <span style="font-weight:bold;">Carousel ${i}</span>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:0.8rem;">Normal</span>
+                <label class="switch">
+                    <input type="checkbox" onchange="toggleInterlock('${key}', this.checked)" ${isInterlocked ? 'checked' : ''}>
+                    <span class="slider round"></span>
+                </label>
+                <span style="font-size:0.8rem;">Interlock</span>
+            </div>
+        `;
+        container.appendChild(row);
+    }
 }
 
-function resetForm() {
-    document.getElementById('user-id').value = '';
-    document.getElementById('user-username').value = '';
-    document.getElementById('user-email').value = '';
-    document.getElementById('user-password').value = '';
-    document.getElementById('user-role').value = 'user';
-    document.getElementById('save-btn').innerText = 'GRANT ACCESS';
+async function toggleInterlock(key, checked) {
+    if (!appSettings.interlocks) appSettings.interlocks = {};
+    appSettings.interlocks[key] = checked;
+    // Auto save on toggle? Or wait for save button? 
+    // Usually toggles are instant, let's save.
+    await saveSettings(true);
 }
 
-async function saveUser() {
-    const id = document.getElementById('user-id').value;
-    const username = document.getElementById('user-username').value;
-    const email = document.getElementById('user-email').value;
-    const password = document.getElementById('user-password').value;
-    const role = document.getElementById('user-role').value;
-
-    const payload = { username, email, roles: [role] };
-    if (password) payload.password = password;
+async function saveSettings(silent = false) {
+    // Update local object from inputs
+    appSettings.sql_server = document.getElementById('cfg-server').value;
+    appSettings.sql_uid = document.getElementById('cfg-uid').value;
+    appSettings.sql_pass = document.getElementById('cfg-pass').value;
+    appSettings.sql_db = document.getElementById('cfg-db').value;
+    appSettings.table_zeroing = document.getElementById('cfg-table-zero').value;
+    appSettings.table_weight = document.getElementById('cfg-table-weight').value;
+    appSettings.table_main = document.getElementById('cfg-table-main').value;
 
     try {
-        let url = `${API_URL}/users`;
-        let method = 'POST';
-
-        if (id) {
-            url = `${API_URL}/users/${id}`;
-            method = 'PUT';
-        }
-
-        const res = await fetch(url, {
-            method: method,
+        const token = currentUser.accessToken;
+        const res = await fetch('/api/settings', {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-access-token': currentUser.accessToken
+                'x-access-token': token
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(appSettings)
         });
 
-        const data = await res.json();
+        if (res.ok) {
+            if (!silent) alert('Settings Saved Successfully');
+        } else {
+            alert('Failed to save settings');
+        }
+    } catch (e) {
+        console.error("Save error", e);
+    }
+}
+
+// --- User Management Logic ---
+async function loadUsers() {
+    try {
+        if (!currentUser || !currentUser.accessToken) {
+            alert("Error: No access token found. Please Logout and Login again.");
+            return;
+        }
+        const token = currentUser.accessToken;
+        const res = await fetch('/api/users', {
+            headers: { 'x-access-token': token }
+        });
 
         if (res.ok) {
-            alert(data.message || 'Success!');
-            loadUsers();
-            resetForm();
+            const users = await res.json();
+            if (Array.isArray(users)) {
+                renderUsers(users);
+                if (users.length === 0) alert("No users found in database.");
+            } else {
+                alert("Error: Invalid response format");
+            }
         } else {
-            alert(data.message || 'Operation failed');
+            const err = await res.text();
+            try {
+                const jsonErr = JSON.parse(err);
+                alert("Failed to load users: " + jsonErr.message);
+            } catch (e) {
+                alert("Failed to load users: " + res.statusText);
+            }
         }
-    } catch (err) {
-        alert('Error saving user');
-        console.error(err);
+    } catch (e) {
+        console.error("Failed to load users", e);
+        alert("Network Error loading users: " + e.message);
+    }
+}
+
+function renderUsers(users) {
+    const tbody = document.getElementById('user-list-body');
+    tbody.innerHTML = '';
+
+    users.forEach(u => {
+        const roles = u.roles ? u.roles.map(r => r.name).join(', ') : '';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${u.id}</td>
+            <td>${u.username}</td>
+            <td>${u.email}</td>
+            <td>${roles}</td>
+            <td>
+                <button class="btn-sm btn-danger" onclick="deleteUser(${u.id})">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function showAddUserModal() {
+    // Simple prompt for now
+    const username = prompt("Enter Username:");
+    if (!username) return;
+    const password = prompt("Enter Password:");
+    if (!password) return;
+    const email = prompt("Enter Email:") || `${username}@example.com`;
+
+    createUser({ username, email, password, roles: ['user'] });
+}
+
+async function createUser(userData) {
+    try {
+        const token = currentUser.accessToken;
+        const res = await fetch('/api/auth/signup', { // Use Auth Signup or User Create? Auth signup handles roles better usually
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-access-token': token
+            },
+            body: JSON.stringify(userData)
+        });
+        if (res.ok) {
+            alert('User Created');
+            loadUsers();
+        } else {
+            const err = await res.json();
+            alert('Error: ' + err.message);
+        }
+    } catch (e) {
+        alert('Create failed');
     }
 }
 
 async function deleteUser(id) {
-    if (!confirm('Are you sure?')) return;
+    if (!confirm('Are you sure you want to delete this user?')) return;
 
     try {
-        const res = await fetch(`${API_URL}/users/${id}`, {
+        const token = currentUser.accessToken;
+        const res = await fetch(`/api/users/${id}`, {
             method: 'DELETE',
-            headers: { 'x-access-token': currentUser.accessToken }
+            headers: { 'x-access-token': token }
         });
-
         if (res.ok) {
             loadUsers();
         } else {
             alert('Failed to delete');
         }
-    } catch (err) {
-        alert('Error deleting user');
+    } catch (e) {
+        alert('Delete error');
     }
+}
+
+function renderCarousels(carousels) {
+    const container = document.getElementById('view-home');
+    container.innerHTML = '';
+
+    for (let i = 1; i <= 5; i++) {
+        const carousel = carousels[i];
+        const col = document.createElement('div');
+        col.className = 'carousel-col';
+
+        if (carousel && carousel.data && carousel.data.productId) {
+            const d = carousel.data;
+            const counter = parseInt(d.counter) || 0;
+            const target = parseInt(d.target) || 1;
+            const progress = Math.min((counter / target) * 100, 100);
+
+            col.innerHTML = `
+                <div class="carousel-card">
+                    <div class="card-header">
+                        <div class="carousel-number">Carousel ${i}</div>
+                        <div class="carousel-name">${d.productName || carousel.name}</div>
+                    </div>
+                    
+                    <div class="card-body">
+                        <div class="info-row">
+                            <span class="info-label">Product ID</span>
+                            <span class="info-value">${d.productId}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Packing Order</span>
+                            <span class="info-value">${d.packingOrder}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Package</span>
+                            <span class="info-value" title="${d.packagingMaterial || '-'}">${d.packagingMaterial || '-'}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Tolerance</span>
+                            <span class="info-value">${d.toleranceMin} — ${d.toleranceMax} Kg</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Pack Weight</span>
+                            <span class="info-value">${d.packWeight} Kg</span>
+                        </div>
+                    </div>
+
+                    <div class="weight-section">
+                        <div class="weight-label">Gross Weight</div>
+                        <div class="weight-display">${(d.lastGross || 0).toFixed(2)} Kg</div>
+                    </div>
+
+                    <div class="progress-section">
+                        <div class="progress-info">
+                            <span>Counter: ${counter} Pcs</span>
+                            <span>Target: ${target} Pcs</span>
+                        </div>
+                        <div class="progress-bar-track">
+                            <div class="progress-bar-fill" style="width: ${progress.toFixed(1)}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-label">Min</div>
+                            <div class="stat-value">0.00</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Nett</div>
+                            <div class="stat-value">${(d.lastNett || 0).toFixed(2)}</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Avg</div>
+                            <div class="stat-value">${(d.average || 0).toFixed(2)}</div>
+                        </div>
+                    </div>
+
+                    <div class="card-footer">
+                        <button class="update-btn">⟳ Update Data</button>
+                    </div>
+                </div>
+            `;
+        } else {
+            col.innerHTML = `
+                <div class="empty-state">
+                    <span class="icon">📦</span>
+                    <span>Carousel ${i}</span>
+                    <span>No data</span>
+                </div>
+            `;
+        }
+
+        container.appendChild(col);
+    }
+    activateMobileCard();
+}
+
+// ==========================================================
+// OPC-UA Configuration Functions
+// ==========================================================
+
+let opcuaConfig = null;
+let opcuaLiveValues = {};
+
+async function loadOpcUaConfig() {
+    try {
+        const token = currentUser.accessToken;
+        const res = await fetch('/api/opcua/config', {
+            headers: { 'x-access-token': token }
+        });
+        if (res.ok) {
+            opcuaConfig = await res.json();
+            document.getElementById('opcua-endpoint').value = opcuaConfig.endpointUrl || '';
+            document.getElementById('opcua-security').value = opcuaConfig.securityMode || 'None';
+            document.getElementById('opcua-policy').value = opcuaConfig.securityPolicy || 'Basic256';
+            document.getElementById('opcua-publish').value = opcuaConfig.publishInterval || 1000;
+            document.getElementById('opcua-sampling').value = opcuaConfig.samplingInterval || 500;
+            document.getElementById('opcua-autoconnect').checked = opcuaConfig.autoConnect || false;
+            document.getElementById('opcua-username').value = opcuaConfig.username || '';
+            document.getElementById('opcua-password').value = opcuaConfig.password || '';
+            renderOpcUaNodes();
+        }
+
+        const statusRes = await fetch('/api/opcua/status', {
+            headers: { 'x-access-token': token }
+        });
+        if (statusRes.ok) {
+            updateOpcUaStatusUI(await statusRes.json());
+        }
+    } catch (e) {
+        showOpcUaToast('Failed to load OPC-UA config', 'error');
+    }
+}
+
+async function saveOpcUaConfig() {
+    const config = {
+        endpointUrl: document.getElementById('opcua-endpoint').value.trim(),
+        securityMode: document.getElementById('opcua-security').value,
+        securityPolicy: document.getElementById('opcua-policy').value,
+        publishInterval: parseInt(document.getElementById('opcua-publish').value) || 1000,
+        samplingInterval: parseInt(document.getElementById('opcua-sampling').value) || 500,
+        autoConnect: document.getElementById('opcua-autoconnect').checked,
+        username: document.getElementById('opcua-username').value.trim(),
+        password: document.getElementById('opcua-password').value
+    };
+
+    try {
+        const token = currentUser.accessToken;
+        const res = await fetch('/api/opcua/config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'x-access-token': token },
+            body: JSON.stringify(config)
+        });
+        const data = await res.json();
+        if (data.success) {
+            opcuaConfig = data.config;
+            showOpcUaToast('Config saved ✓', 'success');
+        } else {
+            showOpcUaToast(data.error || 'Save failed', 'error');
+        }
+    } catch (e) {
+        showOpcUaToast('Save error', 'error');
+    }
+}
+
+async function opcuaConnect() {
+    const btn = document.getElementById('btn-opcua-connect');
+    btn.disabled = true;
+    btn.innerText = '⏳ CONNECTING...';
+
+    try {
+        const token = currentUser.accessToken;
+        const res = await fetch('/api/opcua/connect', {
+            method: 'POST',
+            headers: { 'x-access-token': token }
+        });
+        const data = await res.json();
+        if (data.success) {
+            showOpcUaToast('Connected to OPC-UA server', 'success');
+        } else {
+            showOpcUaToast(data.error || 'Connect failed', 'error');
+        }
+    } catch (e) {
+        showOpcUaToast('Connect error', 'error');
+    }
+    btn.disabled = false;
+    btn.innerText = '🔌 CONNECT';
+}
+
+async function opcuaDisconnect() {
+    try {
+        const token = currentUser.accessToken;
+        const res = await fetch('/api/opcua/disconnect', {
+            method: 'POST',
+            headers: { 'x-access-token': token }
+        });
+        const data = await res.json();
+        if (data.success) {
+            showOpcUaToast('Disconnected', 'success');
+        } else {
+            showOpcUaToast(data.error || 'Disconnect failed', 'error');
+        }
+    } catch (e) {
+        showOpcUaToast('Disconnect error', 'error');
+    }
+}
+
+async function addOpcUaNode() {
+    const nodeId = document.getElementById('opcua-new-nodeid').value.trim();
+    const name = document.getElementById('opcua-new-name').value.trim();
+    const desc = document.getElementById('opcua-new-desc').value.trim();
+    if (!nodeId) { showOpcUaToast('Node ID required', 'error'); return; }
+
+    try {
+        const token = currentUser.accessToken;
+        const res = await fetch('/api/opcua/config/nodes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-access-token': token },
+            body: JSON.stringify({ nodeId, name: name || nodeId, description: desc })
+        });
+        const data = await res.json();
+        if (data.success) {
+            opcuaConfig.nodes = data.nodes;
+            renderOpcUaNodes();
+            document.getElementById('opcua-new-nodeid').value = '';
+            document.getElementById('opcua-new-name').value = '';
+            document.getElementById('opcua-new-desc').value = '';
+            showOpcUaToast('Node added', 'success');
+        } else {
+            showOpcUaToast(data.error || 'Add failed', 'error');
+        }
+    } catch (e) {
+        showOpcUaToast('Add error', 'error');
+    }
+}
+
+async function removeOpcUaNode(index) {
+    try {
+        const token = currentUser.accessToken;
+        const res = await fetch(`/api/opcua/config/nodes/${index}`, {
+            method: 'DELETE',
+            headers: { 'x-access-token': token }
+        });
+        const data = await res.json();
+        if (data.success) {
+            opcuaConfig.nodes = data.nodes;
+            renderOpcUaNodes();
+            showOpcUaToast('Node removed', 'success');
+        } else {
+            showOpcUaToast(data.error || 'Remove failed', 'error');
+        }
+    } catch (e) {
+        showOpcUaToast('Remove error', 'error');
+    }
+}
+
+function renderOpcUaNodes() {
+    if (!opcuaConfig) return;
+    const tbody = document.getElementById('opcua-nodes-body');
+    tbody.innerHTML = '';
+    document.getElementById('opcua-node-count').innerText = `${opcuaConfig.nodes.length} node${opcuaConfig.nodes.length !== 1 ? 's' : ''}`;
+
+    if (opcuaConfig.nodes.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#999; padding:20px;">No nodes configured</td></tr>`;
+        return;
+    }
+
+    opcuaConfig.nodes.forEach((node, idx) => {
+        const liveVal = opcuaLiveValues[node.name];
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${idx + 1}</td>
+            <td style="font-family: var(--font-digital); font-size: 0.8rem;">${node.nodeId}</td>
+            <td style="font-weight: 600">${node.name}</td>
+            <td>${node.description || '—'}</td>
+            <td style="font-family: var(--font-digital)" id="opcua-live-${idx}">${liveVal ? liveVal.value : '—'}</td>
+            <td><button class="btn-sm btn-danger" onclick="removeOpcUaNode(${idx})">Delete</button></td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function updateOpcUaStatusUI(status) {
+    const badge = document.getElementById('opcua-status-badge');
+    const dot = document.getElementById('opcua-nav-dot');
+    const btnConn = document.getElementById('btn-opcua-connect');
+    const btnDisc = document.getElementById('btn-opcua-disconnect');
+
+    if (!badge || !dot) return;
+
+    badge.className = 'opcua-badge';
+    dot.className = 'opcua-dot';
+
+    if (status.connected) {
+        badge.innerText = 'CONNECTED';
+        badge.classList.add('connected');
+        dot.classList.add('connected');
+        btnConn.style.display = 'none';
+        btnDisc.style.display = 'inline-block';
+    } else if (status.connecting) {
+        badge.innerText = 'CONNECTING...';
+        badge.classList.add('connecting');
+        dot.classList.add('connecting');
+        btnConn.style.display = 'none';
+        btnDisc.style.display = 'none';
+    } else {
+        badge.innerText = 'DISCONNECTED';
+        btnConn.style.display = 'inline-block';
+        btnDisc.style.display = 'none';
+    }
+
+    if (status.liveValues) opcuaLiveValues = status.liveValues;
+}
+
+function updateOpcUaLiveValue(data) {
+    opcuaLiveValues[data.name] = data;
+    if (opcuaConfig) {
+        const idx = opcuaConfig.nodes.findIndex(n => n.name === data.name);
+        if (idx >= 0) {
+            const cell = document.getElementById(`opcua-live-${idx}`);
+            if (cell) {
+                cell.innerText = data.value !== null && data.value !== undefined ? data.value : '—';
+                cell.style.color = data.statusCode === 'Good' ? '#28a745' : '#ffc107';
+            }
+        }
+    }
+}
+
+function showOpcUaToast(msg, type) {
+    const existing = document.querySelector('.opcua-toast');
+    if (existing) existing.remove();
+    const t = document.createElement('div');
+    t.className = `opcua-toast ${type || ''}`;
+    t.innerText = msg;
+    document.body.appendChild(t);
+    setTimeout(() => { if (t.parentNode) t.remove(); }, 3000);
 }

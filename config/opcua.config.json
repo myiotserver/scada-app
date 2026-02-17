@@ -1,0 +1,37 @@
+{
+    "endpointUrl": "opc.tcp://147.139.196.244:49320",
+    "securityMode": "Sign",
+    "securityPolicy": "Basic256",
+    "username": "Administrator",
+    "password": "thinkcentre",
+    "publishInterval": 1000,
+    "samplingInterval": 500,
+    "autoConnect": true,
+    "nodes": [
+        {
+            "nodeId": "ns=3;s=\"Carousel1\".\"GrossWeight\"",
+            "name": "Carousel_1",
+            "description": ""
+        },
+        {
+            "nodeId": "ns=3;s=\"Carousel2\".\"GrossWeight\"",
+            "name": "Carousel_2",
+            "description": ""
+        },
+        {
+            "nodeId": "ns=3;s=\"Carousel3\".\"GrossWeight\"",
+            "name": "Carousel_3",
+            "description": ""
+        },
+        {
+            "nodeId": "ns=3;s=\"Carousel4\".\"GrossWeight\"",
+            "name": "Carousel_4",
+            "description": ""
+        },
+        {
+            "nodeId": "ns=3;s=\"Carousel5\".\"GrossWeight\"",
+            "name": "Carousel_5",
+            "description": ""
+        }
+    ]
+}

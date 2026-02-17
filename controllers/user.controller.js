@@ -21,6 +21,7 @@ exports.moderatorBoard = (req, res) => {
 
 // CRUD for Users
 exports.findAll = (req, res) => {
+    console.log("findAll users called");
     User.findAll({
         include: [{
             model: Role,
@@ -31,8 +32,10 @@ exports.findAll = (req, res) => {
             }
         }]
     }).then(users => {
+        console.log("findAll retrieved:", users.length, "users");
         res.send(users);
     }).catch(err => {
+        console.error("findAll error:", err);
         res.status(500).send({ message: err.message });
     });
 };
