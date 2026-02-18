@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRIBOGA - Weighing Dashboard</title>
+    <meta name="description" content="SRIBOGA Weighing Carousel SCADA Dashboard — Real-time industrial monitoring">
+    <link rel="stylesheet" href="style.css">
+    <link rel="shortcut icon" href="favicon.ico">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+    <!-- Login Overlay -->
+    <div id="login-view">
+        <div class="login-card">
+            <h1>SRIBOGA</h1>
+            <p>PIONEER IN FLOUR INNOVATION</p>
+            <div class="form-group">
+                <input type="text" id="username" placeholder="Username" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <input type="password" id="password" placeholder="Password">
+            </div>
+            <button class="btn-primary" onclick="handleLogin()">Sign In</button>
+            <p id="login-error"></p>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div class="app-wrapper" style="display: none;">
+
+        <!-- Header -->
+        <header>
+            <div class="logo-area">
+                <div class="logo-circle">
+                    <span>🌾</span>
+                </div>
+                <div class="logo-text">
+                    <h1>SRIBOGA</h1>
+                    <p>PIONEER IN FLOUR INNOVATION</p>
+                </div>
+            </div>
+            <div class="header-title">WEIGHING DASHBOARD</div>
+            <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Switch theme">
+                <span id="theme-icon">🌙</span>
+            </button>
+        </header>
+
+        <div class="main-content">
+            <!-- Sidebar -->
+            <aside>
+                <nav>
+                    <button class="nav-btn active" onclick="navigate('home')">
+                        <span class="icon">🏠</span>
+                        <span class="nav-label">Home</span>
+                    </button>
+                    <button class="nav-btn" onclick="navigate('config')">
+                        <span class="icon">⚙️</span>
+                        <span class="nav-label">Config</span>
+                    </button>
+                    <button class="nav-btn" onclick="navigate('users')">
+                        <span class="icon">👥</span>
+                        <span class="nav-label">Users</span>
+                    </button>
+                    <button class="nav-btn" onclick="navigate('opcua')">
+                        <span class="icon">🔌</span>
+                        <span class="nav-label">OPC-UA</span>
+                        <span class="opcua-dot" id="opcua-nav-dot"></span>
+                    </button>
+                </nav>
+
+                <div class="sidebar-footer">
+                    <div class="user-info" id="current-user-display">Login as admin</div>
+                    <div class="datetime">
+                        <div id="clock-time">08:19:13</div>
+                        <div id="clock-date">17 February 2026</div>
+                    </div>
+                    <button class="btn-logout" onclick="handleLogout()">
+                        <span class="icon">⏏</span>
+                        <span class="nav-label">Logout</span>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Views Container -->
+            <main id="main-view-container">
+
+                <!-- Mobile Card Picker -->
+                <div class="card-picker" id="card-picker">
+                    <button class="picker-btn active" onclick="showCard(1)">1</button>
+                    <button class="picker-btn" onclick="showCard(2)">2</button>
+                    <button class="picker-btn" onclick="showCard(3)">3</button>
+                    <button class="picker-btn" onclick="showCard(4)">4</button>
+                    <button class="picker-btn" onclick="showCard(5)">5</button>
+                </div>
+
+                <!-- HOME VIEW: Carousel Grid -->
+                <div id="view-home" class="view-section">
+                    <!-- Carousels injected here by JS -->
+                </div>
+
+                <!-- CONFIG VIEW -->
+                <div id="view-config" class="view-section"
+                    style="display: none; padding: 20px; width: 100%; gap: 20px;">
+                    <!-- Left: Interlock Settings -->
+                    <div class="config-panel" style="flex: 1;">
+                        <div class="panel-header">⚡ Underweight Interlock Metal Detector</div>
+                        <div class="panel-body" id="interlock-settings">
+                            <!-- Injected via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Right: SQL Settings -->
+                    <div class="config-panel" style="flex: 1.2;">
+                        <div class="panel-header"
+                            style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>🗄️ SQL Server Setting</span>
+                            <div id="sql-status-badge" class="status-badge"
+                                style="font-size: 0.7rem; padding: 2px 8px;">CHECKING...</div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="form-row">
+                                <label>Server :</label> <input type="text" id="cfg-server">
+                                <label>UID :</label> <input type="text" id="cfg-uid">
+                            </div>
+                            <div class="form-row">
+                                <label>Database :</label> <input type="text" id="cfg-db">
+                                <label>PASS :</label> <input type="password" id="cfg-pass">
+                            </div>
+                            <div class="form-row"><label>Table Zeroing :</label> <input type="text" id="cfg-table-zero">
+                            </div>
+                            <div class="form-row"><label>Table Weight :</label> <input type="text"
+                                    id="cfg-table-weight"></div>
+                            <div class="form-row"><label>Table Main Sql :</label> <input type="text"
+                                    id="cfg-table-main"></div>
+
+                            <div style="text-align: right; margin-top: 20px;">
+                                <button class="btn-save" onclick="saveSettings()">💾 SAVE SETTINGS</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- USER MGMT VIEW -->
+                <div id="view-users" class="view-section"
+                    style="display: none; padding: 20px; width: 100%; flex-direction: column;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2>User Management</h2>
+                        <button class="btn-primary" style="width: auto;" onclick="showAddUserModal()">+ Add
+                            User</button>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Roles</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-list-body">
+                            <!-- Injected via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- OPC-UA CONFIG VIEW -->
+                <div id="view-opcua" class="view-section" style="display: none; padding: 20px; width: 100%; gap: 20px;">
+
+                    <!-- Left: Connection Settings -->
+                    <div class="config-panel" style="flex: 1;">
+                        <div class="panel-header">🔌 OPC-UA Connection <span class="opcua-badge"
+                                id="opcua-status-badge">DISCONNECTED</span></div>
+                        <div class="panel-body">
+                            <div class="form-row">
+                                <label>Endpoint URL :</label>
+                                <input type="text" id="opcua-endpoint" placeholder="opc.tcp://192.168.21.1:4840"
+                                    spellcheck="false" style="flex: 2;">
+                            </div>
+                            <div class="form-row">
+                                <label>Security :</label>
+                                <select id="opcua-security" style="flex: 1;">
+                                    <option value="None">None</option>
+                                    <option value="Sign">Sign</option>
+                                    <option value="SignAndEncrypt">Sign & Encrypt</option>
+                                </select>
+                                <label style="margin-left: 10px;">Policy :</label>
+                                <select id="opcua-policy" style="flex: 1;">
+                                    <option value="Basic128Rsa15">Basic128Rsa15</option>
+                                    <option value="Basic256">Basic256</option>
+                                    <option value="Basic256Sha256">Basic256Sha256</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <label>Publish (ms) :</label>
+                                <input type="number" id="opcua-publish" value="1000" min="100" style="width: 80px;">
+                                <label style="margin-left: 10px;">Sample (ms) :</label>
+                                <input type="number" id="opcua-sampling" value="500" min="100" style="width: 80px;">
+                            </div>
+                            <div class="form-row">
+                                <label>Username :</label>
+                                <input type="text" id="opcua-username" placeholder="(anonymous)" spellcheck="false"
+                                    style="flex: 1;">
+                                <label style="margin-left: 10px;">Password :</label>
+                                <input type="password" id="opcua-password" placeholder="••••••" style="flex: 1;">
+                            </div>
+                            <div class="form-row" style="align-items: center;">
+                                <label>Auto-Connect :</label>
+                                <input type="checkbox" id="opcua-autoconnect" style="width: auto; margin-right: auto;">
+                            </div>
+                            <div class="opc-btn-row" style="display: flex; gap: 10px; margin-top: 10px;">
+                                <button class="btn-save" onclick="saveOpcUaConfig()">
+                                    <span class="icon">💾</span>
+                                    <span class="btn-text">SAVE</span>
+                                </button>
+                                <button class="btn-primary" id="btn-opcua-connect"
+                                    style="width: auto; background: #22c55e;" onclick="opcuaConnect()">
+                                    <span class="icon">🔌</span>
+                                    <span class="btn-text">CONNECT</span>
+                                </button>
+                                <button class="btn-primary" id="btn-opcua-disconnect"
+                                    style="width: auto; background: #ef4444; display: none;"
+                                    onclick="opcuaDisconnect()">
+                                    <span class="icon">⛔</span>
+                                    <span class="btn-text">DISCONNECT</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Node Mapping -->
+                    <div class="config-panel" style="flex: 1.2;">
+                        <div class="panel-header">📡 Monitored Nodes <span id="opcua-node-count"
+                                style="font-weight:normal; font-size:0.75rem; color:var(--text-muted);">0 nodes</span>
+                        </div>
+                        <div class="panel-body">
+                            <div class="form-row" style="margin-bottom: 10px;">
+                                <input type="text" id="opcua-new-nodeid" placeholder="ns=3;s=GrossWeight_1"
+                                    spellcheck="false" style="flex: 2;">
+                                <input type="text" id="opcua-new-name" placeholder="Tag Name" spellcheck="false"
+                                    style="flex: 1;">
+                                <input type="text" id="opcua-new-desc" placeholder="Description" spellcheck="false"
+                                    style="flex: 1;">
+                                <button class="btn-primary" style="width: auto;" onclick="addOpcUaNode()">+ ADD</button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Node ID</th>
+                                            <th>Name</th>
+                                            <th>Description</th>
+                                            <th>Live Value</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="opcua-nodes-body">
+                                        <!-- Filled by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+
+        <!-- System Footer -->
+        <footer>
+            <div class="footer-group">
+                <div class="footer-header">PLC</div>
+                <div class="indicators">
+                    <div class="indicator-item">
+                        <div class="led on-green"></div>
+                        <span>Comm</span>
+                    </div>
+                    <div class="indicator-item">
+                        <div class="led on-green"></div>
+                        <span>Sensor</span>
+                    </div>
+                    <div class="indicator-item">
+                        <div class="led on-green"></div>
+                        <span>Metal Det.</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-group">
+                <div class="footer-header">SERVER</div>
+                <div class="indicators">
+                    <div class="indicator-item">
+                        <div class="led off"></div>
+                        <span>Wait</span>
+                    </div>
+                    <div class="indicator-item">
+                        <div class="led off"></div>
+                        <span>Done</span>
+                    </div>
+                    <div class="indicator-item">
+                        <div class="led off"></div>
+                        <span>N/C</span>
+                    </div>
+                    <div class="indicator-item">
+                        <div class="led on-green"></div>
+                        <span>Running</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-group">
+                <div class="footer-header">SYSTEM</div>
+                <div class="indicators">
+                    <div class="indicator-item">
+                        <div class="led off"></div>
+                        <span>Pause</span>
+                    </div>
+                    <div class="indicator-item">
+                        <div class="led off"></div>
+                        <span>Stop</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-group">
+                <div class="footer-header">CONTROL</div>
+                <div class="controls">
+                    <button class="ctrl-btn"><span class="icon">🔄</span> RESET</button>
+                </div>
+            </div>
+        </footer>
+        <!-- Control Modal -->
+        <div id="control-modal" class="modal-overlay" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modal-title">Carousel Control</h3>
+                    <button class="close-btn" onclick="closeControlModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <p id="modal-status-text">Current Status: <span id="modal-status-val">UNKNOWN</span></p>
+                    <div class="control-actions">
+                        <button class="ctrl-btn btn-run" onclick="sendControlCommand('RUN')">
+                            <span class="icon">▶</span> RUN
+                        </button>
+                        <button class="ctrl-btn btn-pause" onclick="sendControlCommand('PAUSE')">
+                            <span class="icon">⏸</span> PAUSE
+                        </button>
+                        <button class="ctrl-btn btn-stop" onclick="sendControlCommand('STOP')">
+                            <span class="icon">⏹</span> STOP
+                        </button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,17 @@
+{
+    "endpointUrl": "opc.tcp://147.139.196.244:49320",
+    "securityMode": "Sign",
+    "securityPolicy": "Basic256",
+    "username": "Administrator",
+    "password": "thinkcentre",
+    "publishInterval": 1000,
+    "samplingInterval": 500,
+    "autoConnect": true,
+    "nodes": [
+        {
+            "nodeId": "ns=2;s=SCREENING WEIGHING.SCREENING_SCALE1302.ACT_WEIGHT_LOW",
+            "name": "Gross weight",
+            "description": ""
+        }
+    ]
+}
