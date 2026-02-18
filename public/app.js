@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
     startClock();
     loadTheme();
+    setupLoginEnterKey();
 });
 
 // --- Theme Toggle ---
@@ -16,7 +17,11 @@ function loadTheme() {
     const saved = localStorage.getItem('scada_theme') || 'dark';
     document.documentElement.setAttribute('data-theme', saved);
     const icon = document.getElementById('theme-icon');
-    if (icon) icon.innerText = saved === 'light' ? '☀️' : '🌙';
+    if (saved === 'light') {
+        icon.className = 'bx bxs-sun';
+    } else {
+        icon.className = 'bx bxs-moon';
+    }
 }
 
 function toggleTheme() {
@@ -25,7 +30,13 @@ function toggleTheme() {
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('scada_theme', next);
     const icon = document.getElementById('theme-icon');
-    if (icon) icon.innerText = next === 'light' ? '☀️' : '🌙';
+    if (icon) {
+        if (next === 'light') {
+            icon.className = 'bx bxs-sun';
+        } else {
+            icon.className = 'bx bxs-moon';
+        }
+    }
 }
 
 // --- Mobile Card Switcher ---
@@ -52,7 +63,7 @@ function activateMobileCard() {
 function startClock() {
     setInterval(() => {
         const now = new Date();
-        document.getElementById('clock-time').innerText = now.toLocaleTimeString('en-GB', { hour12: false });
+        document.getElementById('clock-time').innerText = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
         const options = { day: 'numeric', month: 'long', year: 'numeric' };
         document.getElementById('clock-date').innerText = now.toLocaleDateString('en-GB', options);
     }, 1000);
@@ -76,6 +87,19 @@ function checkAuth() {
     } else {
         document.getElementById('login-view').style.display = 'flex';
     }
+}
+
+function setupLoginEnterKey() {
+    const inputs = [document.getElementById('username'), document.getElementById('password')];
+    inputs.forEach(input => {
+        if (input) {
+            input.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    handleLogin();
+                }
+            });
+        }
+    });
 }
 
 async function handleLogin() {
@@ -138,11 +162,65 @@ function initApp() {
     });
 
     // OPC-UA events
-    socket.on('opcua-status', (status) => updateOpcUaStatusUI(status));
+    socket.on('opcua-status', (status) => {
+        updateOpcUaStatusUI(status);
+        updateFooterConnections({ opc: status });
+    });
     socket.on('opcua-value', (data) => updateOpcUaLiveValue(data));
 
     // Load initial settings
     loadSettings();
+
+    // Start SQL polling
+    pollSqlStatus();
+    setInterval(pollSqlStatus, 10000); // Poll every 10s
+}
+
+// --- Footer Logic ---
+
+function updateFooterSensors(carousels) {
+    if (!carousels) return;
+    for (let i = 1; i <= 5; i++) {
+        const carousel = carousels[i];
+        const el = document.getElementById(`sensor-${i}`);
+        if (!el) continue;
+
+        const led = el.querySelector('.led');
+        if (!led) continue;
+
+        // Reset classes
+        led.className = 'led';
+
+        if (carousel && carousel.state === 'RUN') {
+            led.classList.add('status-good');
+            // led.classList.add('on'); // optional if we use status-good directly
+        } else {
+            // STOP or PAUSE or Unknown
+            led.classList.add('status-bad'); // or status-neutral if preferred for Stop
+        }
+    }
+}
+
+let lastSqlStatus = false;
+let lastOpcStatus = false;
+
+// function pollSqlStatus removed (merged with bottom one)
+
+function updateFooterConnections(statusUpdate) {
+    // Update local state
+    if (statusUpdate.sql !== undefined) lastSqlStatus = statusUpdate.sql;
+    if (statusUpdate.opc !== undefined) lastOpcStatus = statusUpdate.opc.connected;
+
+    // Update UI
+    const sqlIcon = document.getElementById('conn-sql');
+    if (sqlIcon) {
+        sqlIcon.className = 'conn-item ' + (lastSqlStatus ? 'status-good' : 'status-bad');
+    }
+
+    const opcIcon = document.getElementById('conn-opc');
+    if (opcIcon) {
+        opcIcon.className = 'conn-item ' + (lastOpcStatus ? 'status-good' : 'status-bad');
+    }
 }
 
 let currentView = 'home';
@@ -394,6 +472,9 @@ function renderCarousels(carousels) {
     const container = document.getElementById('view-home');
     container.innerHTML = '';
 
+    // Update Footer Sensors
+    updateFooterSensors(carousels);
+
     for (let i = 1; i <= 5; i++) {
         const carousel = carousels[i];
         const col = document.createElement('div');
@@ -418,6 +499,26 @@ function renderCarousels(carousels) {
             const counter = parseInt(d.counter) || 0;
             const target = parseInt(d.target) || 1;
             const progress = Math.min((counter / target) * 100, 100);
+
+            // Determine Weight Class based on logic
+            let weightClass = '';
+
+            if (carousel.state === 'STOP') {
+                weightClass = 'bg-info';
+            } else if (carousel.state === 'RUN') {
+                if (d.lastGross < d.toleranceMin) {
+                    weightClass = 'bg-danger';
+                } else if (d.lastGross > d.toleranceMax) {
+                    weightClass = 'bg-warning';
+                } else {
+                    weightClass = 'bg-success';
+                }
+            } else {
+                // Default handling for other states (PAUSE/RESET) if needed
+                // Currently defaults to base style (Teal/Primary)
+                // If user wants Green for PAUSE/RESET too, uncomment below:
+                // weightClass = 'bg-success';
+            }
 
             col.innerHTML = `
                 <div class="carousel-card">
@@ -451,9 +552,7 @@ function renderCarousels(carousels) {
 
                     <div class="weight-section">
                         <div class="weight-label">Gross Weight</div>
-                        <div class="weight-display ${(d.lastGross < d.toleranceMin) ? 'bg-danger' :
-                    (d.lastGross > d.toleranceMax) ? 'bg-warning' : ''
-                }">${(d.lastGross || 0).toFixed(2)} Kg</div>
+                        <div class="weight-display ${weightClass}">${(d.lastGross || 0).toFixed(2)} Kg</div>
                     </div>
 
                     <div class="progress-section">
@@ -832,24 +931,34 @@ function showOpcUaToast(msg, type) {
 // --- SQL Status Polling ---
 async function pollSqlStatus() {
     const badge = document.getElementById('sql-status-badge');
-    if (!badge) return;
+    // if (!badge) return; // Don't return early, we might need to update footer even if badge is missing (though it shouldn't be)
 
     try {
         const res = await fetch('/api/sql/status');
         const data = await res.json();
 
-        if (data.connected) {
-            badge.innerText = "CONNECTED";
-            badge.className = "status-badge connected";
-            badge.title = `Connected to ${data.database} on ${data.server}`;
-        } else {
-            badge.innerText = "DISCONNECTED";
-            badge.className = "status-badge disconnected";
-            badge.title = "Connection Failed";
+        // Update Footer (Always)
+        updateFooterConnections({ sql: data.connected });
+
+        // Update Badge (If exists)
+        if (badge) {
+            if (data.connected) {
+                badge.innerText = "CONNECTED";
+                badge.className = "status-badge connected";
+                badge.title = `Connected to ${data.database} on ${data.server}`;
+            } else {
+                badge.innerText = "DISCONNECTED";
+                badge.className = "status-badge disconnected";
+                badge.title = "Connection Failed";
+            }
         }
     } catch (e) {
-        badge.innerText = "ERROR";
-        badge.className = "status-badge disconnected";
+        // Error state
+        updateFooterConnections({ sql: false });
+        if (badge) {
+            badge.innerText = "ERROR";
+            badge.className = "status-badge disconnected";
+        }
     }
 }
 

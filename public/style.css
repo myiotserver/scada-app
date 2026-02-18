@@ -378,6 +378,8 @@ aside {
     align-items: center;
     flex-shrink: 0;
     transition: width 0.3s ease;
+    color: #f1f5f9;
+    /* Always light text for dark sidebar */
 }
 
 aside:hover {
@@ -397,11 +399,31 @@ aside:hover .sidebar-footer {
     width: 100%;
     text-align: center;
     font-size: 0.7rem;
-    color: var(--text-muted);
+    color: rgba(255, 255, 255, 0.7);
+    /* Fixed light color for sidebar */
     margin-bottom: 8px;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+}
+
+.datetime {
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+#clock-time {
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+}
+
+#clock-date {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.6);
 }
 
 nav {
@@ -433,9 +455,10 @@ nav {
 }
 
 .nav-btn .icon {
-    font-size: 1.1rem;
+    font-size: 1.5rem;
     min-width: 24px;
     text-align: center;
+    transition: all var(--transition);
 }
 
 .nav-label {
@@ -465,6 +488,13 @@ nav {
     height: 60%;
     background: var(--accent-primary);
     border-radius: 0 3px 3px 0;
+    box-shadow: 0 0 10px var(--accent-primary);
+}
+
+.nav-btn.active .icon {
+    color: var(--accent-primary);
+    filter: drop-shadow(0 0 8px rgba(0, 212, 170, 0.4));
+    transform: scale(1.1);
 }
 
 .sidebar-footer {
@@ -652,6 +682,34 @@ main {
     margin: 0;
 }
 
+.weight-display.bg-danger {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: var(--accent-danger);
+    text-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
+}
+
+.weight-display.bg-warning {
+    background: rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.3);
+    color: var(--accent-warning);
+    text-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+}
+
+.weight-display.bg-success {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: rgba(34, 197, 94, 0.3);
+    color: var(--accent-success);
+    text-shadow: 0 0 12px rgba(34, 197, 94, 0.3);
+}
+
+.weight-display.bg-info {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.3);
+    color: var(--accent-blue);
+    text-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+}
+
 /* Progress Section */
 .progress-section {
     padding: 0 14px;
@@ -837,35 +895,104 @@ footer {
     box-shadow: 0 0 6px var(--accent-danger);
 }
 
-.controls {
-    display: flex;
-    gap: 6px;
+/* Center the middle group */
+.center-group {
+    margin: 0 auto;
+    /* This centers it if parent is flex */
 }
 
-.ctrl-btn {
+/* Override existing footer-group:last-child margin-left: auto rule 
+   because we now have a center group we want actually centered 
+   and the right group aligned to right. */
+
+footer {
+    justify-content: space-between;
+    /* This handles Left - Center - Right spacing */
+}
+
+.footer-group:last-child {
+    margin-left: 0;
+    /* Reset automatic margin */
+}
+
+.connection-icons {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.conn-item {
+    font-size: 1.5rem;
+    /* Icon size */
+    color: var(--text-muted);
+    transition: all var(--transition);
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 6px 12px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-card);
-    color: var(--text-secondary);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    font-size: 0.65rem;
+    justify-content: center;
+    gap: 8px;
+    /* Space between icon and text */
+}
+
+.conn-label {
+    font-size: 0.75rem;
+    /* Smaller text for label */
     font-weight: 600;
-    font-family: var(--font-main);
-    transition: all var(--transition);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.ctrl-btn:hover {
-    background: var(--bg-card-hover);
-    color: var(--text-primary);
-    border-color: var(--border-accent);
+.conn-item.status-good {
+    color: var(--accent-success);
+    filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.4));
 }
 
-.ctrl-btn .icon {
-    font-size: 0.8rem;
+.conn-item.status-bad {
+    color: var(--accent-danger);
+    filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.4));
+}
+
+.led {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition: all 0.3s ease;
+    box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+.led.on {
+    background: var(--accent-success);
+    box-shadow: 0 0 6px var(--accent-success);
+}
+
+.led.off {
+    background: var(--accent-danger);
+    /* User asked for Red when disconnected/off? 
+    "Apabila koneksi OK ... hijau ... disconnected ... merah". 
+    For Sensors: "Sensor state carousel 1-5". Usually Sensor ON = Green, OFF = Grey/Red.
+    Let's stick to Green / Red for clear distinction. */
+    background: var(--bg-card);
+    border: 1px solid var(--text-muted);
+    box-shadow: none;
+}
+
+/* Let's clarify led states */
+.led.status-good {
+    background: var(--accent-success);
+    box-shadow: 0 0 6px var(--accent-success);
+    border: none;
+}
+
+.led.status-bad {
+    background: var(--accent-danger);
+    box-shadow: 0 0 6px var(--accent-danger);
+    border: none;
+}
+
+.led.status-neutral {
+    background: var(--text-muted);
+    opacity: 0.3;
+    border: none;
 }
 
 /* ============================================================
@@ -1196,13 +1323,6 @@ input:checked+.slider:before {
 
 .data-table td .btn-icon:hover {
     color: var(--accent-danger);
-}
-
-border-radius: 20px;
-letter-spacing: 0.5px;
-background: rgba(239, 68, 68, 0.15);
-color: var(--accent-danger);
-border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .opcua-badge.connected {
@@ -1657,6 +1777,7 @@ border: 1px solid rgba(239, 68, 68, 0.3);
         text-align: left;
     }
 }
+
 /* --- Modal --- */
 .modal-overlay {
     position: fixed;
@@ -1680,8 +1801,15 @@ border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 @keyframes slideIn {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 .modal-header {
@@ -1708,7 +1836,9 @@ border: 1px solid rgba(239, 68, 68, 0.3);
     line-height: 1;
 }
 
-.close-btn:hover { color: var(--text-primary); }
+.close-btn:hover {
+    color: var(--text-primary);
+}
 
 .modal-body {
     padding: 24px;
@@ -1748,18 +1878,36 @@ border: 1px solid rgba(239, 68, 68, 0.3);
     min-width: 90px;
 }
 
-.ctrl-btn .icon { font-size: 1.5rem; }
+.ctrl-btn .icon {
+    font-size: 1.5rem;
+}
 
 .ctrl-btn:hover:not(:disabled) {
     transform: translateY(-2px);
     filter: brightness(1.1);
 }
 
-.btn-run:hover:not(:disabled) { background: rgba(34, 197, 94, 0.2); color: #22c55e; border-color: #22c55e; }
-.btn-pause:hover:not(:disabled) { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border-color: #f59e0b; }
-.btn-stop:hover:not(:disabled) { background: rgba(239, 68, 68, 0.2); color: #ef4444; border-color: #ef4444; }
+.btn-run:hover:not(:disabled) {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+    border-color: #22c55e;
+}
 
-.ctrl-btn:active:not(:disabled) { transform: translateY(0); }
+.btn-pause:hover:not(:disabled) {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+    border-color: #f59e0b;
+}
+
+.btn-stop:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    border-color: #ef4444;
+}
+
+.ctrl-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
 
 .ctrl-btn:disabled {
     opacity: 0.5;
@@ -1769,27 +1917,45 @@ border: 1px solid rgba(239, 68, 68, 0.3);
 
 /* --- Status Backgrounds --- */
 .carousel-col.status-running {
-    background: rgba(34, 197, 94, 0.05); /* Very subtle green tint to keep text readable */
+    background: rgba(34, 197, 94, 0.05);
+    /* Very subtle green tint to keep text readable */
     border-color: #22c55e;
     box-shadow: 0 0 15px rgba(34, 197, 94, 0.1);
 }
+
 /* Ensure header/body/footer are transparent or inherit so they show the tint */
-.carousel-col.status-running .card-header { background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.1)); }
+.carousel-col.status-running .card-header {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.1));
+}
 
 .carousel-col.status-stopped {
     background: rgba(239, 68, 68, 0.05);
     border-color: #ef4444;
 }
-.carousel-col.status-stopped .card-header { background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.1)); }
+
+.carousel-col.status-stopped .card-header {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.1));
+}
 
 .carousel-col.status-paused {
     animation: border-blink-orange 1s infinite;
 }
 
 @keyframes border-blink-orange {
-    0% { border-color: #f59e0b; box-shadow: 0 0 5px rgba(245, 158, 11, 0.3); }
-    50% { border-color: transparent; box-shadow: none; }
-    100% { border-color: #f59e0b; box-shadow: 0 0 5px rgba(245, 158, 11, 0.3); }
+    0% {
+        border-color: #f59e0b;
+        box-shadow: 0 0 5px rgba(245, 158, 11, 0.3);
+    }
+
+    50% {
+        border-color: transparent;
+        box-shadow: none;
+    }
+
+    100% {
+        border-color: #f59e0b;
+        box-shadow: 0 0 5px rgba(245, 158, 11, 0.3);
+    }
 }
 
 
@@ -1818,22 +1984,38 @@ border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 @keyframes blink-red {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
 }
 
 /* --- RESET State --- */
 .carousel-col.status-reset {
-    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); /* Blue */
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    /* Blue */
     color: #fff;
     box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
     animation: pulse-blue 2s infinite;
 }
 
 @keyframes pulse-blue {
-    0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    0% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    }
 }
 
 /* ============================================================
@@ -1842,10 +2024,12 @@ border: 1px solid rgba(239, 68, 68, 0.3);
 
 /* 1. Resize Footer Reset Button to be proportional */
 .footer-group .ctrl-btn {
-    flex-direction: row; /* Horizontal layout */
+    flex-direction: row;
+    /* Horizontal layout */
     padding: 0 16px;
     min-width: auto;
-    height: 36px; /* Match logo circle or similar small size */
+    height: 36px;
+    /* Match logo circle or similar small size */
     gap: 8px;
     font-size: 0.75rem;
     border-radius: var(--radius-sm);
@@ -1865,11 +2049,13 @@ border: 1px solid rgba(239, 68, 68, 0.3);
 /* 2. Responsive OPC-UA Settings View */
 /* Force the view container to fill the available space and use Flexbox */
 #view-opcua {
-    /* display: flex !important; */ /* Controlled by app.js */
+    /* display: flex !important; */
+    /* Controlled by app.js */
     flex-direction: row;
     height: 100%;
     width: 100%;
-    overflow: hidden; /* Prevent main body scroll, force internal scroll */
+    overflow: hidden;
+    /* Prevent main body scroll, force internal scroll */
     box-sizing: border-box;
     align-items: stretch;
 }
@@ -1878,16 +2064,20 @@ border: 1px solid rgba(239, 68, 68, 0.3);
 .config-panel {
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* Constrain content to panel dimensions */
-    min-height: 0; /* Crucial for nested flex scrolling */
+    overflow: hidden;
+    /* Constrain content to panel dimensions */
+    min-height: 0;
+    /* Crucial for nested flex scrolling */
     max-height: 100%;
-    flex-shrink: 1; /* Allow shrinking if needed */
+    flex-shrink: 1;
+    /* Allow shrinking if needed */
 }
 
 /* Ensure panel body handles the scrolling */
 .panel-body {
     flex: 1;
-    overflow-y: auto; /* Scroll internally */
+    overflow-y: auto;
+    /* Scroll internally */
     display: flex;
     flex-direction: column;
     min-height: 0;
@@ -1906,11 +2096,13 @@ border: 1px solid rgba(239, 68, 68, 0.3);
 @media (max-width: 900px) {
     #view-opcua {
         flex-direction: column;
-        overflow-y: auto; /* Allow full page scroll on smaller screens */
+        overflow-y: auto;
+        /* Allow full page scroll on smaller screens */
         height: auto;
-        display: block !important; /* Stack vertically */
+        display: block !important;
+        /* Stack vertically */
     }
-    
+
     .config-panel {
         height: auto;
         min-height: auto;
@@ -1918,7 +2110,7 @@ border: 1px solid rgba(239, 68, 68, 0.3);
         flex: 0 0 auto;
         margin-bottom: 20px;
     }
-    
+
     .panel-body {
         overflow: visible;
         height: auto;

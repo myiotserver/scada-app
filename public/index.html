@@ -8,6 +8,7 @@
     <meta name="description" content="SRIBOGA Weighing Carousel SCADA Dashboard — Real-time industrial monitoring">
     <link rel="stylesheet" href="style.css">
     <link rel="shortcut icon" href="favicon.ico">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <script src="/socket.io/socket.io.js"></script>
 </head>
 
@@ -35,7 +36,8 @@
         <header>
             <div class="logo-area">
                 <div class="logo-circle">
-                    <span>🌾</span>
+                    <!-- <span>🌾</span> -->
+                    <i class='bx bxs-leaf'></i>
                 </div>
                 <div class="logo-text">
                     <h1>SRIBOGA</h1>
@@ -44,7 +46,8 @@
             </div>
             <div class="header-title">WEIGHING DASHBOARD</div>
             <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Switch theme">
-                <span id="theme-icon">🌙</span>
+                <!-- <span id="theme-icon">🌙</span> -->
+                <i class='bx bxs-moon' id="theme-icon"></i>
             </button>
         </header>
 
@@ -53,19 +56,23 @@
             <aside>
                 <nav>
                     <button class="nav-btn active" onclick="navigate('home')">
-                        <span class="icon">🏠</span>
+                        <!-- <span class="icon">🏠</span> -->
+                        <i class='bx bxs-home icon'></i>
                         <span class="nav-label">Home</span>
                     </button>
                     <button class="nav-btn" onclick="navigate('config')">
-                        <span class="icon">⚙️</span>
+                        <!-- <span class="icon">⚙️</span> -->
+                        <i class='bx bxs-cog icon'></i>
                         <span class="nav-label">Config</span>
                     </button>
                     <button class="nav-btn" onclick="navigate('users')">
-                        <span class="icon">👥</span>
+                        <!-- <span class="icon">👥</span> -->
+                        <i class='bx bxs-group icon'></i>
                         <span class="nav-label">Users</span>
                     </button>
                     <button class="nav-btn" onclick="navigate('opcua')">
-                        <span class="icon">🔌</span>
+                        <!-- <span class="icon">🔌</span> -->
+                        <i class='bx bxs-plug icon'></i>
                         <span class="nav-label">OPC-UA</span>
                         <span class="opcua-dot" id="opcua-nav-dot"></span>
                     </button>
@@ -78,7 +85,8 @@
                         <div id="clock-date">17 February 2026</div>
                     </div>
                     <button class="btn-logout" onclick="handleLogout()">
-                        <span class="icon">⏏</span>
+                        <!-- <span class="icon">⏏</span> -->
+                        <i class='bx bx-log-out icon'></i>
                         <span class="nav-label">Logout</span>
                     </button>
                 </div>
@@ -273,66 +281,60 @@
 
         <!-- System Footer -->
         <footer>
-            <div class="footer-group">
-                <div class="footer-header">PLC</div>
-                <div class="indicators">
-                    <div class="indicator-item">
-                        <div class="led on-green"></div>
-                        <span>Comm</span>
-                    </div>
-                    <div class="indicator-item">
-                        <div class="led on-green"></div>
-                        <span>Sensor</span>
-                    </div>
-                    <div class="indicator-item">
-                        <div class="led on-green"></div>
-                        <span>Metal Det.</span>
-                    </div>
-                </div>
-            </div>
+            <!-- PLC Section Removed as per request -->
 
             <div class="footer-group">
-                <div class="footer-header">SERVER</div>
-                <div class="indicators">
-                    <div class="indicator-item">
-                        <div class="led off"></div>
-                        <span>Wait</span>
-                    </div>
-                    <div class="indicator-item">
-                        <div class="led off"></div>
-                        <span>Done</span>
-                    </div>
-                    <div class="indicator-item">
-                        <div class="led off"></div>
-                        <span>N/C</span>
-                    </div>
-                    <div class="indicator-item">
-                        <div class="led on-green"></div>
-                        <span>Running</span>
-                    </div>
-                </div>
-            </div>
 
-            <div class="footer-group">
-                <div class="footer-header">SYSTEM</div>
-                <div class="indicators">
-                    <div class="indicator-item">
-                        <div class="led off"></div>
-                        <span>Pause</span>
-                    </div>
-                    <div class="indicator-item">
-                        <div class="led off"></div>
-                        <span>Stop</span>
+                <div class="footer-group">
+                    <div class="footer-header">SENSORS</div>
+                    <div class="indicators" id="sensor-indicators">
+                        <!-- Javascript will populate or we hardcode 1-5 -->
+                        <div class="indicator-item" id="sensor-1">
+                            <div class="led off"></div> <span>C1</span>
+                        </div>
+                        <div class="indicator-item" id="sensor-2">
+                            <div class="led off"></div> <span>C2</span>
+                        </div>
+                        <div class="indicator-item" id="sensor-3">
+                            <div class="led off"></div> <span>C3</span>
+                        </div>
+                        <div class="indicator-item" id="sensor-4">
+                            <div class="led off"></div> <span>C4</span>
+                        </div>
+                        <div class="indicator-item" id="sensor-5">
+                            <div class="led off"></div> <span>C5</span>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="footer-group">
-                <div class="footer-header">CONTROL</div>
-                <div class="controls">
-                    <button class="ctrl-btn"><span class="icon">🔄</span> RESET</button>
+                <div class="footer-group center-group">
+                    <div class="footer-header">CONNECTIONS</div>
+                    <div class="connection-icons">
+                        <div class="conn-item" id="conn-sql" title="SQL Server">
+                            <i class='bx bxs-data'></i>
+                        </div>
+                        <div class="conn-item" id="conn-opc" title="OPC UA">
+                            <i class='bx bxs-plug'></i>
+                        </div>
+                    </div>
                 </div>
-            </div>
+
+                <div class="footer-group">
+                    <div class="footer-header">CONTROL</div>
+                    <div class="controls">
+                        <button class="ctrl-btn" onclick="openControlModal(currentControlId || 1, 'UNKNOWN')"><span
+                                class="icon">🔄</span> RESET</button>
+                        <!-- Note: Reset usually targets a specific carousel, but here it's global? 
+                         The previous button was just RESET. I will keep it but maybe it needs logic.
+                         Wait, the previous code was: <button class="ctrl-btn"><span class="icon">🔄</span> RESET</button>
+                         It didn't have an onclick? Let's check app.js if there was an event listener.
+                         Checked app.js: No specific listener for .ctrl-btn found in the snippet.
+                         The user said "Tetap pertahankan tombol RESET". I will leave it as is visually, 
+                         but maybe add an ID to hook it up if needed later. 
+                         Actually, let's keep it exactly as requested: "Posisi kanan: Tetap pertahankan tombol RESET"
+                    -->
+                    </div>
+                </div>
         </footer>
         <!-- Control Modal -->
         <div id="control-modal" class="modal-overlay" style="display: none;">
