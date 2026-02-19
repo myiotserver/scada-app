@@ -282,4 +282,4 @@ Distributed under the ISC License. See `LICENSE` for more information.
 
 ## Kontak
 
-- Project Link: [https://github.com/your-username/scada-app](https://github.com/your-username/scada-app)
+- Project Link: [https://github.com/myiotserver/scada-app](https://github.com/your-username/scada-app)
