@@ -191,12 +191,10 @@ function updateFooterSensors(carousels) {
         // Reset classes
         led.className = 'led';
 
-        if (carousel && carousel.state === 'RUN') {
+        if (carousel && carousel.data && carousel.data.sensorStatus) {
             led.classList.add('status-good');
-            // led.classList.add('on'); // optional if we use status-good directly
         } else {
-            // STOP or PAUSE or Unknown
-            led.classList.add('status-bad'); // or status-neutral if preferred for Stop
+            led.classList.add('status-bad');
         }
     }
 }
@@ -240,6 +238,12 @@ function navigate(view) {
     if (view === 'home') {
         document.getElementById('view-home').style.display = isMobile ? 'flex' : 'grid';
     } else if (view === 'config') {
+        // Allow Admin AND User
+        if (!currentUser || !currentUser.roles || (!currentUser.roles.includes('ROLE_ADMIN') && !currentUser.roles.includes('ROLE_USER'))) {
+            alert("Access Denied.");
+            navigate('home');
+            return;
+        }
         document.getElementById('view-config').style.display = 'flex';
         loadSettings();
     } else if (view === 'users') {
@@ -265,6 +269,27 @@ function navigate(view) {
     document.querySelectorAll('.nav-btn').forEach((btn, idx) => {
         btn.classList.remove('active');
         const views = ['home', 'config', 'users', 'opcua'];
+
+        // Hide buttons for restricted roles logic:
+        // Guest: Hide all except Home
+        // User: Hide Users & OPCUA
+        // Admin: Show all
+
+        const isGuest = currentUser && currentUser.roles && currentUser.roles.includes('ROLE_GUEST');
+        const isUser = currentUser && currentUser.roles && currentUser.roles.includes('ROLE_USER');
+        const isAdmin = currentUser && currentUser.roles && currentUser.roles.includes('ROLE_ADMIN');
+
+        // Apply display logic to nav buttons
+        if (idx === 1) { // Config
+            btn.style.display = (isAdmin || isUser) ? 'flex' : 'none';
+        }
+        if (idx === 2) { // Users
+            btn.style.display = (isAdmin) ? 'flex' : 'none';
+        }
+        if (idx === 3) { // OPCUA
+            btn.style.display = (isAdmin) ? 'flex' : 'none';
+        }
+
         if (views[idx] === view) btn.classList.add('active');
     });
 }
@@ -280,6 +305,9 @@ async function loadSettings() {
         if (res.ok) {
             appSettings = await res.json();
             renderSettings();
+        } else {
+            // Handle 403 or other errors
+            if (res.status === 403) alert("Access Denied to Settings");
         }
     } catch (e) {
         console.error("Failed to load settings", e);
@@ -353,7 +381,7 @@ async function saveSettings(silent = false) {
         if (res.ok) {
             if (!silent) alert('Settings Saved Successfully');
         } else {
-            alert('Failed to save settings');
+            alert('Failed to save settings: ' + res.statusText);
         }
     } catch (e) {
         console.error("Save error", e);
@@ -416,14 +444,29 @@ function renderUsers(users) {
 }
 
 function showAddUserModal() {
-    // Simple prompt for now
-    const username = prompt("Enter Username:");
-    if (!username) return;
-    const password = prompt("Enter Password:");
-    if (!password) return;
-    const email = prompt("Enter Email:") || `${username}@example.com`;
+    document.getElementById('user-modal').style.display = 'flex';
+    document.getElementById('new-username').value = '';
+    document.getElementById('new-password').value = '';
+    document.getElementById('new-role').value = 'user';
+}
 
-    createUser({ username, email, password, roles: ['user'] });
+function closeUserModal() {
+    document.getElementById('user-modal').style.display = 'none';
+}
+
+async function submitUserCreation() {
+    const username = document.getElementById('new-username').value.trim();
+    const password = document.getElementById('new-password').value.trim();
+    const role = document.getElementById('new-role').value;
+
+    if (!username || !password) {
+        alert("Username and Password are required");
+        return;
+    }
+
+    const email = `${username}@example.com`; // Auto-generate email for simplicity as per previous pattern
+
+    createUser({ username, email, password, roles: [role] });
 }
 
 async function createUser(userData) {
@@ -439,6 +482,7 @@ async function createUser(userData) {
         });
         if (res.ok) {
             alert('User Created');
+            closeUserModal();
             loadUsers();
         } else {
             const err = await res.json();

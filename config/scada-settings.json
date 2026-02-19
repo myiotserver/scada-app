@@ -7,10 +7,10 @@
     "table_weight": "WEIGHT_TABLE",
     "table_main": "PRESET_TABLE",
     "interlocks": {
-        "carousel1": true,
-        "carousel2": true,
+        "carousel1": false,
+        "carousel2": false,
         "carousel3": true,
-        "carousel4": true,
-        "carousel5": true
+        "carousel4": false,
+        "carousel5": false
     }
 }

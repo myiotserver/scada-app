@@ -97,41 +97,33 @@ if (appSettings.sql_server) {
 }
 
 // --- OPC-UA Integration ---
-const opcConfig = {
-    endpoint: "opc.tcp://192.168.1.10:4840", // User to provide
-    nodes: [
-        // Gross Weight Nodes Only - Status/Command moved to SQL
-        { carouselId: 1, type: 'weight', nodeId: "ns=3;s=\"Carousel1\".\"GrossWeight\"" },
-        { carouselId: 2, type: 'weight', nodeId: "ns=3;s=\"Carousel2\".\"GrossWeight\"" },
-        { carouselId: 3, type: 'weight', nodeId: "ns=3;s=\"Carousel3\".\"GrossWeight\"" },
-        { carouselId: 4, type: 'weight', nodeId: "ns=3;s=\"Carousel4\".\"GrossWeight\"" },
-        { carouselId: 5, type: 'weight', nodeId: "ns=3;s=\"Carousel5\".\"GrossWeight\"" }
-    ]
-};
-
-// Initialize OPC-UA
-if (appSettings.opc_endpoint) {
-    opcConfig.endpoint = appSettings.opc_endpoint;
-}
-// Add monitor items
-opcConfig.nodes.forEach(n => {
-    opcUaManager.addNode(n.nodeId, `Carousel_${n.carouselId}_${n.type}`);
-});
-
-opcUaManager.connect(opcConfig.endpoint).then(connected => {
-    if (connected) {
-        opcUaManager.onUpdate = (name, value) => {
-            const parts = name.split('_');
-            const id = parseInt(parts[1]);
-            const type = parts[2];
-
-            if (carousels[id] && type === 'weight') {
-                carousels[id].data.lastGross = parseFloat(value.toFixed(2));
-                // Calc Nett? Gross - PackWeight
-                const packWeight = carousels[id].data.packWeight || 0;
-                carousels[id].data.lastNett = parseFloat((carousels[id].data.lastGross - packWeight).toFixed(2));
+// Subscribe to OPC Manager updates
+opcUaManager.subscribe('scada-controller', (event, data) => {
+    if (event === 'opcua-value' && data && data.name) {
+        // Map CR1..CR5 to Carousel 1..5
+        const match = data.name.match(/^CR(\d+)$/);
+        if (match) {
+            const carouselId = parseInt(match[1]);
+            if (carousels[carouselId]) {
+                const val = parseFloat(data.value) / 100;
+                if (!isNaN(val)) {
+                    carousels[carouselId].data.lastGross = parseFloat(val.toFixed(2));
+                    // Calc Nett
+                    const packWeight = carousels[carouselId].data.packWeight || 0;
+                    carousels[carouselId].data.lastNett = parseFloat((val - packWeight).toFixed(2));
+                }
             }
-        };
+        }
+
+        // Map S1..S5 (Sensors)
+        const matchSensor = data.name.match(/^S(\d+)$/);
+        if (matchSensor) {
+            const carouselId = parseInt(matchSensor[1]);
+            if (carousels[carouselId]) {
+                // S1-S5 are boolean or boolean-like
+                carousels[carouselId].data.sensorStatus = !!data.value;
+            }
+        }
     }
 });
 

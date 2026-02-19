@@ -12,13 +12,13 @@ module.exports = function (app) {
 
     app.get(
         "/api/settings",
-        [authJwt.verifyToken, authJwt.isAdmin],
+        [authJwt.verifyToken, authJwt.isUserOrAdmin],
         controller.getSettings
     );
 
     app.post(
         "/api/settings",
-        [authJwt.verifyToken, authJwt.isAdmin],
+        [authJwt.verifyToken, authJwt.isUserOrAdmin],
         controller.updateSettings
     );
 };

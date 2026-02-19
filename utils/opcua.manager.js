@@ -271,6 +271,9 @@ class OpcUaManager {
                     TimestampsToReturn.Both
                 );
 
+                monitoredItem.on('err', (err) => {
+                    console.error(`[OPC-UA] Error for ${node.name}:`, err.message);
+                });
                 monitoredItem.on('changed', (dataValue) => {
                     const value = dataValue.value ? dataValue.value.value : null;
                     this.liveValues[node.name] = {

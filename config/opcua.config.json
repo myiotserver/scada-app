@@ -9,9 +9,54 @@
     "autoConnect": true,
     "nodes": [
         {
-            "nodeId": "ns=2;s=SCREENING WEIGHING.SCREENING_SCALE1302.ACT_WEIGHT_LOW",
-            "name": "Gross weight",
-            "description": ""
+            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.GR_CR01",
+            "name": "CR1",
+            "description": "Gross weight CR1"
+        },
+        {
+            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.GR_CR02",
+            "name": "CR2",
+            "description": "Gross weight CR2"
+        },
+        {
+            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.GR_CR03",
+            "name": "CR3",
+            "description": "Gross weight CR3"
+        },
+        {
+            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.GR_CR04",
+            "name": "CR4",
+            "description": "Gross weight CR4"
+        },
+        {
+            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.GR_CR05",
+            "name": "CR5",
+            "description": "Gross weight CR5"
+        },
+        {
+            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.SENSOR01",
+            "name": "S1",
+            "description": "Product sensor CR1"
+        },
+        {
+            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.SENSOR02",
+            "name": "S2",
+            "description": "Product sensor CR2"
+        },
+        {
+            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.SENSOR03",
+            "name": "S3",
+            "description": "Product sensor CR3"
+        },
+        {
+            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.SENSOR04",
+            "name": "S4",
+            "description": "Product sensor CR4"
+        },
+        {
+            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.SENSOR05",
+            "name": "S5",
+            "description": "Product sensor CR5"
         },
         {
             "nodeId": "ns=3;s=\"Carousel1\".\"GrossWeight\"",

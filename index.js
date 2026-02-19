@@ -36,6 +36,7 @@ function initial() {
     Role.findOrCreate({ where: { id: 1, name: "user" } });
     Role.findOrCreate({ where: { id: 2, name: "moderator" } });
     Role.findOrCreate({ where: { id: 3, name: "admin" } });
+    Role.findOrCreate({ where: { id: 4, name: "guest" } });
 }
 
 app.get('/', (req, res) => {
@@ -67,6 +68,7 @@ io.on('connection', (socket) => {
     // Subscribe to OPC-UA events
     const opcuaSubId = `opcua-${socket.id}`;
     opcuaManager.subscribe(opcuaSubId, (event, data) => {
+        // console.log(`[Socket] Emitting ${event} to ${socket.id}`, data.name);
         socket.emit(event, data);
     });
     socket.emit('opcua-status', opcuaManager.getStatus());
