@@ -130,10 +130,10 @@ GRANT ALL PRIVILEGES ON DATABASE scada_db TO scada_user;
 2. **Database MSSQL** (`config/db.config.mssql.js`):
    ```javascript
    module.exports = {
-       user: 'sa',
-       password: 'VPS@thinkcentre',
-       server: 'columba.s-net.id',
-       database: 'WEIGHER',
+       user: 'yourSQLUsername',
+       password: 'yoursqlpassword',
+       server: 'yourserverIP',
+       database: 'yourDatabaseName',
        // ... konfigurasi lainnya
    };
    ```
@@ -144,8 +144,8 @@ GRANT ALL PRIVILEGES ON DATABASE scada_db TO scada_user;
        "endpointUrl": "opc.tcp://147.139.196.244:49320",
        "securityMode": "Sign",
        "securityPolicy": "Basic256",
-       "username": "Administrator",
-       "password": "thinkcentre",
+       "username": "OPCusername",
+       "password": "OPCpassword",
        // ... nodes configuration
    }
    ```
@@ -153,10 +153,10 @@ GRANT ALL PRIVILEGES ON DATABASE scada_db TO scada_user;
 4. **SCADA Settings** (`config/scada-settings.json`):
    ```json
    {
-       "sql_server": "columba.s-net.id",
-       "sql_uid": "sa",
-       "sql_pass": "VPS@thinkcentre",
-       "sql_db": "WEIGHING",
+       "sql_server": "yourSQLserverIP",
+       "sql_uid": "yourSQLUsername",
+       "sql_pass": "yourSQLpassword",
+       "sql_db": "yourDatabaseName",
        // ... tabel dan interlocks
    }
    ```
