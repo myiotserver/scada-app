@@ -9,7 +9,9 @@ module.exports = function (app) {
         next();
     });
 
-    app.get("/api/scada/snapshot", controller.getSnapshot);
+    app.get("/api/scada/status", controller.getSqlStatus);
+    app.post("/api/control", controller.controlCarousel);
+    app.get("/api/scada/history", controller.getWeightHistory);
     app.get("/api/scada/alarms/active", controller.getActiveAlarms);
     app.get("/api/scada/history/:tag", controller.getTagHistory);
 };

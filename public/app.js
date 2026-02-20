@@ -210,14 +210,20 @@ function updateFooterConnections(statusUpdate) {
     if (statusUpdate.opc !== undefined) lastOpcStatus = statusUpdate.opc.connected;
 
     // Update UI
+    // Update UI - SQL
     const sqlIcon = document.getElementById('conn-sql');
     if (sqlIcon) {
         sqlIcon.className = 'conn-item ' + (lastSqlStatus ? 'status-good' : 'status-bad');
+        const label = sqlIcon.querySelector('.conn-label');
+        if (label) label.innerText = lastSqlStatus ? 'Connected' : 'Disconnected';
     }
 
+    // Update UI - OPC
     const opcIcon = document.getElementById('conn-opc');
     if (opcIcon) {
         opcIcon.className = 'conn-item ' + (lastOpcStatus ? 'status-good' : 'status-bad');
+        const label = opcIcon.querySelector('.conn-label');
+        if (label) label.innerText = lastOpcStatus ? 'Connected' : 'Disconnected';
     }
 }
 
@@ -262,13 +268,24 @@ function navigate(view) {
             return;
         }
         document.getElementById('view-opcua').style.display = 'flex';
+        document.getElementById('view-opcua').style.display = 'flex';
         loadOpcUaConfig();
+    } else if (view === 'history') {
+        // Allow Admin AND User (maybe guest too? Let's say Admin/User for now)
+        if (!currentUser || !currentUser.roles) {
+            alert("Access Denied.");
+            navigate('home');
+            return;
+        }
+        document.getElementById('view-history').style.display = 'flex';
+        loadHistory();
     }
 
     // Update Nav Active State
     document.querySelectorAll('.nav-btn').forEach((btn, idx) => {
         btn.classList.remove('active');
-        const views = ['home', 'config', 'users', 'opcua'];
+        const views = ['home', 'config', 'users', 'opcua', 'history'];
+
 
         // Hide buttons for restricted roles logic:
         // Guest: Hide all except Home
@@ -288,6 +305,9 @@ function navigate(view) {
         }
         if (idx === 3) { // OPCUA
             btn.style.display = (isAdmin) ? 'flex' : 'none';
+        }
+        if (idx === 4) { // History
+            btn.style.display = (isAdmin || isUser || isGuest) ? 'flex' : 'none';
         }
 
         if (views[idx] === view) btn.classList.add('active');
@@ -1010,3 +1030,54 @@ async function pollSqlStatus() {
 setInterval(pollSqlStatus, 10000);
 // Initial check after short delay to ensure DOM load
 setTimeout(pollSqlStatus, 1000);
+
+// --- History Logic ---
+async function loadHistory() {
+    const tbody = document.getElementById('history-list-body');
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Loading...</td></tr>';
+
+    try {
+        const token = currentUser.accessToken;
+        const res = await fetch('/api/scada/history?limit=100', {
+            headers: { 'x-access-token': token }
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            renderHistory(data);
+        } else {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:red;">Failed to load history</td></tr>';
+        }
+    } catch (e) {
+        console.error("History Error", e);
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:red;">Network Error</td></tr>';
+    }
+}
+
+function renderHistory(data) {
+    const tbody = document.getElementById('history-list-body');
+    tbody.innerHTML = '';
+
+    if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No records found</td></tr>';
+        return;
+    }
+
+    data.forEach(row => {
+        const tr = document.createElement('tr');
+        // Format Date
+        const date = new Date(row.TIMESTAMP || row.createdAt); // Fallback
+        const dateStr = date.toLocaleString('en-GB');
+
+        tr.innerHTML = `
+            <td>${dateStr}</td>
+            <td>${row.CAROUSEL}</td>
+            <td>${row.PRODUCT_NAME} <span style="font-size:0.8em; color:#888;">(${row.PRODUCT_ID})</span></td>
+            <td>${row.TARGET_COUNT || '-'}</td>
+            <td>${row.GROSS_WEIGHT}</td>
+            <td>${row.NETT_WEIGHT}</td>
+            <td><span class="status-badge status-${(row.STATUS || '').toLowerCase()}">${row.STATUS}</span></td>
+        `;
+        tbody.appendChild(tr);
+    });
+}

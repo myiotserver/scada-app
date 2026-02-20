@@ -48,23 +48,51 @@ let carousels = {
 let weighingPool = null;
 let pollingInterval = null;
 
-// Helper to log weight data for aggregation
-async function logWeightData(carouselId, productId, weight) {
-    if (!weighingPool || !productId) return;
-
-    // Simple throttle or just log all events? 
-    // For simulation it's controlled (once per pack). 
-    // For OPC, we might get many updates. Ideally log only on "Pack Complete" signal or stable weight.
-    // For this specific request "calculate from WEIGHT_DATA", we assume WEIGHT_DATA contains discrete events.
+// Helper to insert weight data into SQL
+async function insertWeightData(carouselId, data) {
+    if (!weighingPool) {
+        console.warn(`[SQL] Skipping insert for CR${carouselId}: Database pool not ready.`);
+        return;
+    }
+    if (!data.productId) {
+        console.warn(`[SQL] Skipping insert for CR${carouselId}: No Product ID defined in configuration.`);
+        return;
+    }
 
     try {
+        // Calculate STATUS
+        let status = 'Normal';
+        if (data.lastNett < data.toleranceMin) status = 'Underweight';
+        else if (data.lastNett > data.toleranceMax) status = 'Overweight';
+
         await weighingPool.request()
-            .input('pid', sql.NVarChar, productId)
-            .input('weight', sql.Decimal(10, 2), weight)
-            .input('carousel', sql.Int, carouselId)
-            .query('INSERT INTO WEIGHT_DATA (Product_ID, Actual_Weight, Carousel, Date_Time) VALUES (@pid, @weight, @carousel, GETDATE())');
+            .input('packingOrder', sql.NVarChar, data.packingOrder)
+            .input('productId', sql.NVarChar, data.productId)
+            .input('productName', sql.NVarChar, data.productName)
+            .input('packagingMaterial', sql.NVarChar, data.packagingMaterial)
+            .input('carousel', sql.NVarChar, `CR${carouselId}`)
+            .input('grossWeight', sql.Decimal(18, 2), data.lastGross)
+            .input('nettWeight', sql.Decimal(18, 2), data.lastNett)
+            .input('toleranceMin', sql.Decimal(18, 2), data.toleranceMin)
+            .input('toleranceMax', sql.Decimal(18, 2), data.toleranceMax)
+            .input('baseTarget', sql.Decimal(18, 2), data.target) // Using target as product count/target count placeholder if needed? No, schema has PRODUCT_COUNT and TARGET_COUNT
+            // Schema from image: PRODUCT_COUNT, TARGET_COUNT. Let's assume these are current counters or target settings.
+            // data.target is likely TARGET_COUNT. PRODUCT_COUNT is likely the current counter.
+            .input('productCount', sql.Int, data.counter || 0)
+            .input('targetCount', sql.Int, data.target || 0)
+            .input('status', sql.NVarChar, status)
+            .query(`
+                INSERT INTO ${appSettings.table_weight || 'WEIGHT_DATA'} 
+                (TIMESTAMP, PACKING_ORDER, PRODUCT_ID, PRODUCT_NAME, PACKAGING_MATERIAL, CAROUSEL, 
+                 GROSS_WEIGHT, NETT_WEIGHT, TOLERANCE_MIN, TOLERANCE_MAX, PRODUCT_COUNT, TARGET_COUNT, STATUS)
+                VALUES 
+                (GETDATE(), @packingOrder, @productId, @productName, @packagingMaterial, @carousel, 
+                 @grossWeight, @nettWeight, @toleranceMin, @toleranceMax, @productCount, @targetCount, @status)
+            `);
+
+        console.log(`[SQL] Inserted data for CR${carouselId}: ${data.lastNett}kg (${status})`);
     } catch (err) {
-        console.error("Error logging weight data:", err.message);
+        console.error("Error inserting weight data:", err.message);
     }
 }
 
@@ -120,8 +148,24 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
         if (matchSensor) {
             const carouselId = parseInt(matchSensor[1]);
             if (carousels[carouselId]) {
-                // S1-S5 are boolean or boolean-like
-                carousels[carouselId].data.sensorStatus = !!data.value;
+                const newValue = !!data.value;
+                const oldValue = carousels[carouselId].data.sensorStatus;
+
+                // Update status
+                carousels[carouselId].data.sensorStatus = newValue;
+
+                // RISING EDGE DETECTION (False -> True)
+                if (!oldValue && newValue) {
+                    console.log(`[OPC] Sensor Rising Edge for CR${carouselId}`);
+
+                    // CHECK LOGIC: Only write if state is RUN
+                    if (carousels[carouselId].state === 'RUN') {
+                        // Use current data snapshot
+                        insertWeightData(carouselId, carousels[carouselId].data);
+                    } else {
+                        console.log(`[OPC] CR${carouselId} is ${carousels[carouselId].state}, skipping SQL write.`);
+                    }
+                }
             }
         }
     }
@@ -165,7 +209,7 @@ async function fetchCarouselConfig() {
         const result = await weighingPool.request().query`
             SELECT * FROM (
                 SELECT *, ROW_NUMBER() OVER (PARTITION BY CAROUSEL ORDER BY CREATED_DATETIME DESC) as rn
-                FROM PRESET_TABLE
+                FROM ${appSettings.table_main || 'PRESET_TABLE'}
                 WHERE CAROUSEL IN (1, 2, 3, 4, 5)
             ) t
             WHERE rn = 1
@@ -234,7 +278,7 @@ function simulateLiveValues() {
                 c.data.lastGross = parseFloat((c.data.lastNett + (c.data.packWeight || 0.08)).toFixed(2));
 
                 // LOG DATA FOR AGGREGATION
-                logWeightData(c.id, c.data.productId, c.data.lastNett).catch(e => console.error("Log error:", e.message)); // Logging Nett weight
+                insertWeightData(c.id, c.data).catch(e => console.error("Log error:", e.message)); // Logging Nett weight
 
                 // Recalc Average (Simple moving average simulation - for immediate feedback)
                 // This will be overwritten by Aggregator's SQL query results eventually
@@ -275,6 +319,25 @@ exports.getTagHistory = (req, res) => {
     res.json([]);
 };
 
+// New: Get Weight Data History
+exports.getWeightHistory = async (req, res) => {
+    if (!weighingPool) {
+        return res.status(503).json({ error: "Database not connected" });
+    }
+    try {
+        const limit = parseInt(req.query.limit) || 100;
+        const result = await weighingPool.request().query(`
+            SELECT TOP ${limit} * 
+            FROM ${appSettings.table_weight || 'WEIGHT_DATA'} 
+            ORDER BY TIMESTAMP DESC
+        `);
+        res.json(result.recordset);
+    } catch (err) {
+        console.error("Error fetching history:", err);
+        res.status(500).json({ error: "Failed to fetch history" });
+    }
+};
+
 exports.getSqlStatus = (req, res) => {
     // Check if pool exists and is connected
     const connected = weighingPool && weighingPool.connected;
@@ -312,11 +375,11 @@ exports.controlCarousel = async (req, res) => {
             .input('state', sql.NVarChar, val) // Changed to NVarChar for strings
             .input('carousel', sql.Int, carouselId)
             .query(`
-                UPDATE PRESET_TABLE
+                UPDATE ${appSettings.table_main || 'PRESET_TABLE'}
                 SET MACHINE_STATE = @state
                 WHERE CAROUSEL = @carousel
                 AND CREATED_DATETIME = (
-                    SELECT TOP 1 CREATED_DATETIME FROM PRESET_TABLE 
+                    SELECT TOP 1 CREATED_DATETIME FROM ${appSettings.table_main || 'PRESET_TABLE'} 
                     WHERE CAROUSEL = @carousel 
                     ORDER BY CREATED_DATETIME DESC
                 )

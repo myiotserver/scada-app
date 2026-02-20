@@ -829,9 +829,11 @@ footer {
     background: var(--bg-secondary);
     border-top: 1px solid var(--border-subtle);
     display: flex;
+    justify-content: center;
     align-items: center;
     padding: 0 20px;
-    gap: 32px;
+    gap: 40px;
+    /* Space between the major groups */
     flex-shrink: 0;
 }
 
@@ -839,11 +841,15 @@ footer {
     display: flex;
     align-items: center;
     gap: 12px;
-    flex: 0 0 auto;
+}
+
+.footer-group:first-child {
+    /* justify-self: start; - Removed */
 }
 
 .footer-group:last-child {
-    margin-left: auto;
+    /* justify-self: end; - Removed */
+    margin-left: 0;
 }
 
 .footer-header {
@@ -897,22 +903,7 @@ footer {
 
 /* Center the middle group */
 .center-group {
-    margin: 0 auto;
-    /* This centers it if parent is flex */
-}
-
-/* Override existing footer-group:last-child margin-left: auto rule 
-   because we now have a center group we want actually centered 
-   and the right group aligned to right. */
-
-footer {
-    justify-content: space-between;
-    /* This handles Left - Center - Right spacing */
-}
-
-.footer-group:last-child {
-    margin-left: 0;
-    /* Reset automatic margin */
+    justify-self: center;
 }
 
 .connection-icons {

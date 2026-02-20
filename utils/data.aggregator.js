@@ -64,7 +64,7 @@ class DataAggregator {
                     MIN(NETT_WEIGHT) as min_val,
                     MAX(NETT_WEIGHT) as max_val,
                     AVG(NETT_WEIGHT) as avg_val
-                FROM dbo.WEIGHT_DATA
+                FROM ${appSettings.table_weight || 'WEIGHT_DATA'}
                 WHERE TIMESTAMP >= DATEADD(minute, -10, SYSDATETIMEOFFSET())
                 GROUP BY PRODUCT_ID
             `);
