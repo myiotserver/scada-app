@@ -1034,17 +1034,18 @@ setTimeout(pollSqlStatus, 1000);
 // --- History Logic ---
 async function loadHistory() {
     const tbody = document.getElementById('history-list-body');
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Loading...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Loading records...</td></tr>';
 
     try {
         const token = currentUser.accessToken;
-        const res = await fetch('/api/scada/history?limit=100', {
+        const limit = 100;
+        const res = await fetch(`/api/scada/history?limit=${limit}`, {
             headers: { 'x-access-token': token }
         });
 
         if (res.ok) {
             const data = await res.json();
-            renderHistory(data);
+            renderHistory(data, limit);
         } else {
             tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:red;">Failed to load history</td></tr>';
         }
@@ -1054,7 +1055,7 @@ async function loadHistory() {
     }
 }
 
-function renderHistory(data) {
+function renderHistory(data, limit = 100) {
     const tbody = document.getElementById('history-list-body');
     tbody.innerHTML = '';
 
@@ -1063,19 +1064,28 @@ function renderHistory(data) {
         return;
     }
 
+    // Check if we hit the limit
+    if (data.length >= limit) {
+        console.log(`[History] Showing ${limit} most recent records out of possibly more`);
+    }
+
     data.forEach(row => {
         const tr = document.createElement('tr');
         // Format Date
         const date = new Date(row.TIMESTAMP || row.createdAt); // Fallback
         const dateStr = date.toLocaleString('en-GB');
 
+        // Format weight values to 2 decimal places
+        const grossWeight = row.GROSS_WEIGHT ? parseFloat(row.GROSS_WEIGHT).toFixed(2) : '-';
+        const nettWeight = row.NETT_WEIGHT ? parseFloat(row.NETT_WEIGHT).toFixed(2) : '-';
+
         tr.innerHTML = `
             <td>${dateStr}</td>
             <td>${row.CAROUSEL}</td>
             <td>${row.PRODUCT_NAME} <span style="font-size:0.8em; color:#888;">(${row.PRODUCT_ID})</span></td>
             <td>${row.TARGET_COUNT || '-'}</td>
-            <td>${row.GROSS_WEIGHT}</td>
-            <td>${row.NETT_WEIGHT}</td>
+            <td>${grossWeight}</td>
+            <td>${nettWeight}</td>
             <td><span class="status-badge status-${(row.STATUS || '').toLowerCase()}">${row.STATUS}</span></td>
         `;
         tbody.appendChild(tr);

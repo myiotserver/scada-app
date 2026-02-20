@@ -10,6 +10,13 @@ let appSettings = {};
 try {
     if (fs.existsSync(settingsPath)) {
         appSettings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+        console.log('[INIT] Settings loaded:', {
+            sql_server: appSettings.sql_server,
+            sql_db: appSettings.sql_db,
+            table_main: appSettings.table_main,
+            table_weight: appSettings.table_weight,
+            table_zeroing: appSettings.table_zeroing
+        });
     }
 } catch (e) {
     console.error("Error loading settings:", e);
@@ -38,11 +45,101 @@ function getMssqlConfig() {
 
 // In-memory state for the Carousels (1-5)
 let carousels = {
-    1: { id: 1, name: 'Carousel 1', state: 'RUN', data: {} },
-    2: { id: 2, name: 'Carousel 2', state: 'STOP', data: {} },
-    3: { id: 3, name: 'Carousel 3', state: 'STOP', data: {} },
-    4: { id: 4, name: 'Carousel 4', state: 'RUN', data: {} },
-    5: { id: 5, name: 'Carousel 5', state: 'STOP', data: {} }
+    1: { 
+        id: 1, 
+        name: 'Carousel 1', 
+        state: 'RUN', 
+        data: {
+            productId: 'PROD001',
+            productName: 'Flour 1kg',
+            packingOrder: 'PO-001',
+            packagingMaterial: 'Plastic 1kg',
+            target: 100,
+            toleranceMin: 24.0,
+            toleranceMax: 26.0,
+            packWeight: 0.08,
+            counter: 0,
+            lastGross: 0,
+            lastNett: 0,
+            average: 0
+        } 
+    },
+    2: { 
+        id: 2, 
+        name: 'Carousel 2', 
+        state: 'STOP', 
+        data: {
+            productId: 'PROD002',
+            productName: 'Flour 2kg',
+            packingOrder: 'PO-002',
+            packagingMaterial: 'Plastic 2kg',
+            target: 50,
+            toleranceMin: 48.0,
+            toleranceMax: 52.0,
+            packWeight: 0.10,
+            counter: 0,
+            lastGross: 0,
+            lastNett: 0,
+            average: 0
+        } 
+    },
+    3: { 
+        id: 3, 
+        name: 'Carousel 3', 
+        state: 'STOP', 
+        data: {
+            productId: 'PROD003',
+            productName: 'Flour 5kg',
+            packingOrder: 'PO-003',
+            packagingMaterial: 'Plastic 5kg',
+            target: 20,
+            toleranceMin: 120.0,
+            toleranceMax: 130.0,
+            packWeight: 0.15,
+            counter: 0,
+            lastGross: 0,
+            lastNett: 0,
+            average: 0
+        } 
+    },
+    4: { 
+        id: 4, 
+        name: 'Carousel 4', 
+        state: 'RUN', 
+        data: {
+            productId: 'PROD004',
+            productName: 'Flour 1kg Premium',
+            packingOrder: 'PO-004',
+            packagingMaterial: 'Paper 1kg',
+            target: 100,
+            toleranceMin: 24.0,
+            toleranceMax: 26.0,
+            packWeight: 0.12,
+            counter: 0,
+            lastGross: 0,
+            lastNett: 0,
+            average: 0
+        } 
+    },
+    5: { 
+        id: 5, 
+        name: 'Carousel 5', 
+        state: 'STOP', 
+        data: {
+            productId: 'PROD005',
+            productName: 'Flour 10kg',
+            packingOrder: 'PO-005',
+            packagingMaterial: 'Sack 10kg',
+            target: 10,
+            toleranceMin: 240.0,
+            toleranceMax: 260.0,
+            packWeight: 0.20,
+            counter: 0,
+            lastGross: 0,
+            lastNett: 0,
+            average: 0
+        } 
+    }
 };
 
 let weighingPool = null;
@@ -60,10 +157,10 @@ async function insertWeightData(carouselId, data) {
     }
 
     try {
-        // Calculate STATUS
+        // Calculate STATUS based on GROSS_WEIGHT
         let status = 'Normal';
-        if (data.lastNett < data.toleranceMin) status = 'Underweight';
-        else if (data.lastNett > data.toleranceMax) status = 'Overweight';
+        if (data.lastGross < data.toleranceMin) status = 'Underweight';
+        else if (data.lastGross > data.toleranceMax) status = 'Overweight';
 
         await weighingPool.request()
             .input('packingOrder', sql.NVarChar, data.packingOrder)
@@ -103,8 +200,12 @@ async function connectToWeighingDB() {
             await weighingPool.close();
         }
 
-        weighingPool = await new sql.ConnectionPool(getMssqlConfig()).connect();
-        console.log("Connected to SQL Server (Dynamic Config)");
+        const config = getMssqlConfig();
+        console.log(`[SQL] Connecting to ${config.server}/${config.database} as ${config.user}`);
+        
+        weighingPool = await new sql.ConnectionPool(config).connect();
+        console.log("✓ Connected to SQL Server (Dynamic Config)");
+        console.log(`[SQL] Using table_main: ${appSettings.table_main || 'PRESET_TABLE'}`);
 
         // Initial Fetch
         fetchCarouselConfig();
@@ -116,7 +217,7 @@ async function connectToWeighingDB() {
         pollingInterval = setInterval(fetchCarouselConfig, 30000);
 
     } catch (err) {
-        console.error("Failed to connect to DB:", err.message);
+        console.error("✗ Failed to connect to DB:", err.message);
     }
 }
 // Start connection
@@ -158,12 +259,16 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
                 if (!oldValue && newValue) {
                     console.log(`[OPC] Sensor Rising Edge for CR${carouselId}`);
 
-                    // CHECK LOGIC: Only write if state is RUN
+                    // CHECK LOGIC: Only write and increment counter if state is RUN
                     if (carousels[carouselId].state === 'RUN') {
+                        // Increment counter
+                        carousels[carouselId].data.counter = (carousels[carouselId].data.counter || 0) + 1;
+                        console.log(`[OPC] CR${carouselId} counter incremented to ${carousels[carouselId].data.counter}`);
+                        
                         // Use current data snapshot
                         insertWeightData(carouselId, carousels[carouselId].data);
                     } else {
-                        console.log(`[OPC] CR${carouselId} is ${carousels[carouselId].state}, skipping SQL write.`);
+                        console.log(`[OPC] CR${carouselId} is ${carousels[carouselId].state}, skipping counter increment and SQL write.`);
                     }
                 }
             }
@@ -206,14 +311,26 @@ async function fetchCarouselConfig() {
     if (!weighingPool) return;
 
     try {
-        const result = await weighingPool.request().query`
+        const tableName = appSettings.table_main || 'PRESET_TABLE';
+        console.log(`[DB] Fetching carousel config from table: ${tableName}`);
+        
+        // Use raw SQL with table name - mssql supports this
+        const query = `
             SELECT * FROM (
                 SELECT *, ROW_NUMBER() OVER (PARTITION BY CAROUSEL ORDER BY CREATED_DATETIME DESC) as rn
-                FROM ${appSettings.table_main || 'PRESET_TABLE'}
+                FROM [${tableName}]
                 WHERE CAROUSEL IN (1, 2, 3, 4, 5)
             ) t
             WHERE rn = 1
         `;
+        
+        const result = await weighingPool.request().query(query);
+
+        if (result.recordset.length > 0) {
+            console.log(`[DB] Found ${result.recordset.length} carousel configs`);
+        } else {
+            console.log(`[DB] No carousel configs found in ${tableName}`);
+        }
 
         result.recordset.forEach(row => {
             const carouselId = row.CAROUSEL;

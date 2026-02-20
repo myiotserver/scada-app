@@ -57,31 +57,6 @@
             "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.SENSOR05",
             "name": "S5",
             "description": "Product sensor CR5"
-        },
-        {
-            "nodeId": "ns=3;s=\"Carousel1\".\"GrossWeight\"",
-            "name": "Carousel_1_weight",
-            "description": ""
-        },
-        {
-            "nodeId": "ns=3;s=\"Carousel2\".\"GrossWeight\"",
-            "name": "Carousel_2_weight",
-            "description": ""
-        },
-        {
-            "nodeId": "ns=3;s=\"Carousel3\".\"GrossWeight\"",
-            "name": "Carousel_3_weight",
-            "description": ""
-        },
-        {
-            "nodeId": "ns=3;s=\"Carousel4\".\"GrossWeight\"",
-            "name": "Carousel_4_weight",
-            "description": ""
-        },
-        {
-            "nodeId": "ns=3;s=\"Carousel5\".\"GrossWeight\"",
-            "name": "Carousel_5_weight",
-            "description": ""
         }
     ]
 }

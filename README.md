@@ -15,7 +15,7 @@ Aplikasi SCADA (Supervisory Control and Data Acquisition) untuk monitoring dan k
 
 Sebelum menjalankan aplikasi ini, pastikan Anda memiliki:
 
-- **Node.js** versi 16 atau lebih tinggi
+- **Node.js** versi 18 atau lebih tinggi
 - **npm** (biasanya sudah terinstall dengan Node.js)
 - **Database Server**:
   - Microsoft SQL Server (untuk data weighing)
@@ -109,7 +109,7 @@ GRANT ALL PRIVILEGES ON DATABASE scada_db TO scada_user;
 
 - Pastikan Microsoft SQL Server terinstall dan berjalan
 - Server remote sudah dikonfigurasi (dalam contoh: columba.s-net.id)
-- Database `WEIGHER` sudah ada dengan tabel yang diperlukan
+- Database `WEIGHING` sudah ada dengan tabel yang diperlukan
 
 ### Langkah 4: Konfigurasi Aplikasi
 
@@ -188,28 +188,10 @@ npm start
 
 Aplikasi akan berjalan di `http://localhost:3001`
 
-### Production Mode
-
-Untuk production, gunakan process manager seperti PM2:
-
-#### Linux
-```bash
-npm install -g pm2
-pm2 start index.js --name "scada-app"
-pm2 startup
-pm2 save
-```
-
-#### Windows
-```cmd
-npm install -g pm2
-pm2 start index.js --name "scada-app"
-```
-
 ## Penggunaan
 
 1. **Akses Dashboard**:
-   - Buka browser dan navigasi ke `http://localhost:3000`
+   - Buka browser dan navigasi ke `http://localhost:3001`
    - Login dengan kredensial yang valid
 
 2. **Monitoring Real-time**:
@@ -226,10 +208,26 @@ pm2 start index.js --name "scada-app"
 
 ## API Endpoints
 
+### Authentication
 - `POST /api/auth/signup` - Registrasi user baru
 - `POST /api/auth/signin` - Login
-- `GET /api/scada/data` - Ambil data SCADA
-- `GET /api/opcua/status` - Status OPC UA connection
+
+### SCADA Data
+- `GET /api/scada/status` - Status koneksi SQL
+- `GET /api/scada/history` - Riwayat berat
+- `GET /api/scada/alarms/active` - Alarm aktif
+- `GET /api/scada/history/:tag` - Riwayat tag spesifik
+- `POST /api/control` - Kontrol carousel
+
+### OPC UA
+- `GET /api/opcua/status` - Status koneksi OPC UA
+- `POST /api/opcua/connect` - Connect ke OPC UA server
+- `POST /api/opcua/disconnect` - Disconnect dari OPC UA server
+- `GET /api/opcua/config` - Ambil konfigurasi OPC UA (admin)
+- `PUT /api/opcua/config` - Update konfigurasi OPC UA (admin)
+- `POST /api/opcua/browse` - Browse OPC UA nodes (admin)
+
+### Settings
 - `GET /api/settings` - Pengaturan aplikasi
 
 ## Troubleshooting

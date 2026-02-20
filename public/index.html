@@ -73,6 +73,7 @@
                     <button class="nav-btn" onclick="navigate('opcua')">
                         <!-- <span class="icon">🔌</span> -->
                         <i class='bx bxs-plug icon'></i>
+                        <span class="nav-label">OPC</span>
                         <span class="opcua-dot" id="opcua-nav-dot"></span>
                     </button>
                     <button class="nav-btn" onclick="navigate('history')">
@@ -284,10 +285,13 @@
                     style="display: none; padding: 20px; width: 100%; flex-direction: column;">
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h2>Weight History</h2>
+                        <div>
+                            <h2 style="margin: 0 0 5px 0;">Weight History</h2>
+                            <p style="margin: 0; font-size: 0.85rem; color: #888;">Displaying last 100 records</p>
+                        </div>
                         <button class="btn-primary" style="width: auto;" onclick="loadHistory()">Refresh</button>
                     </div>
-                    <div style="overflow-x: auto; width: 100%;">
+                    <div style="overflow: auto; width: 100%; max-height: 600px; border: 1px solid #333; border-radius: 4px;">
                         <table class="data-table">
                             <thead>
                                 <tr>
