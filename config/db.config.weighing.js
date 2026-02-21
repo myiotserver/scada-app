@@ -17,10 +17,10 @@ function buildConfig() {
     const settings = loadSettings();
 
     return {
-        user: process.env.MSSQL_USER || settings.sql_uid || 'sa',
+        user: process.env.MSSQL_USER || settings.sql_uid || '',
         password: process.env.MSSQL_PASSWORD || settings.sql_pass || '',
-        server: process.env.MSSQL_SERVER || settings.sql_server || 'localhost',
-        database: process.env.MSSQL_DATABASE || settings.sql_db || 'WEIGHING',
+        server: process.env.MSSQL_SERVER || settings.sql_server || '',
+        database: process.env.MSSQL_DATABASE || settings.sql_db || '',
         port: Number(process.env.MSSQL_PORT || 1433),
         options: {
             encrypt: process.env.MSSQL_ENCRYPT === 'true',

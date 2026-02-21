@@ -15,4 +15,5 @@ module.exports = function (app) {
     app.get("/api/scada/history", controller.getWeightHistory);
     app.get("/api/scada/alarms/active", controller.getActiveAlarms);
     app.get("/api/scada/history/:tag", controller.getTagHistory);
+    app.post("/api/scada/refresh", controller.manualRefresh);
 };

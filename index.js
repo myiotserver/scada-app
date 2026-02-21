@@ -59,10 +59,14 @@ io.on('connection', (socket) => {
     // Send initial state
     socket.emit('init', scadaController.getSnapshot());
 
-    // Subscribe this socket to simulator updates
+    // Subscribe this socket to simulator/config updates
     const subscriptionId = `socket-${socket.id}`;
-    scadaController.subscribe(subscriptionId, (updates) => {
-        socket.emit('carousel-update', updates);
+    scadaController.subscribe(subscriptionId, (data) => {
+        if (data.type === 'config-loading') {
+            socket.emit('config-loading', data.loading);
+        } else {
+            socket.emit('carousel-update', data);
+        }
     });
 
     const alertSubscriptionId = `alert-${socket.id}`;

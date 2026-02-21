@@ -25,13 +25,13 @@ try {
 // Helper to construct MSSQL config from settings
 function getMssqlConfig() {
     return {
-        user: appSettings.sql_uid || 'sa',
-        password: appSettings.sql_pass || 'VPS@thinkcentre',
-        server: appSettings.sql_server || 'columba.s-net.id',
-        database: appSettings.sql_db || 'WEIGHING',
+        user: appSettings.sql_uid || '',
+        password: appSettings.sql_pass || '',
+        server: appSettings.sql_server || '',
+        database: appSettings.sql_db || '',
         port: 1433,
         options: {
-            encrypt: false,
+            encrypt: true,
             trustServerCertificate: true,
             enableArithAbort: true
         },
@@ -45,10 +45,10 @@ function getMssqlConfig() {
 
 // In-memory state for the Carousels (1-5)
 let carousels = {
-    1: { 
-        id: 1, 
-        name: 'Carousel 1', 
-        state: 'RUN', 
+    1: {
+        id: 1,
+        name: 'Carousel 1',
+        state: 'RUN',
         data: {
             productId: 'PROD001',
             productName: 'Flour 1kg',
@@ -62,12 +62,12 @@ let carousels = {
             lastGross: 0,
             lastNett: 0,
             average: 0
-        } 
+        }
     },
-    2: { 
-        id: 2, 
-        name: 'Carousel 2', 
-        state: 'STOP', 
+    2: {
+        id: 2,
+        name: 'Carousel 2',
+        state: 'STOP',
         data: {
             productId: 'PROD002',
             productName: 'Flour 2kg',
@@ -81,12 +81,12 @@ let carousels = {
             lastGross: 0,
             lastNett: 0,
             average: 0
-        } 
+        }
     },
-    3: { 
-        id: 3, 
-        name: 'Carousel 3', 
-        state: 'STOP', 
+    3: {
+        id: 3,
+        name: 'Carousel 3',
+        state: 'STOP',
         data: {
             productId: 'PROD003',
             productName: 'Flour 5kg',
@@ -100,12 +100,12 @@ let carousels = {
             lastGross: 0,
             lastNett: 0,
             average: 0
-        } 
+        }
     },
-    4: { 
-        id: 4, 
-        name: 'Carousel 4', 
-        state: 'RUN', 
+    4: {
+        id: 4,
+        name: 'Carousel 4',
+        state: 'RUN',
         data: {
             productId: 'PROD004',
             productName: 'Flour 1kg Premium',
@@ -119,12 +119,12 @@ let carousels = {
             lastGross: 0,
             lastNett: 0,
             average: 0
-        } 
+        }
     },
-    5: { 
-        id: 5, 
-        name: 'Carousel 5', 
-        state: 'STOP', 
+    5: {
+        id: 5,
+        name: 'Carousel 5',
+        state: 'STOP',
         data: {
             productId: 'PROD005',
             productName: 'Flour 10kg',
@@ -138,7 +138,7 @@ let carousels = {
             lastGross: 0,
             lastNett: 0,
             average: 0
-        } 
+        }
     }
 };
 
@@ -232,19 +232,19 @@ async function connectToWeighingDB() {
 
         const config = getMssqlConfig();
         console.log(`[SQL] Connecting to ${config.server}/${config.database} as ${config.user}`);
-        
+
         weighingPool = await new sql.ConnectionPool(config).connect();
         console.log("✓ Connected to SQL Server (Dynamic Config)");
         console.log(`[SQL] Using table_main: ${appSettings.table_main || 'PRESET_TABLE'}`);
 
         // Initial Fetch
-        fetchCarouselConfig();
+        fetchCarouselConfig(true);
 
         // Clear existing interval if any
         if (pollingInterval) clearInterval(pollingInterval);
 
-        // Poll for config changes
-        pollingInterval = setInterval(fetchCarouselConfig, 30000);
+        // Poll for config changes (quietly in background)
+        pollingInterval = setInterval(() => fetchCarouselConfig(false), 30000);
 
     } catch (err) {
         console.error("✗ Failed to connect to DB:", err.message);
@@ -294,7 +294,7 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
                         // Increment counter
                         carousels[carouselId].data.counter = (carousels[carouselId].data.counter || 0) + 1;
                         console.log(`[OPC] CR${carouselId} counter incremented to ${carousels[carouselId].data.counter}`);
-                        
+
                         // Use current data snapshot
                         insertWeightData(carouselId, carousels[carouselId].data);
                     } else {
@@ -337,13 +337,18 @@ exports.reloadSettings = () => {
     }
 };
 
-async function fetchCarouselConfig() {
+async function fetchCarouselConfig(showLoading = false) {
     if (!weighingPool) return;
+
+    if (showLoading) {
+        // Notify subscribers that loading started
+        listeners.forEach(callback => callback({ type: 'config-loading', loading: true }));
+    }
 
     try {
         const tableName = appSettings.table_main || 'PRESET_TABLE';
         console.log(`[DB] Fetching carousel config from table: ${tableName}`);
-        
+
         // Use raw SQL with table name - mssql supports this
         const query = `
             SELECT * FROM (
@@ -353,7 +358,7 @@ async function fetchCarouselConfig() {
             ) t
             WHERE rn = 1
         `;
-        
+
         const result = await weighingPool.request().query(query);
 
         if (result.recordset.length > 0) {
@@ -396,6 +401,11 @@ async function fetchCarouselConfig() {
 
     } catch (err) {
         console.error("Error fetching Carousel Config:", err.message);
+    } finally {
+        if (showLoading) {
+            // Notify subscribers that loading ended
+            listeners.forEach(callback => callback({ type: 'config-loading', loading: false }));
+        }
     }
 }
 
@@ -441,6 +451,11 @@ const listeners = new Map();
 
 exports.subscribe = (id, callback) => {
     listeners.set(id, callback);
+};
+
+exports.manualRefresh = async () => {
+    console.log("[Controller] Manual refresh requested...");
+    await fetchCarouselConfig(true);
 };
 
 exports.unsubscribe = (id) => {

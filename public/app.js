@@ -161,9 +161,18 @@ function initApp() {
     });
 
     socket.on('carousel-update', (data) => {
-        if (currentView === 'home') {
-            renderCarousels(data);
-        }
+        renderCarousels(data);
+    });
+
+    socket.on('config-loading', (loading) => {
+        const overlays = document.querySelectorAll('.card-loading-overlay');
+        overlays.forEach(overlay => {
+            if (loading) {
+                overlay.classList.add('active');
+            } else {
+                overlay.classList.remove('active');
+            }
+        });
     });
 
     // OPC-UA events
@@ -616,6 +625,11 @@ function renderCarousels(carousels) {
 
             col.innerHTML = `
                 <div class="carousel-card">
+                    <div class="card-loading-overlay">
+                        <div class="spinner"></div>
+                        <div class="loading-text">Updating Data...</div>
+                    </div>
+
                     <div class="card-header">
                         <div class="carousel-number">Carousel ${i}</div>
                         <div class="carousel-name">${d.productName || carousel.name}</div>
@@ -659,29 +673,33 @@ function renderCarousels(carousels) {
                         </div>
                     </div>
 
-                    <div class="stats-grid">
+                    <div class="stats-grid" title="Statistics based on the last 1 hour of production">
                         <div class="stat-box">
-                            <div class="stat-label">Min</div>
-                            <div class="stat-value">0.00</div>
+                            <div class="stat-label">Min (1h)</div>
+                            <div class="stat-value">${(d.minVal || 0).toFixed(2)}</div>
                         </div>
                         <div class="stat-box">
                             <div class="stat-label">Nett</div>
                             <div class="stat-value">${(d.lastNett || 0).toFixed(2)}</div>
                         </div>
                         <div class="stat-box">
-                            <div class="stat-label">Avg</div>
+                            <div class="stat-label">Avg (1h)</div>
                             <div class="stat-value">${(d.average || 0).toFixed(2)}</div>
                         </div>
                     </div>
 
                     <div class="card-footer">
-                        <button class="update-btn">⟳ Update Data</button>
+                        <button class="update-btn" onclick="triggerManualUpdate(${i}, event)">⟳ Update Data</button>
                     </div>
                 </div>
             `;
         } else {
             col.innerHTML = `
                 <div class="empty-state">
+                    <div class="card-loading-overlay">
+                        <div class="spinner"></div>
+                        <div class="loading-text">Updating Data...</div>
+                    </div>
                     <span class="icon" style="color:var(--accent-danger); opacity:0.8;">🔌</span>
                     <span style="font-size:1rem; font-weight:600; color:var(--text-secondary);">Carousel ${i}</span>
                     <span style="font-weight:700; color:var(--accent-danger); letter-spacing:1px; margin-top:5px; margin-bottom:15px;">OFFLINE</span>
@@ -698,6 +716,31 @@ function renderCarousels(carousels) {
         container.appendChild(col);
     }
     activateMobileCard();
+}
+
+// --- Manual Update Integration ---
+async function triggerManualUpdate(id, event) {
+    if (event) event.stopPropagation();
+
+    // Show loading immediately for better UX
+    const overlays = document.querySelectorAll('.card-loading-overlay');
+    overlays.forEach(overlay => overlay.classList.add('active'));
+
+    try {
+        const token = localStorage.getItem('scada_token');
+        const res = await fetch('/api/scada/refresh', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-access-token': token
+            }
+        });
+        if (!res.ok) throw new Error("Failed to refresh data");
+    } catch (err) {
+        console.error("Manual refresh error:", err.message);
+        // Hide on error
+        overlays.forEach(overlay => overlay.classList.remove('active'));
+    }
 }
 
 // --- Control Modal Logic ---
