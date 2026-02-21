@@ -852,7 +852,8 @@ main {
     height: 100%;
     background: rgba(var(--bg-card-rgb), 0.85);
     backdrop-filter: blur(4px);
-    display: none; /* Hidden by default */
+    display: none;
+    /* Hidden by default */
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -876,8 +877,13 @@ main {
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .loading-text {
@@ -886,18 +892,16 @@ main {
     font-weight: 600;
     letter-spacing: 0.5px;
 }
-   FOOTER
-   ============================================================ */
+
+/* FOOTER============================================================*/
 footer {
-    height: 56px;
+    height: 45px;
     background: var(--bg-secondary);
     border-top: 1px solid var(--border-subtle);
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
-    padding: 0 20px;
-    gap: 40px;
-    /* Space between the major groups */
+    padding: 0 32px;
     flex-shrink: 0;
 }
 
@@ -905,10 +909,21 @@ footer {
     display: flex;
     align-items: center;
     gap: 12px;
+    flex: 1;
+}
+
+.footer-group.center-group {
+    justify-content: center;
+    flex: 0 0 auto;
+}
+
+.footer-group:last-child {
+    justify-content: flex-end;
+    padding-right: 20px;
 }
 
 .footer-group:first-child {
-    /* justify-self: start; - Removed */
+    padding-left: 20px;
 }
 
 .footer-group:last-child {
@@ -1473,6 +1488,7 @@ input:checked+.slider:before {
         opacity: 0;
         transform: translateY(-6px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
