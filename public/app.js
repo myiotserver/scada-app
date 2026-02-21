@@ -167,6 +167,7 @@ function initApp() {
         updateFooterConnections({ opc: status });
     });
     socket.on('opcua-value', (data) => updateOpcUaLiveValue(data));
+    socket.on('scada-alert', (alertData) => handleScadaAlert(alertData));
 
     // Load initial settings
     loadSettings();
@@ -990,6 +991,26 @@ function showOpcUaToast(msg, type) {
     t.innerText = msg;
     document.body.appendChild(t);
     setTimeout(() => { if (t.parentNode) t.remove(); }, 3000);
+}
+
+function handleScadaAlert(alertData) {
+    if (!alertData || alertData.type !== 'sql_insert_failed') return;
+
+    const carousel = alertData.carousel || 'Unknown Carousel';
+    const msg = alertData.message || `Gagal update WEIGHT_DATA untuk ${carousel}`;
+    showOperatorToast(`${msg}. Cek koneksi SQL/table.`);
+}
+
+function showOperatorToast(msg) {
+    const existing = document.querySelector('.operator-toast');
+    if (existing) existing.remove();
+
+    const t = document.createElement('div');
+    t.className = 'operator-toast';
+    t.innerText = msg;
+    document.body.appendChild(t);
+
+    setTimeout(() => { if (t.parentNode) t.remove(); }, 6000);
 }
 
 // --- SQL Status Polling ---

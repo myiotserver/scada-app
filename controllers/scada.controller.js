@@ -144,6 +144,30 @@ let carousels = {
 
 let weighingPool = null;
 let pollingInterval = null;
+const alertListeners = new Map();
+const lastSqlInsertAlertTs = new Map();
+const SQL_ALERT_DEBOUNCE_MS = 8000;
+
+function notifySqlInsertFailure(payload) {
+    const now = Date.now();
+    const key = payload && payload.carousel ? String(payload.carousel) : 'GLOBAL';
+    const lastTs = lastSqlInsertAlertTs.get(key) || 0;
+    if (now - lastTs < SQL_ALERT_DEBOUNCE_MS) return;
+    lastSqlInsertAlertTs.set(key, now);
+
+    alertListeners.forEach(cb => {
+        try {
+            cb({
+                type: 'sql_insert_failed',
+                level: 'error',
+                ...payload,
+                ts: new Date().toISOString()
+            });
+        } catch (err) {
+            console.error('[Alert] Failed to deliver SQL alert:', err.message);
+        }
+    });
+}
 
 // Helper to insert weight data into SQL
 async function insertWeightData(carouselId, data) {
@@ -190,6 +214,12 @@ async function insertWeightData(carouselId, data) {
         console.log(`[SQL] Inserted data for CR${carouselId}: ${data.lastNett}kg (${status})`);
     } catch (err) {
         console.error("Error inserting weight data:", err.message);
+        notifySqlInsertFailure({
+            message: `Gagal update ${appSettings.table_weight || 'WEIGHT_DATA'} untuk CR${carouselId}`,
+            carousel: `CR${carouselId}`,
+            table: appSettings.table_weight || 'WEIGHT_DATA',
+            reason: err.message
+        });
     }
 }
 
@@ -415,6 +445,14 @@ exports.subscribe = (id, callback) => {
 
 exports.unsubscribe = (id) => {
     listeners.delete(id);
+};
+
+exports.subscribeAlerts = (id, callback) => {
+    alertListeners.set(id, callback);
+};
+
+exports.unsubscribeAlerts = (id) => {
+    alertListeners.delete(id);
 };
 
 // Broadcast loop

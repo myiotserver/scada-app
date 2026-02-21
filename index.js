@@ -65,6 +65,11 @@ io.on('connection', (socket) => {
         socket.emit('carousel-update', updates);
     });
 
+    const alertSubscriptionId = `alert-${socket.id}`;
+    scadaController.subscribeAlerts(alertSubscriptionId, (alertData) => {
+        socket.emit('scada-alert', alertData);
+    });
+
     // Subscribe to OPC-UA events
     const opcuaSubId = `opcua-${socket.id}`;
     opcuaManager.subscribe(opcuaSubId, (event, data) => {
@@ -76,6 +81,7 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         console.log('User disconnected');
         scadaController.unsubscribe(subscriptionId);
+        scadaController.unsubscribeAlerts(alertSubscriptionId);
         opcuaManager.unsubscribe(opcuaSubId);
     });
 });
