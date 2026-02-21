@@ -1,20 +1,10 @@
 const sql = require('mssql');
-
-const config = {
-    user: 'sa',
-    password: 'VPS@thinkcentre',
-    server: 'columba.s-net.id',
-    database: 'WEIGHER',
-    port: 1433,
-    options: {
-        encrypt: false, // for Azure
-        trustServerCertificate: true // change to true for local dev / self-signed certs
-    }
-};
+const dbConfig = require('./config/db.config.mssql');
 
 async function testConnection() {
     try {
         console.log('Connecting to SQL Server...');
+        const config = dbConfig.getConfig ? dbConfig.getConfig() : dbConfig;
         let pool = await sql.connect(config);
         console.log('Connected!');
 

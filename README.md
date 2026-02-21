@@ -127,16 +127,12 @@ GRANT ALL PRIVILEGES ON DATABASE scada_db TO scada_user;
    };
    ```
 
-2. **Database MSSQL** (`config/db.config.mssql.js`):
-   ```javascript
-   module.exports = {
-       user: 'yourSQLUsername',
-       password: 'yoursqlpassword',
-       server: 'yourserverIP',
-       database: 'yourDatabaseName',
-       // ... konfigurasi lainnya
-   };
-   ```
+2. **Database MSSQL** (`config/db.config.mssql.js` dan `config/db.config.weighing.js`):
+   - File config ini sekarang **dinamis** dan membaca nilai SQL dari:
+     1. Environment variable (`MSSQL_USER`, `MSSQL_PASSWORD`, `MSSQL_SERVER`, `MSSQL_DATABASE`, `MSSQL_PORT`)
+     2. `config/scada-settings.json`
+     3. Fallback default internal
+   - Artinya, jika Anda update SQL Server dari menu Settings di aplikasi (Windows UI), koneksi SQL backend akan mengikuti nilai terbaru tersebut.
 
 3. **OPC UA Configuration** (`config/opcua.config.json`):
    ```json
@@ -160,6 +156,7 @@ GRANT ALL PRIVILEGES ON DATABASE scada_db TO scada_user;
        // ... tabel dan interlocks
    }
    ```
+   - Nilai `sql_server`, `sql_uid`, `sql_pass`, dan `sql_db` adalah sumber utama konfigurasi SQL yang dipakai runtime SCADA.
 
 #### Setup Environment Variables (opsional)
 
@@ -168,6 +165,11 @@ Buat file `.env` di root directory:
 NODE_ENV=development
 PORT=3001
 JWT_SECRET=your_jwt_secret_key
+MSSQL_USER=optional_override_user
+MSSQL_PASSWORD=optional_override_password
+MSSQL_SERVER=optional_override_server
+MSSQL_DATABASE=optional_override_database
+MSSQL_PORT=1433
 ```
 
 ## Menjalankan Aplikasi
@@ -236,7 +238,8 @@ Aplikasi akan berjalan di `http://localhost:3001`
 
 1. **Database Connection Error**:
    - Pastikan database server berjalan
-   - Periksa kredensial di file konfigurasi
+   - Periksa kredensial di `config/scada-settings.json` atau di menu Settings aplikasi
+   - Jika menggunakan environment variable, pastikan nilainya benar (karena env override nilai file settings)
    - Untuk remote MSSQL, pastikan firewall mengizinkan koneksi
 
 2. **OPC UA Connection Failed**:
