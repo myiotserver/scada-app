@@ -9,6 +9,7 @@ Aplikasi SCADA (Supervisory Control and Data Acquisition) untuk monitoring dan k
 - **OPC UA Integration**: Komunikasi dengan server OPC UA untuk data industri
 - **Database Integration**: Dukungan MSSQL dan PostgreSQL
 - **Data Aggregation**: Agregasi data otomatis dengan cron jobs
+- **Dashboard Offline Ready**: Dashboard menampilkan status OFFLINE dan 0.00 Kg secara otomatis saat data belum tersedia atau koneksi terputus.
 - **PKI Certificates**: Manajemen sertifikat untuk keamanan OPC UA
 
 ## Prerequisites
@@ -174,21 +175,26 @@ MSSQL_PORT=1433
 
 ## Menjalankan Aplikasi
 
-### Development Mode
-
-#### Linux
-```bash
-npm start
-# atau
-node index.js
-```
-
-#### Windows
-```cmd
-npm start
-```
-
 Aplikasi akan berjalan di `http://localhost:3001`
+
+### Production Mode (Linux Server)
+
+Untuk menjalankan aplikasi di server agar tetap berjalan di background, gunakan **PM2**:
+
+```bash
+# Install PM2 jika belum ada
+sudo npm install -g pm2
+
+# Jalankan aplikasi
+pm2 start index.js --name scada-app
+
+# Perintah umum PM2
+pm2 status                # Cek status aplikasi
+pm2 logs scada-app        # Lihat log real-time
+pm2 restart scada-app     # Merestart aplikasi
+pm2 stop scada-app        # Menghentikan aplikasi
+pm2 save                  # Simpan daftar aplikasi agar auto-start saat reboot
+```
 
 ## Penggunaan
 
@@ -242,7 +248,10 @@ Aplikasi akan berjalan di `http://localhost:3001`
    - Jika menggunakan environment variable, pastikan nilainya benar (karena env override nilai file settings)
    - Untuk remote MSSQL, pastikan firewall mengizinkan koneksi
 
-2. **OPC UA Connection Failed**:
+3. **RESET Button Error**:
+   - Jika tombol RESET di footer error dengan pesan `Cannot create property 'dataType' on number '1'`, pastikan backend menggunakan update terbaru di `utils/opcua.manager.js` yang menangani konversi tipe data ke `Variant` dengan benar.
+
+4. **OPC UA Certificate Issue**:
    - Periksa endpoint URL dan kredensial
    - Pastikan OPC UA server berjalan
    - Download dan install client certificate ke server OPC UA

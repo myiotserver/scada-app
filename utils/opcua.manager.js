@@ -319,7 +319,7 @@ class OpcUaManager {
     async writeNode(nodeId, value, dataType) {
         if (!this.session) return { error: 'Not connected' };
         try {
-            const { DataType, Variant } = require("node-opcua");
+            const { DataType } = require("node-opcua");
             const variantValue = {
                 dataType: DataType[dataType] || DataType.Int16, // Default to Int16
                 value: value
@@ -328,7 +328,9 @@ class OpcUaManager {
             const statusCode = await this.session.write({
                 nodeId: nodeId,
                 attributeId: AttributeIds.Value,
-                value: new Variant(variantValue)
+                value: {
+                    value: variantValue
+                }
             });
 
             if (statusCode.name === 'Good') {

@@ -147,6 +147,11 @@ function initApp() {
         document.getElementById('current-user-display').innerText = currentUser.username;
     }
 
+    // Default to offline state before data is received
+    const offlineState = {};
+    for (let i = 1; i <= 5; i++) offlineState[i] = { id: i, state: 'OFFLINE', data: null };
+    renderCarousels(offlineState);
+
     // Connect Socket
     socket = io();
 
@@ -164,7 +169,7 @@ function initApp() {
     // OPC-UA events
     socket.on('opcua-status', (status) => {
         updateOpcUaStatusUI(status);
-        updateFooterConnections({ opc: status });
+        updateFooterConnections({ opcStatus: status });
     });
     socket.on('opcua-value', (data) => updateOpcUaLiveValue(data));
     socket.on('scada-alert', (alertData) => handleScadaAlert(alertData));
@@ -175,6 +180,21 @@ function initApp() {
     // Start SQL polling
     pollSqlStatus();
     setInterval(pollSqlStatus, 10000); // Poll every 10s
+
+    // Initial OPC Status Sync
+    if (currentUser && currentUser.accessToken) {
+        fetch('/api/opcua/status', {
+            headers: { 'x-access-token': currentUser.accessToken }
+        })
+            .then(res => res.json())
+            .then(status => {
+                if (status) {
+                    updateOpcUaStatusUI(status);
+                    updateFooterConnections({ opcStatus: status });
+                }
+            })
+            .catch(err => console.error("Initial OPC status fetch failed", err));
+    }
 }
 
 // --- Footer Logic ---
@@ -206,11 +226,20 @@ let lastOpcStatus = false;
 // function pollSqlStatus removed (merged with bottom one)
 
 function updateFooterConnections(statusUpdate) {
-    // Update local state
-    if (statusUpdate.sql !== undefined) lastSqlStatus = statusUpdate.sql;
-    if (statusUpdate.opc !== undefined) lastOpcStatus = statusUpdate.opc.connected;
+    if (!statusUpdate) return;
 
-    // Update UI
+    // Update local state - SQL
+    if (statusUpdate.sql !== undefined) {
+        lastSqlStatus = !!statusUpdate.sql;
+    }
+
+    // Update local state - OPC
+    if (statusUpdate.opcStatus !== undefined) {
+        lastOpcStatus = !!statusUpdate.opcStatus.connected;
+    } else if (statusUpdate.opcConnected !== undefined) {
+        lastOpcStatus = !!statusUpdate.opcConnected;
+    }
+
     // Update UI - SQL
     const sqlIcon = document.getElementById('conn-sql');
     if (sqlIcon) {
@@ -541,21 +570,21 @@ function renderCarousels(carousels) {
     updateFooterSensors(carousels);
 
     for (let i = 1; i <= 5; i++) {
-        const carousel = carousels[i];
+        const carousel = carousels ? carousels[i] : null;
         const col = document.createElement('div');
         // Map State to Class
         const stateClass =
-            (carousel.state === 'RUN') ? 'status-running' :
-                (carousel.state === 'PAUSE') ? 'status-paused' :
-                    (carousel.state === 'STOP') ? 'status-stopped' :
-                        (carousel.state === 'RESET') ? 'status-reset' : '';
+            (carousel && carousel.state === 'RUN') ? 'status-running' :
+                (carousel && carousel.state === 'PAUSE') ? 'status-paused' :
+                    (carousel && carousel.state === 'STOP') ? 'status-stopped' :
+                        (carousel && carousel.state === 'RESET') ? 'status-reset' : '';
 
         col.className = `carousel-col ${stateClass}`;
         // Add Click Handler
         col.onclick = (e) => {
             // Prevent if clicking update button
             if (e.target.closest('.update-btn')) return;
-            openControlModal(i, carousel.state);
+            openControlModal(i, carousel ? carousel.state : 'OFFLINE');
         };
         col.style.cursor = 'pointer';
 
@@ -653,11 +682,17 @@ function renderCarousels(carousels) {
         } else {
             col.innerHTML = `
                 <div class="empty-state">
-                    <span class="icon">📦</span>
-                    <span>Carousel ${i}</span>
-                    <span>No data</span>
+                    <span class="icon" style="color:var(--accent-danger); opacity:0.8;">🔌</span>
+                    <span style="font-size:1rem; font-weight:600; color:var(--text-secondary);">Carousel ${i}</span>
+                    <span style="font-weight:700; color:var(--accent-danger); letter-spacing:1px; margin-top:5px; margin-bottom:15px;">OFFLINE</span>
+                    <div class="weight-section" style="width: 100%; padding: 0 14px;">
+                        <div class="weight-label">Gross Weight</div>
+                        <div class="weight-display bg-danger">0.00 Kg</div>
+                    </div>
                 </div>
             `;
+            col.style.borderColor = "var(--accent-danger)";
+            col.style.boxShadow = "none";
         }
 
         container.appendChild(col);
@@ -813,7 +848,9 @@ async function loadOpcUaConfig() {
             headers: { 'x-access-token': token }
         });
         if (statusRes.ok) {
-            updateOpcUaStatusUI(await statusRes.json());
+            const st = await statusRes.json();
+            updateOpcUaStatusUI(st);
+            updateFooterConnections({ opcStatus: st });
         }
     } catch (e) {
         showOpcUaToast('Failed to load OPC-UA config', 'error');
