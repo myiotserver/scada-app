@@ -1034,12 +1034,19 @@ setTimeout(pollSqlStatus, 1000);
 // --- History Logic ---
 async function loadHistory() {
     const tbody = document.getElementById('history-list-body');
+    const carouselFilterEl = document.getElementById('history-carousel-filter');
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Loading records...</td></tr>';
 
     try {
         const token = currentUser.accessToken;
         const limit = 100;
-        const res = await fetch(`/api/scada/history?limit=${limit}`, {
+        const params = new URLSearchParams({ limit: String(limit) });
+        const selectedCarousel = carouselFilterEl ? carouselFilterEl.value : '';
+        if (selectedCarousel) {
+            params.set('carousel', selectedCarousel);
+        }
+
+        const res = await fetch(`/api/scada/history?${params.toString()}`, {
             headers: { 'x-access-token': token }
         });
 

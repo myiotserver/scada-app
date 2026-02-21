@@ -442,12 +442,25 @@ exports.getWeightHistory = async (req, res) => {
         return res.status(503).json({ error: "Database not connected" });
     }
     try {
-        const limit = parseInt(req.query.limit) || 100;
-        const result = await weighingPool.request().query(`
-            SELECT TOP ${limit} * 
-            FROM ${appSettings.table_weight || 'WEIGHT_DATA'} 
-            ORDER BY TIMESTAMP DESC
-        `);
+        const parsedLimit = parseInt(req.query.limit, 10);
+        const limit = Number.isInteger(parsedLimit) && parsedLimit > 0 ? Math.min(parsedLimit, 500) : 100;
+        const requestedCarousel = (req.query.carousel || '').toString().trim().toUpperCase();
+        const carouselFilter = /^CR\d+$/.test(requestedCarousel) ? requestedCarousel : '';
+
+        const request = weighingPool.request();
+        let query = `
+            SELECT TOP ${limit} *
+            FROM ${appSettings.table_weight || 'WEIGHT_DATA'}
+        `;
+
+        if (carouselFilter) {
+            query += ` WHERE CAROUSEL = @carousel`;
+            request.input('carousel', sql.NVarChar, carouselFilter);
+        }
+
+        query += ` ORDER BY TIMESTAMP DESC`;
+
+        const result = await request.query(query);
         res.json(result.recordset);
     } catch (err) {
         console.error("Error fetching history:", err);
