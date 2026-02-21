@@ -395,6 +395,15 @@ async function fetchCarouselConfig(showLoading = false) {
                     else if (st === 'STOP' || st === 'STOPPED' || st === '0' || st === '3') s = 'STOP';
 
                     carousels[carouselId].state = s;
+
+                    // Counter logic for STOP state
+                    if (s === 'STOP') {
+                        const cData = carousels[carouselId].data;
+                        if ((cData.counter || 0) >= (cData.target || 0)) {
+                            cData.counter = 0;
+                            // console.log(`[POLL] CR${carouselId} counter reset due to STOP state`);
+                        }
+                    }
                 }
             }
         });
@@ -603,6 +612,17 @@ exports.controlCarousel = async (req, res) => {
 
     if (!weighingPool) {
         return res.status(503).json({ error: "Database Offline. Control disabled." });
+    }
+
+    // Logic: If STOP is pressed and target is reached, reset counter
+    if (val === 'STOP' && carousels[carouselId]) {
+        const cData = carousels[carouselId].data;
+        if ((cData.counter || 0) >= (cData.target || 0)) {
+            cData.counter = 0;
+            console.log(`[STOP] CR${carouselId} counter reset (Target reached: ${cData.target})`);
+        } else {
+            console.log(`[STOP] CR${carouselId} counter maintained (Target not reached: ${cData.counter}/${cData.target})`);
+        }
     }
 
     try {
