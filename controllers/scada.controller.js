@@ -408,6 +408,33 @@ async function fetchCarouselConfig(showLoading = false) {
             }
         });
 
+        // --- Fetch Last Counter Values based on Packing Order ---
+        const weightTable = appSettings.table_weight || 'WEIGHT_DATA';
+        const poQueries = result.recordset.map(async (row) => {
+            const carouselId = row.CAROUSEL;
+            const packingOrder = row.PACKING_ORDER;
+            if (!packingOrder) return;
+
+            try {
+                const countResult = await weighingPool.request()
+                    .input('po', sql.NVarChar, packingOrder)
+                    .input('cr', sql.NVarChar, `CR${carouselId}`)
+                    .query(`SELECT MAX(PRODUCT_COUNT) as lastCount FROM [${weightTable}] WHERE PACKING_ORDER = @po AND CAROUSEL = @cr`);
+
+                if (countResult.recordset[0] && countResult.recordset[0].lastCount !== null) {
+                    const count = countResult.recordset[0].lastCount;
+                    if (carousels[carouselId]) {
+                        carousels[carouselId].data.counter = count;
+                        console.log(`[INIT] Loaded counter for CR${carouselId}: ${count} (PO: ${packingOrder})`);
+                    }
+                }
+            } catch (err) {
+                console.error(`[DB] Error fetching last count for CR${carouselId}:`, err.message);
+            }
+        });
+
+        await Promise.all(poQueries);
+
     } catch (err) {
         console.error("Error fetching Carousel Config:", err.message);
     } finally {
