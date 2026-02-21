@@ -97,6 +97,7 @@ app.get('/api/settings', (req, res) => {
 });
 app.get('/api/sql/status', scadaController.getSqlStatus);
 app.post('/api/control', scadaController.controlCarousel);
+app.post('/api/control/reset-error', scadaController.resetErrorTag);
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {

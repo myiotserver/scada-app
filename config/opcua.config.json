@@ -57,6 +57,11 @@
             "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.SENSOR05",
             "name": "S5",
             "description": "Product sensor CR5"
+        },
+        {
+            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.RESET",
+            "name": "RST",
+            "description": "Reset error"
         }
     ]
 }

@@ -516,6 +516,60 @@ exports.getSqlStatus = (req, res) => {
     });
 };
 
+exports.resetErrorTag = async (req, res) => {
+    try {
+        const opcStatus = opcUaManager.getStatus();
+        if (!opcStatus.connected) {
+            return res.status(503).json({ error: "OPC-UA not connected" });
+        }
+
+        const opcConfig = opcUaManager.getConfig();
+        const nodes = Array.isArray(opcConfig.nodes) ? opcConfig.nodes : [];
+        const resetNode = nodes.find((n) => {
+            const name = (n.name || '').toString().trim().toUpperCase();
+            const desc = (n.description || '').toString().trim().toUpperCase();
+            return name === 'RST' || desc === 'RESET ERROR';
+        });
+
+        if (!resetNode || !resetNode.nodeId) {
+            return res.status(404).json({ error: "OPC Reset tag (RST / Reset error) not found in configuration" });
+        }
+
+        // Write pulse TRUE -> FALSE (common reset pattern for PLC/OPC tag)
+        let writeOn = await opcUaManager.writeNode(resetNode.nodeId, true, 'Boolean');
+        if (writeOn.error) {
+            // Fallback for servers expecting numeric reset signal.
+            writeOn = await opcUaManager.writeNode(resetNode.nodeId, 1, 'Int16');
+        }
+        if (writeOn.error) {
+            return res.status(500).json({ error: `Failed writing reset ON: ${writeOn.error}` });
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 250));
+
+        let writeOff = await opcUaManager.writeNode(resetNode.nodeId, false, 'Boolean');
+        if (writeOff.error) {
+            writeOff = await opcUaManager.writeNode(resetNode.nodeId, 0, 'Int16');
+        }
+        if (writeOff.error) {
+            return res.status(500).json({ error: `Reset ON sent but failed writing OFF: ${writeOff.error}` });
+        }
+
+        return res.json({
+            success: true,
+            message: "Reset error signal sent successfully",
+            node: {
+                name: resetNode.name,
+                nodeId: resetNode.nodeId,
+                description: resetNode.description || ''
+            }
+        });
+    } catch (err) {
+        console.error('[OPC] Reset error tag failed:', err.message);
+        return res.status(500).json({ error: `Reset error failed: ${err.message}` });
+    }
+};
+
 exports.controlCarousel = async (req, res) => {
     const { carouselId, command } = req.body;
     // Command Mapping: RESET (String directly)

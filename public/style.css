@@ -2083,6 +2083,11 @@ input:checked+.slider:before {
     border-color: var(--accent-primary);
 }
 
+.footer-group .ctrl-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
 .footer-group .ctrl-btn .icon {
     font-size: 0.9rem;
 }

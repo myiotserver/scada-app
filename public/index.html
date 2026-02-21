@@ -374,7 +374,7 @@
                 <div class="footer-group">
                     <!-- <div class="footer-header">CONTROL</div> -->
                     <div class="controls">
-                        <button class="ctrl-btn" onclick="openControlModal(currentControlId || 1, 'UNKNOWN')"><span
+                        <button class="ctrl-btn" id="btn-reset-error" onclick="triggerResetError()"><span
                                 class="icon">🔄</span> RESET</button>
                         <!-- Note: Reset usually targets a specific carousel, but here it's global? 
                          The previous button was just RESET. I will keep it but maybe it needs logic.

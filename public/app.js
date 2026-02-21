@@ -735,6 +735,54 @@ async function sendControlCommand(command) {
     }
 }
 
+async function triggerResetError() {
+    const btn = document.getElementById('btn-reset-error');
+    const originalHtml = btn ? btn.innerHTML : '';
+
+    try {
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="icon">⏳</span> RESETTING...';
+        }
+
+        const token = currentUser && currentUser.accessToken;
+        const res = await fetch('/api/control/reset-error', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'x-access-token': token } : {})
+            }
+        });
+        const raw = await res.text();
+        let data = null;
+        try {
+            data = raw ? JSON.parse(raw) : null;
+        } catch (parseErr) {
+            if (!res.ok) {
+                const msg = res.status === 404
+                    ? 'Endpoint reset-error belum tersedia. Restart backend lalu coba lagi.'
+                    : `Server returned non-JSON response (HTTP ${res.status})`;
+                showOpcUaToast(msg, 'error');
+                return;
+            }
+            throw parseErr;
+        }
+
+        if (res.ok && data && data.success) {
+            showOpcUaToast('Reset error signal sent', 'success');
+        } else {
+            showOpcUaToast((data && data.error) || `Failed to send reset signal (HTTP ${res.status})`, 'error');
+        }
+    } catch (e) {
+        showOpcUaToast(`Reset error failed: ${e.message}`, 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml || '<span class="icon">🔄</span> RESET';
+        }
+    }
+}
+
 // ==========================================================
 // OPC-UA Configuration Functions
 // ==========================================================
