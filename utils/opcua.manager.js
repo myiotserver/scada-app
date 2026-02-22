@@ -26,21 +26,90 @@ class OpcUaManager {
     }
 
     // --- Config ---
+    _normalizeNode(node, index) {
+        const rawName = (node && node.name ? String(node.name) : '').trim();
+        const rawDescription = (node && node.description ? String(node.description) : '').trim();
+        const normalized = {
+            nodeId: node && node.nodeId ? String(node.nodeId).trim() : '',
+            name: rawName || `NODE_${index + 1}`,
+            description: rawDescription,
+            machineId: null,
+            signalType: 'UNKNOWN',
+            scale: 1,
+            enabled: node && node.enabled !== undefined ? !!node.enabled : true
+        };
+
+        const parsedMachineId = parseInt(node && node.machineId, 10);
+        if (Number.isInteger(parsedMachineId) && parsedMachineId >= 1 && parsedMachineId <= 5) {
+            normalized.machineId = parsedMachineId;
+        }
+
+        if (node && node.signalType) {
+            normalized.signalType = String(node.signalType).trim().toUpperCase();
+        }
+
+        const parsedScale = parseFloat(node && node.scale);
+        if (Number.isFinite(parsedScale) && parsedScale !== 0) {
+            normalized.scale = parsedScale;
+        }
+
+        // Backward compatibility for legacy config that only had name/description.
+        if (normalized.signalType === 'UNKNOWN' || !normalized.machineId) {
+            const upperName = normalized.name.toUpperCase();
+            const upperDesc = normalized.description.toUpperCase();
+
+            const matchGross = upperName.match(/^CR([1-5])$/);
+            if (matchGross) {
+                normalized.machineId = normalized.machineId || parseInt(matchGross[1], 10);
+                normalized.signalType = 'GROSS_WEIGHT';
+                if (!node || node.scale === undefined) normalized.scale = 0.01;
+            }
+
+            const matchSensor = upperName.match(/^S([1-5])$/);
+            if (matchSensor) {
+                normalized.machineId = normalized.machineId || parseInt(matchSensor[1], 10);
+                normalized.signalType = 'PRODUCT_SENSOR';
+            }
+
+            if (upperName === 'RST' || upperDesc === 'RESET ERROR') {
+                normalized.signalType = 'RESET';
+            }
+        }
+
+        return normalized;
+    }
+
+    _normalizeConfig(config) {
+        const safe = config || {};
+        return {
+            endpointUrl: safe.endpointUrl || '',
+            securityMode: safe.securityMode || 'None',
+            securityPolicy: safe.securityPolicy || 'Basic256',
+            username: safe.username || '',
+            password: safe.password || '',
+            publishInterval: parseInt(safe.publishInterval, 10) || 1000,
+            samplingInterval: parseInt(safe.samplingInterval, 10) || 500,
+            autoConnect: !!safe.autoConnect,
+            nodes: Array.isArray(safe.nodes)
+                ? safe.nodes.map((node, idx) => this._normalizeNode(node, idx)).filter(n => n.nodeId)
+                : []
+        };
+    }
 
     _loadConfig() {
         try {
             const raw = fs.readFileSync(CONFIG_PATH, 'utf-8');
-            return JSON.parse(raw);
+            return this._normalizeConfig(JSON.parse(raw));
         } catch (err) {
             console.error('[OPC-UA] Failed to load config:', err.message);
-            return {
+            return this._normalizeConfig({
                 endpointUrl: '',
                 securityMode: 'None',
                 publishInterval: 1000,
                 samplingInterval: 500,
                 autoConnect: false,
                 nodes: []
-            };
+            });
         }
     }
 
@@ -65,15 +134,32 @@ class OpcUaManager {
         if (newConfig.publishInterval !== undefined) this.config.publishInterval = parseInt(newConfig.publishInterval) || 1000;
         if (newConfig.samplingInterval !== undefined) this.config.samplingInterval = parseInt(newConfig.samplingInterval) || 500;
         if (newConfig.autoConnect !== undefined) this.config.autoConnect = newConfig.autoConnect;
-        if (newConfig.nodes !== undefined) this.config.nodes = newConfig.nodes;
+        if (newConfig.nodes !== undefined) {
+            this.config.nodes = Array.isArray(newConfig.nodes)
+                ? newConfig.nodes.map((node, idx) => this._normalizeNode(node, idx)).filter(n => n.nodeId)
+                : [];
+        }
         this._saveConfig();
         return this.config;
     }
 
-    addNode(nodeId, name, description) {
+    addNode(nodeId, name, description, machineId, signalType, scale, enabled) {
         const exists = this.config.nodes.find(n => n.nodeId === nodeId);
         if (exists) return { error: 'Node already exists' };
-        this.config.nodes.push({ nodeId, name: name || nodeId, description: description || '' });
+        this.config.nodes.push(
+            this._normalizeNode(
+                {
+                    nodeId,
+                    name: name || nodeId,
+                    description: description || '',
+                    machineId,
+                    signalType,
+                    scale,
+                    enabled
+                },
+                this.config.nodes.length
+            )
+        );
         this._saveConfig();
         return { success: true, nodes: this.config.nodes };
     }
@@ -81,6 +167,19 @@ class OpcUaManager {
     removeNode(index) {
         if (index < 0 || index >= this.config.nodes.length) return { error: 'Invalid index' };
         this.config.nodes.splice(index, 1);
+        this._saveConfig();
+        return { success: true, nodes: this.config.nodes };
+    }
+
+    updateNode(index, payload) {
+        if (index < 0 || index >= this.config.nodes.length) return { error: 'Invalid index' };
+        const existing = this.config.nodes[index];
+        const merged = this._normalizeNode({ ...existing, ...payload }, index);
+
+        const duplicateNodeId = this.config.nodes.find((n, i) => i !== index && n.nodeId === merged.nodeId);
+        if (duplicateNodeId) return { error: 'Node ID already exists' };
+
+        this.config.nodes[index] = merged;
         this._saveConfig();
         return { success: true, nodes: this.config.nodes };
     }
@@ -262,7 +361,7 @@ class OpcUaManager {
         this.monitoredItems = [];
 
         for (const node of this.config.nodes) {
-            if (!node.nodeId) continue;
+            if (!node.nodeId || node.enabled === false) continue;
             try {
                 const monitoredItem = ClientMonitoredItem.create(
                     this.subscription,
@@ -280,6 +379,9 @@ class OpcUaManager {
                         value,
                         timestamp: new Date().toISOString(),
                         nodeId: node.nodeId,
+                        machineId: node.machineId,
+                        signalType: node.signalType,
+                        scale: node.scale,
                         statusCode: dataValue.statusCode ? dataValue.statusCode.toString() : 'Good'
                     };
                     this._emitUpdate(node.name, this.liveValues[node.name]);

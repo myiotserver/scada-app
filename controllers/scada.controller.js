@@ -147,6 +147,20 @@ let pollingInterval = null;
 const alertListeners = new Map();
 const lastSqlInsertAlertTs = new Map();
 const SQL_ALERT_DEBOUNCE_MS = 8000;
+const lastGrossCategoryByMachine = {
+    1: null,
+    2: null,
+    3: null,
+    4: null,
+    5: null
+};
+const lastRunSignalByMachine = {
+    1: null,
+    2: null,
+    3: null,
+    4: null,
+    5: null
+};
 
 function notifySqlInsertFailure(payload) {
     const now = Date.now();
@@ -256,51 +270,220 @@ if (appSettings.sql_server) {
 }
 
 // --- OPC-UA Integration ---
+function normalizeSignalType(value) {
+    return (value || '').toString().trim().toUpperCase();
+}
+
+function toBoolean(value) {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value !== 0;
+    const str = String(value || '').trim().toUpperCase();
+    return str === '1' || str === 'TRUE' || str === 'ON' || str === 'YES';
+}
+
+function toMachineId(value) {
+    const machineId = parseInt(value, 10);
+    if (!Number.isInteger(machineId)) return null;
+    return machineId >= 1 && machineId <= 5 ? machineId : null;
+}
+
+function findNodeConfigFromEvent(data) {
+    const opcConfig = opcUaManager.getConfig();
+    const nodes = Array.isArray(opcConfig.nodes) ? opcConfig.nodes : [];
+    if (!data) return null;
+    return nodes.find(n => n.nodeId === data.nodeId) || nodes.find(n => n.name === data.name) || null;
+}
+
+function resolveNodeMapping(data) {
+    const nodeCfg = findNodeConfigFromEvent(data);
+    if (nodeCfg) {
+        return {
+            machineId: toMachineId(nodeCfg.machineId),
+            signalType: normalizeSignalType(nodeCfg.signalType),
+            scale: Number.isFinite(parseFloat(nodeCfg.scale)) ? parseFloat(nodeCfg.scale) : 1
+        };
+    }
+
+    // Backward compatibility for legacy nodes without mapping metadata.
+    const name = (data.name || '').toString().trim().toUpperCase();
+    const grossMatch = name.match(/^CR([1-5])$/);
+    if (grossMatch) {
+        return {
+            machineId: parseInt(grossMatch[1], 10),
+            signalType: 'GROSS_WEIGHT',
+            scale: 0.01
+        };
+    }
+
+    const sensorMatch = name.match(/^S([1-5])$/);
+    if (sensorMatch) {
+        return {
+            machineId: parseInt(sensorMatch[1], 10),
+            signalType: 'PRODUCT_SENSOR',
+            scale: 1
+        };
+    }
+
+    if (name === 'RST') {
+        return {
+            machineId: null,
+            signalType: 'RESET',
+            scale: 1
+        };
+    }
+
+    return null;
+}
+
+function classifyGrossByTolerance(carouselId, grossValue) {
+    const carousel = carousels[carouselId];
+    if (!carousel || !carousel.data) return null;
+    const toleranceMin = parseFloat(carousel.data.toleranceMin);
+    const toleranceMax = parseFloat(carousel.data.toleranceMax);
+    if (!Number.isFinite(toleranceMin) || !Number.isFinite(toleranceMax)) return null;
+
+    if (grossValue < toleranceMin) return 'UNDER';
+    if (grossValue > toleranceMax) return 'OVER';
+    return 'NORMAL';
+}
+
+async function writeBooleanToOpc(nodeId, value) {
+    let result = await opcUaManager.writeNode(nodeId, !!value, 'Boolean');
+    if (result && result.error) {
+        result = await opcUaManager.writeNode(nodeId, value ? 1 : 0, 'Int16');
+    }
+    return result;
+}
+
+async function syncGrossCategorySignals(machineId, category) {
+    if (!machineId || !category) return;
+    const opcStatus = opcUaManager.getStatus();
+    if (!opcStatus || !opcStatus.connected) return;
+
+    const cfg = opcUaManager.getConfig();
+    const nodes = Array.isArray(cfg.nodes) ? cfg.nodes : [];
+    const indicators = nodes.filter((n) => {
+        const signalType = (n.signalType || '').toString().trim().toUpperCase();
+        const nodeMachineId = parseInt(n.machineId, 10);
+        return nodeMachineId === machineId && ['GROSS_NORMAL', 'GROSS_UNDER', 'GROSS_OVER'].includes(signalType);
+    });
+
+    for (const node of indicators) {
+        if (!node.nodeId) continue;
+        const signalType = (node.signalType || '').toString().trim().toUpperCase();
+        const expectedValue =
+            (signalType === 'GROSS_NORMAL' && category === 'NORMAL') ||
+            (signalType === 'GROSS_UNDER' && category === 'UNDER') ||
+            (signalType === 'GROSS_OVER' && category === 'OVER');
+
+        try {
+            const writeRes = await writeBooleanToOpc(node.nodeId, expectedValue);
+            if (writeRes && writeRes.error) {
+                console.warn(`[OPC] Failed writing ${signalType} for CR${machineId}: ${writeRes.error}`);
+            }
+        } catch (err) {
+            console.warn(`[OPC] Failed writing ${signalType} for CR${machineId}: ${err.message}`);
+        }
+    }
+}
+
+async function syncMachineRunSignal(machineId, state) {
+    if (!machineId) return;
+    const isRun = String(state || '').toUpperCase() === 'RUN';
+    if (lastRunSignalByMachine[machineId] === isRun) return;
+
+    const opcStatus = opcUaManager.getStatus();
+    if (!opcStatus || !opcStatus.connected) return;
+
+    const cfg = opcUaManager.getConfig();
+    const nodes = Array.isArray(cfg.nodes) ? cfg.nodes : [];
+    const runNodes = nodes.filter((n) => {
+        const signalType = (n.signalType || '').toString().trim().toUpperCase();
+        const nodeMachineId = parseInt(n.machineId, 10);
+        return nodeMachineId === machineId && signalType === 'MACHINE_RUN';
+    });
+
+    for (const node of runNodes) {
+        if (!node.nodeId) continue;
+        try {
+            const writeRes = await writeBooleanToOpc(node.nodeId, isRun);
+            if (writeRes && writeRes.error) {
+                console.warn(`[OPC] Failed writing MACHINE_RUN for CR${machineId}: ${writeRes.error}`);
+            }
+        } catch (err) {
+            console.warn(`[OPC] Failed writing MACHINE_RUN for CR${machineId}: ${err.message}`);
+        }
+    }
+
+    lastRunSignalByMachine[machineId] = isRun;
+}
+
 // Subscribe to OPC Manager updates
 opcUaManager.subscribe('scada-controller', (event, data) => {
     if (event === 'opcua-value' && data && data.name) {
-        // Map CR1..CR5 to Carousel 1..5
-        const match = data.name.match(/^CR(\d+)$/);
-        if (match) {
-            const carouselId = parseInt(match[1]);
-            if (carousels[carouselId]) {
-                const val = parseFloat(data.value) / 100;
-                if (!isNaN(val)) {
-                    carousels[carouselId].data.lastGross = parseFloat(val.toFixed(2));
-                    // Calc Nett
-                    const packWeight = carousels[carouselId].data.packWeight || 0;
-                    carousels[carouselId].data.lastNett = parseFloat((val - packWeight).toFixed(2));
-                }
+        const mapping = resolveNodeMapping(data);
+        if (!mapping || !mapping.signalType) return;
+
+        const carouselId = mapping.machineId;
+        const carousel = carouselId ? carousels[carouselId] : null;
+
+        if (mapping.signalType === 'GROSS_WEIGHT') {
+            if (!carousel) return;
+            const rawVal = parseFloat(data.value);
+            if (isNaN(rawVal)) return;
+            const scaledVal = rawVal * mapping.scale;
+            carousel.data.lastGross = parseFloat(scaledVal.toFixed(2));
+            const packWeight = carousel.data.packWeight || 0;
+            carousel.data.lastNett = parseFloat((scaledVal - packWeight).toFixed(2));
+
+            const category = classifyGrossByTolerance(carouselId, scaledVal);
+            if (category && lastGrossCategoryByMachine[carouselId] !== category) {
+                lastGrossCategoryByMachine[carouselId] = category;
+                syncGrossCategorySignals(carouselId, category).catch((err) => {
+                    console.warn(`[OPC] syncGrossCategorySignals failed for CR${carouselId}: ${err.message}`);
+                });
             }
+            return;
         }
 
-        // Map S1..S5 (Sensors)
-        const matchSensor = data.name.match(/^S(\d+)$/);
-        if (matchSensor) {
-            const carouselId = parseInt(matchSensor[1]);
-            if (carousels[carouselId]) {
-                const newValue = !!data.value;
-                const oldValue = carousels[carouselId].data.sensorStatus;
+        if (mapping.signalType === 'PRODUCT_SENSOR') {
+            if (!carousel) return;
+            const newValue = toBoolean(data.value);
+            const oldValue = !!carousel.data.sensorStatus;
+            carousel.data.sensorStatus = newValue;
 
-                // Update status
-                carousels[carouselId].data.sensorStatus = newValue;
-
-                // RISING EDGE DETECTION (False -> True)
-                if (!oldValue && newValue) {
-                    console.log(`[OPC] Sensor Rising Edge for CR${carouselId}`);
-
-                    // CHECK LOGIC: Only write and increment counter if state is RUN
-                    if (carousels[carouselId].state === 'RUN') {
-                        // Increment counter
-                        carousels[carouselId].data.counter = (carousels[carouselId].data.counter || 0) + 1;
-                        console.log(`[OPC] CR${carouselId} counter incremented to ${carousels[carouselId].data.counter}`);
-
-                        // Use current data snapshot
-                        insertWeightData(carouselId, carousels[carouselId].data);
-                    } else {
-                        console.log(`[OPC] CR${carouselId} is ${carousels[carouselId].state}, skipping counter increment and SQL write.`);
-                    }
+            if (!oldValue && newValue) {
+                console.log(`[OPC] Sensor Rising Edge for CR${carouselId}`);
+                if (carousel.state === 'RUN') {
+                    carousel.data.counter = (carousel.data.counter || 0) + 1;
+                    console.log(`[OPC] CR${carouselId} counter incremented to ${carousel.data.counter}`);
+                    insertWeightData(carouselId, carousel.data);
+                } else {
+                    console.log(`[OPC] CR${carouselId} is ${carousel.state}, skipping counter increment and SQL write.`);
                 }
+            }
+            return;
+        }
+
+        if (mapping.signalType === 'CAROUSEL_INTERLOCK') {
+            if (!carousel) return;
+            carousel.data.interlockStatus = toBoolean(data.value);
+            return;
+        }
+
+        if (mapping.signalType === 'RESET') {
+            const resetActive = toBoolean(data.value);
+            if (!resetActive) return;
+            if (carousel) {
+                carousel.state = 'RESET';
+                carousel.data.counter = 0;
+                syncMachineRunSignal(carouselId, carousel.state).catch(() => { });
+            } else {
+                Object.values(carousels).forEach(c => {
+                    c.state = 'RESET';
+                    c.data.counter = 0;
+                    syncMachineRunSignal(c.id, c.state).catch(() => { });
+                });
             }
         }
     }
@@ -395,6 +578,9 @@ async function fetchCarouselConfig(showLoading = false) {
                     else if (st === 'STOP' || st === 'STOPPED' || st === '0' || st === '3') s = 'STOP';
 
                     carousels[carouselId].state = s;
+                    syncMachineRunSignal(carouselId, s).catch((err) => {
+                        console.warn(`[OPC] syncMachineRunSignal failed for CR${carouselId}: ${err.message}`);
+                    });
 
                     // Counter logic for STOP state
                     if (s === 'STOP') {
@@ -577,9 +763,10 @@ exports.resetErrorTag = async (req, res) => {
         const opcConfig = opcUaManager.getConfig();
         const nodes = Array.isArray(opcConfig.nodes) ? opcConfig.nodes : [];
         const resetNode = nodes.find((n) => {
+            const signalType = (n.signalType || '').toString().trim().toUpperCase();
             const name = (n.name || '').toString().trim().toUpperCase();
             const desc = (n.description || '').toString().trim().toUpperCase();
-            return name === 'RST' || desc === 'RESET ERROR';
+            return signalType === 'RESET' || name === 'RST' || desc === 'RESET ERROR';
         });
 
         if (!resetNode || !resetNode.nodeId) {
@@ -673,7 +860,12 @@ exports.controlCarousel = async (req, res) => {
             // Update local state immediately for responsiveness
             // Map directly since now state matches command
             const stateMap = { 'RUN': 'RUN', 'PAUSE': 'PAUSE', 'STOP': 'STOP', 'RESET': 'RESET' };
-            if (carousels[carouselId]) carousels[carouselId].state = stateMap[val];
+            if (carousels[carouselId]) {
+                carousels[carouselId].state = stateMap[val];
+                syncMachineRunSignal(carouselId, carousels[carouselId].state).catch((err) => {
+                    console.warn(`[OPC] syncMachineRunSignal failed for CR${carouselId}: ${err.message}`);
+                });
+            }
 
             res.json({ success: true, message: `Sent ${command} to DB` });
         } else {

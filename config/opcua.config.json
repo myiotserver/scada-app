@@ -11,57 +11,146 @@
         {
             "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.GR_CR01",
             "name": "CR1",
-            "description": "Gross weight CR1"
+            "description": "Gross weight CR1",
+            "machineId": 1,
+            "signalType": "GROSS_WEIGHT",
+            "scale": 0.01,
+            "enabled": true
         },
         {
             "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.GR_CR02",
             "name": "CR2",
-            "description": "Gross weight CR2"
+            "description": "Gross weight CR2",
+            "machineId": 2,
+            "signalType": "GROSS_WEIGHT",
+            "scale": 0.01,
+            "enabled": true
         },
         {
             "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.GR_CR03",
             "name": "CR3",
-            "description": "Gross weight CR3"
+            "description": "Gross weight CR3",
+            "machineId": 3,
+            "signalType": "GROSS_WEIGHT",
+            "scale": 0.01,
+            "enabled": true
         },
         {
             "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.GR_CR04",
             "name": "CR4",
-            "description": "Gross weight CR4"
+            "description": "Gross weight CR4",
+            "machineId": 4,
+            "signalType": "GROSS_WEIGHT",
+            "scale": 0.01,
+            "enabled": true
         },
         {
             "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.GR_CR05",
             "name": "CR5",
-            "description": "Gross weight CR5"
+            "description": "Gross weight CR5",
+            "machineId": 5,
+            "signalType": "GROSS_WEIGHT",
+            "scale": 0.01,
+            "enabled": true
         },
         {
             "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.SENSOR01",
             "name": "S1",
-            "description": "Product sensor CR1"
+            "description": "Product sensor CR1",
+            "machineId": 1,
+            "signalType": "PRODUCT_SENSOR",
+            "scale": 1,
+            "enabled": true
         },
         {
             "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.SENSOR02",
             "name": "S2",
-            "description": "Product sensor CR2"
+            "description": "Product sensor CR2",
+            "machineId": 2,
+            "signalType": "PRODUCT_SENSOR",
+            "scale": 1,
+            "enabled": true
         },
         {
             "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.SENSOR03",
             "name": "S3",
-            "description": "Product sensor CR3"
+            "description": "Product sensor CR3",
+            "machineId": 3,
+            "signalType": "PRODUCT_SENSOR",
+            "scale": 1,
+            "enabled": true
         },
         {
             "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.SENSOR04",
             "name": "S4",
-            "description": "Product sensor CR4"
+            "description": "Product sensor CR4",
+            "machineId": 4,
+            "signalType": "PRODUCT_SENSOR",
+            "scale": 1,
+            "enabled": true
         },
         {
             "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.SENSOR05",
             "name": "S5",
-            "description": "Product sensor CR5"
+            "description": "Product sensor CR5",
+            "machineId": 5,
+            "signalType": "PRODUCT_SENSOR",
+            "scale": 1,
+            "enabled": true
         },
         {
             "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.RESET",
             "name": "RST",
-            "description": "Reset error"
+            "description": "Reset error",
+            "machineId": null,
+            "signalType": "RESET",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.GR_NORMAL_CR01",
+            "name": "GR01_STATUS",
+            "description": "Gross weight NORMAL status CR1",
+            "machineId": 1,
+            "signalType": "GROSS_NORMAL",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.GR_NORMAL_CR02",
+            "name": "GR02_STATUS",
+            "description": "Gross weight NORMAL status CR2",
+            "machineId": 2,
+            "signalType": "GROSS_NORMAL",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.GR_NORMAL_CR03",
+            "name": "GR03_STATUS",
+            "description": "Gross weight NORMAL status CR3",
+            "machineId": 3,
+            "signalType": "GROSS_NORMAL",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.GR_NORMAL_CR04",
+            "name": "GR04_STATUS",
+            "description": "Gross weight status NORMAL CR4",
+            "machineId": 4,
+            "signalType": "GROSS_NORMAL",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.GR_NORMAL_CR05",
+            "name": "GR05_STATUS",
+            "description": "Gross weight NORMAL status CR5",
+            "machineId": 5,
+            "signalType": "GROSS_NORMAL",
+            "scale": 1,
+            "enabled": true
         }
     ]
 }

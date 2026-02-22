@@ -1341,6 +1341,79 @@ input:checked+.slider:before {
     font-size: 0.85rem;
 }
 
+/* Compact OPC connection panel so node panel gets more horizontal room */
+#view-opcua .opc-connection-panel {
+    flex: 0 0 35%;
+    max-width: 470px;
+}
+
+#view-opcua .opc-tags-panel {
+    flex: 1 1 65%;
+}
+
+#view-opcua .opc-connection-panel .panel-body {
+    padding: 14px;
+    gap: 10px;
+}
+
+#view-opcua .opc-connection-panel .form-row {
+    grid-template-columns: 100px 1fr;
+    gap: 8px;
+}
+
+#view-opcua .opc-connection-panel .form-row.opc-inline-row {
+    grid-template-columns: 100px minmax(130px, 1fr) 100px minmax(130px, 1fr);
+}
+
+#view-opcua .opc-connection-panel .form-row label {
+    font-size: 0.76rem;
+    text-align: right;
+}
+
+#view-opcua .opc-connection-panel .form-row input,
+#view-opcua .opc-connection-panel .form-row select {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+}
+
+#view-opcua .opc-connection-panel #opcua-security,
+#view-opcua .opc-connection-panel #opcua-policy {
+    max-width: 220px;
+}
+
+#view-opcua .opc-connection-panel #opcua-publish,
+#view-opcua .opc-connection-panel #opcua-sampling {
+    max-width: 110px;
+    text-align: center;
+}
+
+#view-opcua .opc-connection-panel .form-row.opc-inline-row #opcua-security,
+#view-opcua .opc-connection-panel .form-row.opc-inline-row #opcua-policy {
+    max-width: none;
+    width: 100%;
+}
+
+#view-opcua .opc-connection-panel .form-row.opc-inline-row #opcua-publish,
+#view-opcua .opc-connection-panel .form-row.opc-inline-row #opcua-sampling {
+    max-width: none;
+    width: 100%;
+    text-align: center;
+}
+
+#view-opcua .opc-connection-panel .opc-checkbox-row input[type="checkbox"] {
+    justify-self: start;
+}
+
+#view-opcua .opc-connection-panel .opc-btn-row {
+    margin-top: 6px !important;
+}
+
+#view-opcua .opc-connection-panel .btn-save,
+#view-opcua .opc-connection-panel #btn-opcua-connect,
+#view-opcua .opc-connection-panel #btn-opcua-disconnect {
+    padding: 8px 12px;
+}
+
 .opcua-badge {
     font-size: 0.6rem;
     font-weight: 700;
@@ -1393,6 +1466,53 @@ input:checked+.slider:before {
 
 .data-table td .btn-icon:hover {
     color: var(--accent-danger);
+}
+
+.signal-type-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    line-height: 1.1;
+}
+
+.signal-type-main {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.signal-type-category {
+    display: inline-flex;
+    width: fit-content;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    border: 1px solid transparent;
+}
+
+.signal-type-category.category-normal {
+    color: var(--accent-success);
+    background: rgba(34, 197, 94, 0.12);
+    border-color: rgba(34, 197, 94, 0.28);
+}
+
+.signal-type-category.category-under {
+    color: var(--accent-danger);
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.28);
+}
+
+.signal-type-category.category-over {
+    color: var(--accent-warning);
+    background: rgba(245, 158, 11, 0.14);
+    border-color: rgba(245, 158, 11, 0.28);
+}
+
+.signal-type-category.category-info {
+    color: var(--accent-blue-light);
+    background: rgba(59, 130, 246, 0.14);
+    border-color: rgba(96, 165, 250, 0.3);
 }
 
 .opcua-badge.connected {
@@ -1944,6 +2064,99 @@ input:checked+.slider:before {
     text-align: center;
 }
 
+.opcua-edit-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(3px);
+}
+
+.opcua-edit-dialog {
+    width: min(760px, 92vw);
+    max-height: calc(100vh - 40px);
+    overflow: auto;
+    background: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: var(--shadow-card);
+}
+
+.opcua-edit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.opcua-edit-header h3 {
+    margin: 0;
+}
+
+.opcua-edit-form {
+    display: grid;
+    gap: 12px;
+}
+
+.opcua-edit-field {
+    display: grid;
+    grid-template-columns: 120px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+}
+
+.opcua-edit-field label {
+    text-align: right;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.opcua-edit-field input,
+.opcua-edit-field select {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: var(--font-digital);
+    font-size: 0.95rem;
+}
+
+.opcua-edit-field input:focus,
+.opcua-edit-field select:focus {
+    border-color: var(--accent-primary);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 212, 170, 0.2);
+}
+
+.opcua-edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+    gap: 8px;
+}
+
+@media (max-width: 768px) {
+    .opcua-edit-field {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+
+    .opcua-edit-field label {
+        text-align: left;
+    }
+
+    #view-opcua .opc-connection-panel .form-row.opc-inline-row {
+        grid-template-columns: 100px 1fr;
+    }
+}
+
 #modal-status-text {
     margin-bottom: 24px;
     color: var(--text-secondary);
@@ -2218,5 +2431,11 @@ input:checked+.slider:before {
     .panel-body {
         overflow: visible;
         height: auto;
+    }
+
+    #view-opcua .opc-connection-panel,
+    #view-opcua .opc-tags-panel {
+        max-width: none;
+        flex: 0 0 auto;
     }
 }

@@ -187,45 +187,46 @@
                 <div id="view-opcua" class="view-section" style="display: none; padding: 20px; width: 100%; gap: 20px;">
 
                     <!-- Left: Connection Settings -->
-                    <div class="config-panel" style="flex: 1;">
+                    <div class="config-panel opc-connection-panel">
                         <div class="panel-header">🔌 OPC-UA Connection <span class="opcua-badge"
                                 id="opcua-status-badge">DISCONNECTED</span></div>
                         <div class="panel-body">
                             <div class="form-row">
                                 <label>Endpoint URL :</label>
                                 <input type="text" id="opcua-endpoint" placeholder="opc.tcp://192.168.21.1:4840"
-                                    spellcheck="false" style="flex: 2;">
+                                    spellcheck="false">
                             </div>
-                            <div class="form-row">
+                            <div class="form-row opc-inline-row">
                                 <label>Security :</label>
-                                <select id="opcua-security" style="flex: 1;">
+                                <select id="opcua-security">
                                     <option value="None">None</option>
                                     <option value="Sign">Sign</option>
                                     <option value="SignAndEncrypt">Sign & Encrypt</option>
                                 </select>
-                                <label style="margin-left: 10px;">Policy :</label>
-                                <select id="opcua-policy" style="flex: 1;">
+                                <label>Policy :</label>
+                                <select id="opcua-policy">
                                     <option value="Basic128Rsa15">Basic128Rsa15</option>
                                     <option value="Basic256">Basic256</option>
                                     <option value="Basic256Sha256">Basic256Sha256</option>
                                 </select>
                             </div>
-                            <div class="form-row">
+                            <div class="form-row opc-inline-row">
                                 <label>Publish (ms) :</label>
-                                <input type="number" id="opcua-publish" value="1000" min="100" style="width: 80px;">
-                                <label style="margin-left: 10px;">Sample (ms) :</label>
-                                <input type="number" id="opcua-sampling" value="500" min="100" style="width: 80px;">
+                                <input type="number" id="opcua-publish" value="1000" min="100">
+                                <label>Sample (ms) :</label>
+                                <input type="number" id="opcua-sampling" value="500" min="100">
                             </div>
                             <div class="form-row">
                                 <label>Username :</label>
-                                <input type="text" id="opcua-username" placeholder="(anonymous)" spellcheck="false"
-                                    style="flex: 1;">
-                                <label style="margin-left: 10px;">Password :</label>
-                                <input type="password" id="opcua-password" placeholder="••••••" style="flex: 1;">
+                                <input type="text" id="opcua-username" placeholder="(anonymous)" spellcheck="false">
                             </div>
-                            <div class="form-row" style="align-items: center;">
+                            <div class="form-row">
+                                <label>Password :</label>
+                                <input type="password" id="opcua-password" placeholder="••••••">
+                            </div>
+                            <div class="form-row opc-checkbox-row" style="align-items: center;">
                                 <label>Auto-Connect :</label>
-                                <input type="checkbox" id="opcua-autoconnect" style="width: auto; margin-right: auto;">
+                                <input type="checkbox" id="opcua-autoconnect" style="width: auto;">
                             </div>
                             <div class="opc-btn-row" style="display: flex; gap: 10px; margin-top: 10px;">
                                 <button class="btn-save" onclick="saveOpcUaConfig()">
@@ -248,7 +249,7 @@
                     </div>
 
                     <!-- Right: Node Mapping -->
-                    <div class="config-panel" style="flex: 1.2;">
+                    <div class="config-panel opc-tags-panel">
                         <div class="panel-header">📡 Monitored Nodes <span id="opcua-node-count"
                                 style="font-weight:normal; font-size:0.75rem; color:var(--text-muted);">0 nodes</span>
                         </div>
@@ -258,8 +259,28 @@
                                     spellcheck="false" style="flex: 2;">
                                 <input type="text" id="opcua-new-name" placeholder="Tag Name" spellcheck="false"
                                     style="flex: 1;">
+                                <select id="opcua-new-machine" style="width: 110px;">
+                                    <option value="">Global</option>
+                                    <option value="1">CR1</option>
+                                    <option value="2">CR2</option>
+                                    <option value="3">CR3</option>
+                                    <option value="4">CR4</option>
+                                    <option value="5">CR5</option>
+                                </select>
+                                <select id="opcua-new-signal" style="flex: 1;">
+                                    <option value="GROSS_WEIGHT">GROSS_WEIGHT</option>
+                                    <option value="PRODUCT_SENSOR">PRODUCT_SENSOR</option>
+                                    <option value="RESET">RESET</option>
+                                    <option value="CAROUSEL_INTERLOCK">CAROUSEL_INTERLOCK</option>
+                                    <option value="GROSS_NORMAL">GROSS_NORMAL</option>
+                                    <option value="GROSS_UNDER">GROSS_UNDER</option>
+                                    <option value="GROSS_OVER">GROSS_OVER</option>
+                                    <option value="MACHINE_RUN">MACHINE_RUN</option>
+                                </select>
+                                <input type="number" id="opcua-new-scale" placeholder="Scale" value="0.01" step="0.001"
+                                    style="width: 90px;">
                                 <input type="text" id="opcua-new-desc" placeholder="Description" spellcheck="false"
-                                    style="flex: 1;">
+                                    style="flex: 1.2;">
                                 <button class="btn-primary" style="width: auto;" onclick="addOpcUaNode()">+ ADD</button>
                             </div>
                             <div class="table-responsive">
@@ -269,6 +290,9 @@
                                             <th>#</th>
                                             <th>Node ID</th>
                                             <th>Name</th>
+                                            <th>Machine</th>
+                                            <th>Signal Type</th>
+                                            <th>Scale</th>
                                             <th>Description</th>
                                             <th>Live Value</th>
                                             <th>Action</th>
@@ -445,6 +469,60 @@
             </div>
         </div>
 
+        <!-- Edit OPC Node Modal -->
+        <div id="opcua-edit-modal" class="opcua-edit-modal" style="display:none;">
+            <div class="opcua-edit-dialog">
+                <div class="opcua-edit-header">
+                    <h3>Edit OPC Node</h3>
+                    <button class="btn-sm" onclick="closeOpcUaEditModal()">Close</button>
+                </div>
+                <div class="opcua-edit-form">
+                    <div class="opcua-edit-field">
+                        <label for="opcua-edit-nodeid">Node ID :</label>
+                        <input type="text" id="opcua-edit-nodeid" spellcheck="false">
+                    </div>
+                    <div class="opcua-edit-field">
+                        <label for="opcua-edit-name">Name :</label>
+                        <input type="text" id="opcua-edit-name" spellcheck="false">
+                    </div>
+                    <div class="opcua-edit-field">
+                        <label for="opcua-edit-machine">Machine :</label>
+                        <select id="opcua-edit-machine">
+                            <option value="">Global</option>
+                            <option value="1">CR1</option>
+                            <option value="2">CR2</option>
+                            <option value="3">CR3</option>
+                            <option value="4">CR4</option>
+                            <option value="5">CR5</option>
+                        </select>
+                    </div>
+                    <div class="opcua-edit-field">
+                        <label for="opcua-edit-signal">Signal :</label>
+                        <select id="opcua-edit-signal">
+                            <option value="GROSS_WEIGHT">GROSS_WEIGHT</option>
+                            <option value="PRODUCT_SENSOR">PRODUCT_SENSOR</option>
+                            <option value="RESET">RESET</option>
+                            <option value="CAROUSEL_INTERLOCK">CAROUSEL_INTERLOCK</option>
+                            <option value="GROSS_NORMAL">GROSS_NORMAL</option>
+                            <option value="GROSS_UNDER">GROSS_UNDER</option>
+                            <option value="GROSS_OVER">GROSS_OVER</option>
+                            <option value="MACHINE_RUN">MACHINE_RUN</option>
+                        </select>
+                    </div>
+                    <div class="opcua-edit-field">
+                        <label for="opcua-edit-scale">Scale :</label>
+                        <input type="number" id="opcua-edit-scale" step="0.001">
+                    </div>
+                    <div class="opcua-edit-field">
+                        <label for="opcua-edit-desc">Description :</label>
+                        <input type="text" id="opcua-edit-desc" spellcheck="false">
+                    </div>
+                </div>
+                <div class="opcua-edit-actions">
+                    <button class="btn-primary" style="width:auto;" onclick="saveOpcUaNodeEdit()">Save</button>
+                </div>
+            </div>
+        </div>
 
     </div>
 

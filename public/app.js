@@ -4,6 +4,7 @@
 
 let socket = null;
 let currentUser = null;
+let latestCarouselsSnapshot = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
@@ -157,10 +158,12 @@ function initApp() {
 
     socket.on('init', (data) => {
         console.log("Init Data", data);
+        latestCarouselsSnapshot = data;
         renderCarousels(data);
     });
 
     socket.on('carousel-update', (data) => {
+        latestCarouselsSnapshot = data;
         renderCarousels(data);
     });
 
@@ -185,6 +188,7 @@ function initApp() {
 
     // Load initial settings
     loadSettings();
+    initOpcUaFormDefaults();
 
     // Start SQL polling
     pollSqlStatus();
@@ -204,6 +208,25 @@ function initApp() {
             })
             .catch(err => console.error("Initial OPC status fetch failed", err));
     }
+}
+
+function initOpcUaFormDefaults() {
+    const signalEl = document.getElementById('opcua-new-signal');
+    const scaleEl = document.getElementById('opcua-new-scale');
+    if (!signalEl || !scaleEl || signalEl.dataset.bound === '1') return;
+
+    const applyScalePreset = () => {
+        if (signalEl.value === 'GROSS_WEIGHT' && (!scaleEl.value || scaleEl.value === '1')) {
+            scaleEl.value = '0.01';
+        }
+        if (signalEl.value !== 'GROSS_WEIGHT' && scaleEl.value === '0.01') {
+            scaleEl.value = '1';
+        }
+    };
+
+    signalEl.addEventListener('change', applyScalePreset);
+    signalEl.dataset.bound = '1';
+    applyScalePreset();
 }
 
 // --- Footer Logic ---
@@ -572,6 +595,7 @@ async function deleteUser(id) {
 }
 
 function renderCarousels(carousels) {
+    latestCarouselsSnapshot = carousels || latestCarouselsSnapshot;
     const container = document.getElementById('view-home');
     container.innerHTML = '';
 
@@ -772,8 +796,12 @@ function closeControlModal() {
 
 window.onclick = function (event) {
     const modal = document.getElementById('control-modal');
+    const opcEditModal = document.getElementById('opcua-edit-modal');
     if (event.target === modal) {
         closeControlModal();
+    }
+    if (event.target === opcEditModal) {
+        closeOpcUaEditModal();
     }
 }
 
@@ -867,6 +895,7 @@ async function triggerResetError() {
 
 let opcuaConfig = null;
 let opcuaLiveValues = {};
+let editingOpcuaIndex = null;
 
 async function loadOpcUaConfig() {
     try {
@@ -977,14 +1006,31 @@ async function addOpcUaNode() {
     const nodeId = document.getElementById('opcua-new-nodeid').value.trim();
     const name = document.getElementById('opcua-new-name').value.trim();
     const desc = document.getElementById('opcua-new-desc').value.trim();
+    const machineIdRaw = document.getElementById('opcua-new-machine').value;
+    const signalType = document.getElementById('opcua-new-signal').value;
+    const scaleRaw = document.getElementById('opcua-new-scale').value;
     if (!nodeId) { showOpcUaToast('Node ID required', 'error'); return; }
+
+    const machineId = machineIdRaw ? parseInt(machineIdRaw, 10) : null;
+    const scale = Number.isFinite(parseFloat(scaleRaw)) ? parseFloat(scaleRaw) : 1;
+    if (['GROSS_WEIGHT', 'PRODUCT_SENSOR', 'CAROUSEL_INTERLOCK', 'GROSS_NORMAL', 'GROSS_UNDER', 'GROSS_OVER', 'MACHINE_RUN'].includes(signalType) && !machineId) {
+        showOpcUaToast('Machine wajib dipilih untuk signal ini', 'error');
+        return;
+    }
 
     try {
         const token = currentUser.accessToken;
         const res = await fetch('/api/opcua/config/nodes', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-access-token': token },
-            body: JSON.stringify({ nodeId, name: name || nodeId, description: desc })
+            body: JSON.stringify({
+                nodeId,
+                name: name || nodeId,
+                description: desc,
+                machineId,
+                signalType,
+                scale
+            })
         });
         const data = await res.json();
         if (data.success) {
@@ -993,6 +1039,9 @@ async function addOpcUaNode() {
             document.getElementById('opcua-new-nodeid').value = '';
             document.getElementById('opcua-new-name').value = '';
             document.getElementById('opcua-new-desc').value = '';
+            document.getElementById('opcua-new-machine').value = '';
+            document.getElementById('opcua-new-signal').value = 'GROSS_WEIGHT';
+            document.getElementById('opcua-new-scale').value = '0.01';
             showOpcUaToast('Node added', 'success');
         } else {
             showOpcUaToast(data.error || 'Add failed', 'error');
@@ -1022,6 +1071,95 @@ async function removeOpcUaNode(index) {
     }
 }
 
+function openOpcUaEditModal(index) {
+    if (!opcuaConfig || !Array.isArray(opcuaConfig.nodes)) return;
+    const node = opcuaConfig.nodes[index];
+    if (!node) return;
+
+    editingOpcuaIndex = index;
+    document.getElementById('opcua-edit-nodeid').value = node.nodeId || '';
+    document.getElementById('opcua-edit-name').value = node.name || '';
+    document.getElementById('opcua-edit-machine').value = node.machineId ? String(node.machineId) : '';
+    document.getElementById('opcua-edit-signal').value = node.signalType || 'GROSS_WEIGHT';
+    document.getElementById('opcua-edit-scale').value = Number.isFinite(parseFloat(node.scale)) ? String(node.scale) : '1';
+    document.getElementById('opcua-edit-desc').value = node.description || '';
+
+    document.getElementById('opcua-edit-modal').style.display = 'flex';
+}
+
+function closeOpcUaEditModal() {
+    editingOpcuaIndex = null;
+    const modal = document.getElementById('opcua-edit-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+async function saveOpcUaNodeEdit() {
+    if (editingOpcuaIndex === null || editingOpcuaIndex === undefined) return;
+
+    const nodeId = document.getElementById('opcua-edit-nodeid').value.trim();
+    const name = document.getElementById('opcua-edit-name').value.trim();
+    const machineIdRaw = document.getElementById('opcua-edit-machine').value;
+    const signalType = document.getElementById('opcua-edit-signal').value;
+    const scaleRaw = document.getElementById('opcua-edit-scale').value;
+    const description = document.getElementById('opcua-edit-desc').value.trim();
+
+    if (!nodeId) {
+        showOpcUaToast('Node ID required', 'error');
+        return;
+    }
+
+    const machineId = machineIdRaw ? parseInt(machineIdRaw, 10) : null;
+    if (['GROSS_WEIGHT', 'PRODUCT_SENSOR', 'CAROUSEL_INTERLOCK', 'GROSS_NORMAL', 'GROSS_UNDER', 'GROSS_OVER', 'MACHINE_RUN'].includes(signalType) && !machineId) {
+        showOpcUaToast('Machine wajib dipilih untuk signal ini', 'error');
+        return;
+    }
+
+    const scale = Number.isFinite(parseFloat(scaleRaw)) ? parseFloat(scaleRaw) : 1;
+
+    try {
+        const token = currentUser.accessToken;
+        const res = await fetch(`/api/opcua/config/nodes/${editingOpcuaIndex}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'x-access-token': token },
+            body: JSON.stringify({
+                nodeId,
+                name: name || nodeId,
+                machineId,
+                signalType,
+                scale,
+                description
+            })
+        });
+
+        const raw = await res.text();
+        let data = null;
+        try {
+            data = raw ? JSON.parse(raw) : null;
+        } catch (parseErr) {
+            if (!res.ok) {
+                const msg = res.status === 404
+                    ? 'Endpoint update node belum tersedia. Restart backend lalu coba lagi.'
+                    : `Server returned non-JSON response (HTTP ${res.status})`;
+                showOpcUaToast(msg, 'error');
+                return;
+            }
+            throw parseErr;
+        }
+
+        if (res.ok && data && data.success) {
+            opcuaConfig.nodes = data.nodes;
+            renderOpcUaNodes();
+            closeOpcUaEditModal();
+            showOpcUaToast('Node updated', 'success');
+        } else {
+            showOpcUaToast((data && data.error) || `Update failed (HTTP ${res.status})`, 'error');
+        }
+    } catch (e) {
+        console.error('saveOpcUaNodeEdit failed:', e);
+        showOpcUaToast(`Update error: ${e.message}`, 'error');
+    }
+}
+
 function renderOpcUaNodes() {
     if (!opcuaConfig) return;
     const tbody = document.getElementById('opcua-nodes-body');
@@ -1029,23 +1167,79 @@ function renderOpcUaNodes() {
     document.getElementById('opcua-node-count').innerText = `${opcuaConfig.nodes.length} node${opcuaConfig.nodes.length !== 1 ? 's' : ''}`;
 
     if (opcuaConfig.nodes.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#999; padding:20px;">No nodes configured</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#999; padding:20px;">No nodes configured</td></tr>`;
         return;
     }
 
     opcuaConfig.nodes.forEach((node, idx) => {
         const liveVal = opcuaLiveValues[node.name];
+        const machineLabel = node.machineId ? `CR${node.machineId}` : 'Global';
+        const signalType = node.signalType || 'UNKNOWN';
+        const grossCategory = getGrossWeightCategory(node, liveVal);
+        const signalTypeHtml = formatSignalTypeCell(signalType, grossCategory);
+        const scale = Number.isFinite(parseFloat(node.scale)) ? parseFloat(node.scale) : 1;
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${idx + 1}</td>
             <td style="font-family: var(--font-digital); font-size: 0.8rem;">${node.nodeId}</td>
             <td style="font-weight: 600">${node.name}</td>
+            <td>${machineLabel}</td>
+            <td>${signalTypeHtml}</td>
+            <td>${scale}</td>
             <td>${node.description || '—'}</td>
             <td style="font-family: var(--font-digital)" id="opcua-live-${idx}">${liveVal ? liveVal.value : '—'}</td>
-            <td><button class="btn-sm btn-danger" onclick="removeOpcUaNode(${idx})">Delete</button></td>
+            <td>
+                <button class="btn-sm" onclick="openOpcUaEditModal(${idx})">Edit</button>
+                <button class="btn-sm btn-danger" onclick="removeOpcUaNode(${idx})">Delete</button>
+            </td>
         `;
         tbody.appendChild(tr);
     });
+}
+
+function getGrossWeightCategory(node, liveVal) {
+    if (!node || !liveVal) return '';
+    const signalType = (node.signalType || '').toString().trim().toUpperCase();
+    if (signalType !== 'GROSS_WEIGHT') return '';
+
+    const machineId = parseInt(node.machineId, 10);
+    if (!Number.isInteger(machineId) || machineId < 1 || machineId > 5) return 'NO_MACHINE';
+
+    const carousel = latestCarouselsSnapshot && latestCarouselsSnapshot[machineId];
+    if (!carousel || !carousel.data) return 'NO_DATA';
+
+    const toleranceMin = parseFloat(carousel.data.toleranceMin);
+    const toleranceMax = parseFloat(carousel.data.toleranceMax);
+    if (!Number.isFinite(toleranceMin) || !Number.isFinite(toleranceMax)) return 'NO_TOLERANCE';
+
+    const rawValue = parseFloat(liveVal.value);
+    if (!Number.isFinite(rawValue)) return 'NO_VALUE';
+
+    const scale = Number.isFinite(parseFloat(node.scale)) ? parseFloat(node.scale) : 1;
+    const grossValue = rawValue * scale;
+
+    if (grossValue < toleranceMin) return 'UNDER_MIN';
+    if (grossValue > toleranceMax) return 'OVER_MAX';
+    return 'NORMAL';
+}
+
+function formatSignalTypeCell(signalType, grossCategory) {
+    const safeSignalType = signalType || 'UNKNOWN';
+    if (!grossCategory) {
+        return `<span class="signal-type-main">${safeSignalType}</span>`;
+    }
+
+    const categoryClass =
+        grossCategory === 'NORMAL' ? 'category-normal' :
+            grossCategory === 'UNDER_MIN' ? 'category-under' :
+                grossCategory === 'OVER_MAX' ? 'category-over' : 'category-info';
+
+    return `
+        <div class="signal-type-cell">
+            <span class="signal-type-main">${safeSignalType}</span>
+            <span class="signal-type-category ${categoryClass}">${grossCategory}</span>
+        </div>
+    `;
 }
 
 function updateOpcUaStatusUI(status) {

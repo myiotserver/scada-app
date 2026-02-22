@@ -146,9 +146,23 @@ GRANT ALL PRIVILEGES ON DATABASE scada_db TO scada_user;
        "securityPolicy": "Basic256",
        "username": "OPCusername",
        "password": "OPCpassword",
-       // ... nodes configuration
+       "nodes": [
+           {
+               "nodeId": "ns=2;s=PLC.CR1.GROSS",
+               "name": "CR1_GROSS",
+               "machineId": 1,
+               "signalType": "GROSS_WEIGHT",
+               "scale": 0.01,
+               "enabled": true
+           }
+       ]
    }
    ```
+   - `machineId` saat ini fixed `1..5` (jumlah mesin tetap 5).
+   - `signalType` yang didukung: `GROSS_WEIGHT`, `PRODUCT_SENSOR`, `RESET`, `CAROUSEL_INTERLOCK`, `GROSS_NORMAL`, `GROSS_UNDER`, `GROSS_OVER`, `MACHINE_RUN`.
+   - `GROSS_NORMAL/GROSS_UNDER/GROSS_OVER` adalah output signal yang otomatis ditulis backend berdasarkan evaluasi nilai `GROSS_WEIGHT` terhadap `toleranceMin/toleranceMax` per carousel (untuk kebutuhan Light Tower/PLC logic).
+   - `MACHINE_RUN` adalah output signal boolean per carousel yang otomatis `true` saat state mesin `RUN`, dan `false` untuk state lain.
+   - Mapping tag OPC bisa dikonfigurasi dari menu OPC di UI tanpa ubah kode backend.
 
 4. **SCADA Settings** (`config/scada-settings.json`):
    ```json

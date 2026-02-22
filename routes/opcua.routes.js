@@ -57,4 +57,10 @@ module.exports = function (app) {
         [authJwt.verifyToken, authJwt.isAdmin],
         controller.removeNode
     );
+
+    app.put(
+        "/api/opcua/config/nodes/:index",
+        [authJwt.verifyToken, authJwt.isAdmin],
+        controller.updateNode
+    );
 };
