@@ -1013,7 +1013,7 @@ async function addOpcUaNode() {
 
     const machineId = machineIdRaw ? parseInt(machineIdRaw, 10) : null;
     const scale = Number.isFinite(parseFloat(scaleRaw)) ? parseFloat(scaleRaw) : 1;
-    if (['GROSS_WEIGHT', 'PRODUCT_SENSOR', 'CAROUSEL_INTERLOCK', 'GROSS_NORMAL', 'GROSS_UNDER', 'GROSS_OVER', 'MACHINE_RUN'].includes(signalType) && !machineId) {
+    if (['GROSS_WEIGHT', 'PRODUCT_SENSOR', 'CAROUSEL_INTERLOCK', 'GROSS_NORMAL', 'GROSS_UNDER', 'GROSS_OVER', 'MACHINE_RUN', 'ZEROING'].includes(signalType) && !machineId) {
         showOpcUaToast('Machine wajib dipilih untuk signal ini', 'error');
         return;
     }
@@ -1109,7 +1109,7 @@ async function saveOpcUaNodeEdit() {
     }
 
     const machineId = machineIdRaw ? parseInt(machineIdRaw, 10) : null;
-    if (['GROSS_WEIGHT', 'PRODUCT_SENSOR', 'CAROUSEL_INTERLOCK', 'GROSS_NORMAL', 'GROSS_UNDER', 'GROSS_OVER', 'MACHINE_RUN'].includes(signalType) && !machineId) {
+    if (['GROSS_WEIGHT', 'PRODUCT_SENSOR', 'CAROUSEL_INTERLOCK', 'GROSS_NORMAL', 'GROSS_UNDER', 'GROSS_OVER', 'MACHINE_RUN', 'ZEROING'].includes(signalType) && !machineId) {
         showOpcUaToast('Machine wajib dipilih untuk signal ini', 'error');
         return;
     }

@@ -169,6 +169,17 @@ const lastRunSignalByMachine = {
     4: null,
     5: null
 };
+const lastZeroingSignalByMachine = {
+    1: false,
+    2: false,
+    3: false,
+    4: false,
+    5: false
+};
+const zeroingTableColumnsCache = {
+    tableName: null,
+    columns: null
+};
 
 function notifySqlInsertFailure(payload) {
     const now = Date.now();
@@ -240,6 +251,122 @@ async function insertWeightData(carouselId, data) {
             message: `Gagal update ${appSettings.table_weight || 'WEIGHT_DATA'} untuk CR${carouselId}`,
             carousel: `CR${carouselId}`,
             table: appSettings.table_weight || 'WEIGHT_DATA',
+            reason: err.message
+        });
+    }
+}
+
+async function getZeroingTableColumns() {
+    if (!weighingPool) return [];
+    const tableName = (appSettings.table_zeroing || 'ZEROINGPLCDATA').toString();
+
+    if (zeroingTableColumnsCache.tableName === tableName && Array.isArray(zeroingTableColumnsCache.columns)) {
+        return zeroingTableColumnsCache.columns;
+    }
+
+    const schema = tableName.includes('.') ? tableName.split('.')[0].replace(/[[\]]/g, '') : 'dbo';
+    const bareTable = tableName.includes('.') ? tableName.split('.')[1].replace(/[[\]]/g, '') : tableName.replace(/[[\]]/g, '');
+
+    const result = await weighingPool.request()
+        .input('tableName', sql.NVarChar, bareTable)
+        .input('tableSchema', sql.NVarChar, schema)
+        .query(`
+            SELECT COLUMN_NAME
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_NAME = @tableName AND TABLE_SCHEMA = @tableSchema
+        `);
+
+    const columns = (result.recordset || []).map(r => String(r.COLUMN_NAME || '').toUpperCase()).filter(Boolean);
+    zeroingTableColumnsCache.tableName = tableName;
+    zeroingTableColumnsCache.columns = columns;
+    return columns;
+}
+
+async function insertZeroingData(carouselId) {
+    if (!weighingPool) {
+        console.warn(`[ZEROING] Skipping insert for CR${carouselId}: Database pool not ready.`);
+        return;
+    }
+
+    const carousel = carousels[carouselId];
+    if (!carousel || !carousel.data) {
+        console.warn(`[ZEROING] Skipping insert for CR${carouselId}: Carousel data not available.`);
+        return;
+    }
+
+    const gross = parseFloat(carousel.data.lastGross);
+    if (!Number.isFinite(gross)) {
+        console.warn(`[ZEROING] Skipping insert for CR${carouselId}: Invalid gross value.`);
+        return;
+    }
+
+    const tableName = appSettings.table_zeroing || 'ZEROINGPLCDATA';
+
+    try {
+        const columns = await getZeroingTableColumns();
+        if (!columns.length) {
+            console.warn(`[ZEROING] Skipping insert for CR${carouselId}: No columns found for table ${tableName}.`);
+            return;
+        }
+
+        const dataMap = {
+            CAROUSEL: `CR${carouselId}`,
+            GROSS_WEIGHT: parseFloat(gross.toFixed(2)),
+            ZERO_WEIGHT: parseFloat(gross.toFixed(2)),
+            PACKING_ORDER: carousel.data.packingOrder || null,
+            PRODUCT_ID: carousel.data.productId || null,
+            PRODUCT_NAME: carousel.data.productName || null,
+            PACKAGING_MATERIAL: carousel.data.packagingMaterial || null
+        };
+
+        const insertColumns = [];
+        const valueSql = [];
+        const request = weighingPool.request();
+
+        const timeColumn = columns.includes('TIMESTAMP')
+            ? 'TIMESTAMP'
+            : (columns.includes('CREATED_DATETIME') ? 'CREATED_DATETIME' : null);
+        if (timeColumn) {
+            insertColumns.push(`[${timeColumn}]`);
+            valueSql.push('GETDATE()');
+        }
+
+        const preferredColumns = ['CAROUSEL', 'ZERO_WEIGHT', 'GROSS_WEIGHT', 'PACKING_ORDER', 'PRODUCT_ID', 'PRODUCT_NAME', 'PACKAGING_MATERIAL'];
+        preferredColumns.forEach((col) => {
+            if (!columns.includes(col)) return;
+            const paramName = col.toLowerCase();
+            insertColumns.push(`[${col}]`);
+            valueSql.push(`@${paramName}`);
+
+            if (col === 'GROSS_WEIGHT') {
+                request.input(paramName, sql.Decimal(18, 2), dataMap[col]);
+            } else if (col === 'ZERO_WEIGHT') {
+                request.input(paramName, sql.Real, dataMap[col]);
+            } else {
+                request.input(paramName, sql.NVarChar, dataMap[col]);
+            }
+        });
+
+        // Require at least carousel + weight (ZERO_WEIGHT or GROSS_WEIGHT).
+        const hasCarousel = insertColumns.includes('[CAROUSEL]');
+        const hasWeight = insertColumns.includes('[ZERO_WEIGHT]') || insertColumns.includes('[GROSS_WEIGHT]');
+        if (!(hasCarousel && hasWeight)) {
+            console.warn(`[ZEROING] Skipping insert for CR${carouselId}: Table ${tableName} must contain CAROUSEL and ZERO_WEIGHT/GROSS_WEIGHT columns.`);
+            return;
+        }
+
+        await request.query(`
+            INSERT INTO ${tableName} (${insertColumns.join(', ')})
+            VALUES (${valueSql.join(', ')})
+        `);
+
+        console.log(`[ZEROING] Inserted CR${carouselId} gross=${gross.toFixed(2)} into ${tableName}`);
+    } catch (err) {
+        console.error(`[ZEROING] Failed insert for CR${carouselId}:`, err.message);
+        notifySqlInsertFailure({
+            message: `Gagal update ${tableName} untuk CR${carouselId}`,
+            carousel: `CR${carouselId}`,
+            table: tableName,
             reason: err.message
         });
     }
@@ -336,6 +463,15 @@ function resolveNodeMapping(data) {
         return {
             machineId: null,
             signalType: 'RESET',
+            scale: 1
+        };
+    }
+
+    const zeroingMatch = name.match(/^ZEROING_?([1-5])$/);
+    if (zeroingMatch) {
+        return {
+            machineId: parseInt(zeroingMatch[1], 10),
+            signalType: 'ZEROING',
             scale: 1
         };
     }
@@ -506,6 +642,23 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
                     c.data.counter = 0;
                     syncMachineRunSignal(c.id, c.state).catch(() => { });
                 });
+            }
+            return;
+        }
+
+        if (mapping.signalType === 'ZEROING') {
+            if (!carousel) return;
+            const zeroingActive = toBoolean(data.value);
+            const wasActive = !!lastZeroingSignalByMachine[carouselId];
+            lastZeroingSignalByMachine[carouselId] = zeroingActive;
+
+            // Rising edge + machine RUN -> insert current gross value into ZEROING table.
+            if (!wasActive && zeroingActive) {
+                if (carousel.state === 'RUN') {
+                    insertZeroingData(carouselId);
+                } else {
+                    console.log(`[ZEROING] CR${carouselId} zeroing active but state is ${carousel.state}, skipping insert.`);
+                }
             }
         }
     }

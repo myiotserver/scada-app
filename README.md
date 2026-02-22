@@ -159,9 +159,10 @@ GRANT ALL PRIVILEGES ON DATABASE scada_db TO scada_user;
    }
    ```
    - `machineId` saat ini fixed `1..5` (jumlah mesin tetap 5).
-   - `signalType` yang didukung: `GROSS_WEIGHT`, `PRODUCT_SENSOR`, `RESET`, `CAROUSEL_INTERLOCK`, `GROSS_NORMAL`, `GROSS_UNDER`, `GROSS_OVER`, `MACHINE_RUN`.
+   - `signalType` yang didukung: `GROSS_WEIGHT`, `PRODUCT_SENSOR`, `RESET`, `CAROUSEL_INTERLOCK`, `GROSS_NORMAL`, `GROSS_UNDER`, `GROSS_OVER`, `MACHINE_RUN`, `ZEROING`.
    - `GROSS_NORMAL/GROSS_UNDER/GROSS_OVER` adalah output signal yang otomatis ditulis backend berdasarkan evaluasi nilai `GROSS_WEIGHT` terhadap `toleranceMin/toleranceMax` per carousel (untuk kebutuhan Light Tower/PLC logic).
    - `MACHINE_RUN` adalah output signal boolean per carousel yang otomatis `true` saat state mesin `RUN`, dan `false` untuk state lain.
+   - `ZEROING` adalah input trigger per carousel. Saat `ZEROING` ON (rising edge) dan mesin dalam state `RUN`, backend akan menyimpan nilai `GROSS_WEIGHT` terbaru ke tabel zeroing (`table_zeroing`) menggunakan kolom berat yang tersedia (`ZERO_WEIGHT` atau `GROSS_WEIGHT`).
    - Mapping tag OPC bisa dikonfigurasi dari menu OPC di UI tanpa ubah kode backend.
 
 4. **SCADA Settings** (`config/scada-settings.json`):
