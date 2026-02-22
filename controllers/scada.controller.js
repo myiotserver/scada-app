@@ -154,6 +154,14 @@ const lastGrossCategoryByMachine = {
     4: null,
     5: null
 };
+const lastGrossCategorySyncTs = {
+    1: 0,
+    2: 0,
+    3: 0,
+    4: 0,
+    5: 0
+};
+const GROSS_SIGNAL_RESYNC_MS = 5000;
 const lastRunSignalByMachine = {
     1: null,
     2: null,
@@ -385,6 +393,8 @@ async function syncGrossCategorySignals(machineId, category) {
             console.warn(`[OPC] Failed writing ${signalType} for CR${machineId}: ${err.message}`);
         }
     }
+
+    lastGrossCategorySyncTs[machineId] = Date.now();
 }
 
 async function syncMachineRunSignal(machineId, state) {
@@ -420,6 +430,16 @@ async function syncMachineRunSignal(machineId, state) {
 
 // Subscribe to OPC Manager updates
 opcUaManager.subscribe('scada-controller', (event, data) => {
+    if (event === 'opcua-status' && data && data.connected) {
+        // Force re-sync after reconnect so PLC outputs don't stay stale.
+        for (let i = 1; i <= 5; i++) {
+            lastGrossCategoryByMachine[i] = null;
+            lastGrossCategorySyncTs[i] = 0;
+            lastRunSignalByMachine[i] = null;
+        }
+        return;
+    }
+
     if (event === 'opcua-value' && data && data.name) {
         const mapping = resolveNodeMapping(data);
         if (!mapping || !mapping.signalType) return;
@@ -437,7 +457,9 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
             carousel.data.lastNett = parseFloat((scaledVal - packWeight).toFixed(2));
 
             const category = classifyGrossByTolerance(carouselId, scaledVal);
-            if (category && lastGrossCategoryByMachine[carouselId] !== category) {
+            const now = Date.now();
+            const mustResync = (now - (lastGrossCategorySyncTs[carouselId] || 0)) >= GROSS_SIGNAL_RESYNC_MS;
+            if (category && (lastGrossCategoryByMachine[carouselId] !== category || mustResync)) {
                 lastGrossCategoryByMachine[carouselId] = category;
                 syncGrossCategorySignals(carouselId, category).catch((err) => {
                     console.warn(`[OPC] syncGrossCategorySignals failed for CR${carouselId}: ${err.message}`);
