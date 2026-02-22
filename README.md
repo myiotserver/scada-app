@@ -189,11 +189,62 @@ MSSQL_PASSWORD=optional_override_password
 MSSQL_SERVER=optional_override_server
 MSSQL_DATABASE=optional_override_database
 MSSQL_PORT=1433
+ENABLE_FALLBACK_SIMULATION=false
+```
+
+Contoh set env sementara di Windows:
+
+Command Prompt (`cmd`):
+```cmd
+set ENABLE_FALLBACK_SIMULATION=true
+npm start
+```
+
+PowerShell:
+```powershell
+$env:ENABLE_FALLBACK_SIMULATION="true"
+npm start
+```
+
+Kembalikan ke default (tanpa simulasi):
+
+Command Prompt (`cmd`):
+```cmd
+set ENABLE_FALLBACK_SIMULATION=false
+```
+
+PowerShell:
+```powershell
+$env:ENABLE_FALLBACK_SIMULATION="false"
 ```
 
 ## Menjalankan Aplikasi
 
 Aplikasi akan berjalan di `http://localhost:3001`
+
+### Quick Start (Windows)
+
+Untuk operasional harian di Windows, gunakan script `.bat` bawaan:
+
+```cmd
+start_scada.bat
+```
+
+Script ini akan:
+- cek/install dependency jika `node_modules` belum ada
+- jalankan `seed-admin.js` (PostgreSQL auth)
+- start aplikasi dengan `npm start`
+
+Alternatif production (service style + auto restart):
+
+```cmd
+start_scada_pm2.bat
+```
+
+Catatan perilaku startup terbaru:
+- Saat startup, backend melakukan read konfigurasi dari SQL (`table_main`) dan load counter terakhir dari `table_weight`.
+- Tidak ada write simulasi otomatis ke `WEIGHT_DATA` pada mode default.
+- Simulasi fallback hanya aktif jika `ENABLE_FALLBACK_SIMULATION=true`.
 
 ### Production Mode (Linux Server)
 
@@ -213,6 +264,38 @@ pm2 restart scada-app     # Merestart aplikasi
 pm2 stop scada-app        # Menghentikan aplikasi
 pm2 save                  # Simpan daftar aplikasi agar auto-start saat reboot
 ```
+
+### Production Mode (Windows + PM2)
+
+Gunakan script bawaan agar service lebih stabil (auto-restart saat crash) dan mudah dikelola.
+
+1. Jalankan starter PM2:
+   ```cmd
+   start_scada_pm2.bat
+   ```
+   Script ini akan:
+   - install dependency jika `node_modules` belum ada/kosong
+   - install PM2 global jika belum tersedia
+   - jalankan `seed-admin.js`
+   - start/restart `scada-app` via `ecosystem.config.js`
+   - simpan state PM2 (`pm2 save`)
+
+2. Cek status dan log:
+   ```cmd
+   pm2 status scada-app
+   pm2 logs scada-app
+   ```
+
+3. Stop service:
+   ```cmd
+   stop_scada_pm2.bat
+   ```
+
+4. (Opsional) Auto-restore saat Windows login:
+   ```cmd
+   setup_pm2_startup_windows.bat
+   ```
+   Ini membuat Task Scheduler `SCADA_PM2_RESURRECT` yang menjalankan `pm2 resurrect` saat login.
 
 ## Penggunaan
 

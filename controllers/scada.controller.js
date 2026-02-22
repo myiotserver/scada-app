@@ -48,7 +48,7 @@ let carousels = {
     1: {
         id: 1,
         name: 'Carousel 1',
-        state: 'RUN',
+        state: 'STOP',
         data: {
             productId: 'PROD001',
             productName: 'Flour 1kg',
@@ -67,7 +67,7 @@ let carousels = {
     2: {
         id: 2,
         name: 'Carousel 2',
-        state: 'STOP',
+        state: 'StOP',
         data: {
             productId: 'PROD002',
             productName: 'Flour 2kg',
@@ -105,7 +105,7 @@ let carousels = {
     4: {
         id: 4,
         name: 'Carousel 4',
-        state: 'RUN',
+        state: 'STOP',
         data: {
             productId: 'PROD004',
             productName: 'Flour 1kg Premium',
@@ -679,8 +679,13 @@ dataAggregator.onUpdate = (stats) => {
 dataAggregator.start();
 
 
-// Start fast simulation loop (100ms) - Fallback if no OPC
-setInterval(simulateLiveValues, 100);
+// Fallback simulation is disabled by default to avoid synthetic WEIGHT_DATA inserts on startup.
+// Set ENABLE_FALLBACK_SIMULATION=true to re-enable for demo/testing.
+const ENABLE_FALLBACK_SIMULATION = process.env.ENABLE_FALLBACK_SIMULATION === 'true';
+if (ENABLE_FALLBACK_SIMULATION) {
+    // Start fast simulation loop (100ms) - Fallback if no OPC
+    setInterval(simulateLiveValues, 100);
+}
 
 exports.reloadSettings = () => {
     console.log("Reloading Settings...");
