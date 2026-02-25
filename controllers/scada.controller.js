@@ -385,8 +385,8 @@ dataAggregator.onUpdate = (stats) => {
 dataAggregator.start();
 
 
-// Start fast simulation loop (100ms) - Fallback if no OPC
-setInterval(simulateLiveValues, 100);
+// Fallback simulation DISABLED — no fake data when OPC is offline
+// setInterval(simulateLiveValues, 100);
 
 exports.reloadSettings = () => {
     logger.info('SYSTEM', 'Reloading Settings...');
@@ -404,15 +404,11 @@ async function fetchCarouselConfig(showLoading = false) {
     if (!weighingPool) return;
 
     if (showLoading) {
-        // Notify subscribers that loading started
         listeners.forEach(callback => callback({ type: 'config-loading', loading: true }));
     }
 
     try {
         const tableName = appSettings.table_main || 'PRESET_TABLE';
-        // Quiet polling — only log on first fetch or errors
-
-        // Use raw SQL with table name - mssql supports this
         const query = `
             SELECT * FROM (
                 SELECT *, ROW_NUMBER() OVER (PARTITION BY CAROUSEL ORDER BY CREATED_DATETIME DESC) as rn
@@ -431,9 +427,8 @@ async function fetchCarouselConfig(showLoading = false) {
         result.recordset.forEach(row => {
             const carouselId = row.CAROUSEL;
             if (carousels[carouselId]) {
-                // Update Static/Config Data
                 carousels[carouselId].data = {
-                    ...carousels[carouselId].data, // Keep existing live values
+                    ...carousels[carouselId].data,
                     productId: row.PRODUCT_ID,
                     productName: row.PRODUCT_NAME,
                     packingOrder: row.PACKING_ORDER,
@@ -444,10 +439,8 @@ async function fetchCarouselConfig(showLoading = false) {
                     packWeight: row.PACKAGING_WEIGHT,
                 };
 
-                // Map DB State (Strings: RUN, PAUSE, STOP)
                 const dbState = row.MACHINE_STATE;
                 if (dbState !== undefined && dbState !== null) {
-                    // Normalize state
                     let s = 'STOP';
                     const st = String(dbState).toUpperCase().trim();
 
@@ -457,19 +450,17 @@ async function fetchCarouselConfig(showLoading = false) {
 
                     carousels[carouselId].state = s;
 
-                    // Counter logic for STOP state
                     if (s === 'STOP') {
                         const cData = carousels[carouselId].data;
                         if ((cData.counter || 0) >= (cData.target || 0)) {
                             cData.counter = 0;
-                            // console.log(`[POLL] CR${carouselId} counter reset due to STOP state`);
                         }
                     }
                 }
             }
         });
 
-        // --- Fetch Last Counter Values based on Packing Order ---
+        // Fetch Last Counter Values based on Packing Order
         const weightTable = appSettings.table_weight || 'WEIGHT_DATA';
         const poQueries = result.recordset.map(async (row) => {
             const carouselId = row.CAROUSEL;
@@ -500,51 +491,10 @@ async function fetchCarouselConfig(showLoading = false) {
         logger.error('SQL', `Error fetching Carousel Config: ${err.message}`);
     } finally {
         if (showLoading) {
-            // Notify subscribers that loading ended
             listeners.forEach(callback => callback({ type: 'config-loading', loading: false }));
         }
     }
 }
-
-function simulateLiveValues() {
-
-    Object.values(carousels).forEach(c => {
-        if (!c.data.productId) return;
-
-        // If OPC is connected, we might still want to simulate "Counter" if OPC doesn't provide it
-        // valid check: if (opcUaManager.connected) ...
-
-        const isRunning = [3, 4].includes(c.id);
-
-        // Simulation for Demo purposes (populate charts/counters)
-        // NOTE: This is ONLY for visual dashboard simulation when OPC is offline.
-        // SQL inserts are NEVER done from here — only from real OPC sensor rising edge detection.
-        if (isRunning && !opcUaManager.connected) {
-
-            // Counter Increment (approx 1 per 2-5 seconds)
-            if (Math.random() < 0.05) {
-                c.data.counter = (c.data.counter || 0) + 1;
-                if (c.data.counter > c.data.target) c.data.counter = 0; // Reset loop
-
-                // Update Weight on new pack (visual only)
-                const target = 25.1;
-                const noise = (Math.random() - 0.5) * 0.1; // +/- 0.05
-
-                c.data.lastNett = parseFloat((target + noise).toFixed(2));
-                c.data.lastGross = parseFloat((c.data.lastNett + (c.data.packWeight || 0.08)).toFixed(2));
-
-                // NO SQL INSERT HERE — inserts only happen from real OPC sensor data
-
-                // Recalc Average (Simple moving average simulation - for immediate feedback)
-                // This will be overwritten by Aggregator's SQL query results eventually
-                const currentAvg = c.data.average || target;
-                c.data.average = parseFloat(((currentAvg * 9 + c.data.lastNett) / 10).toFixed(2));
-            }
-        }
-    });
-}
-
-// Subscription logic for Socket.IO
 const listeners = new Map();
 
 exports.subscribe = (id, callback) => {
