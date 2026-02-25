@@ -10,7 +10,7 @@
     "interlocks": {
         "carousel1": false,
         "carousel2": false,
-        "carousel3": true,
+        "carousel3": false,
         "carousel4": false,
         "carousel5": false
     }

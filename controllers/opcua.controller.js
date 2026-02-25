@@ -1,5 +1,22 @@
 const opcuaManager = require('../utils/opcua.manager');
 
+function requiresMachineId(signalType) {
+    return ['GROSS_WEIGHT', 'PRODUCT_SENSOR', 'CAROUSEL_INTERLOCK', 'GROSS_NORMAL', 'GROSS_UNDER', 'GROSS_OVER', 'MACHINE_RUN', 'ZEROING'].includes(
+        (signalType || '').toString().trim().toUpperCase()
+    );
+}
+
+function validateNodePayload(body) {
+    const signalType = (body.signalType || '').toString().trim().toUpperCase();
+    if (signalType && requiresMachineId(signalType)) {
+        const machineId = parseInt(body.machineId, 10);
+        if (!Number.isInteger(machineId) || machineId < 1 || machineId > 5) {
+            return `machineId wajib diisi 1..5 untuk signalType ${signalType}`;
+        }
+    }
+    return null;
+}
+
 exports.getConfig = (req, res) => {
     res.json(opcuaManager.getConfig());
 };
@@ -30,15 +47,31 @@ exports.browse = async (req, res) => {
 };
 
 exports.addNode = (req, res) => {
-    const { nodeId, name, description } = req.body;
+    const { nodeId, name, description, machineId, signalType, scale, enabled } = req.body;
     if (!nodeId) return res.status(400).json({ error: 'nodeId is required' });
-    const result = opcuaManager.addNode(nodeId, name, description);
+    const validationError = validateNodePayload(req.body || {});
+    if (validationError) return res.status(400).json({ error: validationError });
+    const result = opcuaManager.addNode(nodeId, name, description, machineId, signalType, scale, enabled);
+    if (result.error) return res.status(400).json(result);
     res.json(result);
 };
 
 exports.removeNode = (req, res) => {
     const index = parseInt(req.params.index);
     const result = opcuaManager.removeNode(index);
+    if (result.error) return res.status(400).json(result);
+    res.json(result);
+};
+
+exports.updateNode = (req, res) => {
+    const index = parseInt(req.params.index, 10);
+    if (!Number.isInteger(index)) return res.status(400).json({ error: 'Invalid index' });
+
+    const validationError = validateNodePayload(req.body || {});
+    if (validationError) return res.status(400).json({ error: validationError });
+
+    const result = opcuaManager.updateNode(index, req.body || {});
+    if (result.error) return res.status(400).json(result);
     res.json(result);
 };
 

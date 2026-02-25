@@ -1,7 +1,7 @@
 module.exports = {
     HOST: "localhost",
     USER: "scada_user",
-    PASSWORD: "secure_password",
+    PASSWORD: "12345678",
     DB: "scada_db",
     dialect: "postgres",
     pool: {
