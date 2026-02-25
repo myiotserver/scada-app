@@ -1,19 +1,9 @@
 const sql = require('mssql');
-
-const config = {
-    user: 'sa',
-    password: 'VPS@thinkcentre',
-    server: 'columba.s-net.id',
-    database: 'WEIGHER',
-    port: 1433,
-    options: {
-        encrypt: false,
-        trustServerCertificate: true
-    }
-};
+const dbConfig = require('./config/db.config.mssql');
 
 async function createTable() {
     try {
+        const config = dbConfig.getConfig ? dbConfig.getConfig() : dbConfig;
         let pool = await sql.connect(config);
 
         const query = `

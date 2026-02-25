@@ -5,6 +5,7 @@ const http = require('http');
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
+const logger = require('./utils/logger');
 
 // Parse requests of content-type - application/json
 app.use(express.json());
@@ -54,29 +55,52 @@ const opcuaManager = require("./utils/opcua.manager");
 const scadaSim = scadaController.scadaSim;
 
 io.on('connection', (socket) => {
-    console.log('User connected to SCADA dashboard');
+    logger.info('SYSTEM', `User connected to SCADA dashboard (${socket.id})`);
 
     // Send initial state
     socket.emit('init', scadaController.getSnapshot());
 
-    // Subscribe this socket to simulator updates
+    // Subscribe this socket to simulator/config updates
     const subscriptionId = `socket-${socket.id}`;
-    scadaController.subscribe(subscriptionId, (updates) => {
-        socket.emit('carousel-update', updates);
+    scadaController.subscribe(subscriptionId, (data) => {
+        if (data.type === 'config-loading') {
+            socket.emit('config-loading', data.loading);
+        } else {
+            socket.emit('carousel-update', data);
+        }
+    });
+
+    const alertSubscriptionId = `alert-${socket.id}`;
+    scadaController.subscribeAlerts(alertSubscriptionId, (alertData) => {
+        socket.emit('scada-alert', alertData);
     });
 
     // Subscribe to OPC-UA events
     const opcuaSubId = `opcua-${socket.id}`;
     opcuaManager.subscribe(opcuaSubId, (event, data) => {
-        // console.log(`[Socket] Emitting ${event} to ${socket.id}`, data.name);
         socket.emit(event, data);
     });
     socket.emit('opcua-status', opcuaManager.getStatus());
 
+    // Subscribe to SQL status changes
+    const sqlSubId = `sql-${socket.id}`;
+    scadaController.subscribeSqlStatus(sqlSubId, (status) => {
+        socket.emit('sql-status', status);
+    });
+
+    // Subscribe to system logs (real-time)
+    const logSubId = `log-${socket.id}`;
+    logger.subscribe(logSubId, (entry) => {
+        socket.emit('system-log', entry);
+    });
+
     socket.on('disconnect', () => {
-        console.log('User disconnected');
+        logger.info('SYSTEM', `User disconnected (${socket.id})`);
         scadaController.unsubscribe(subscriptionId);
+        scadaController.unsubscribeAlerts(alertSubscriptionId);
         opcuaManager.unsubscribe(opcuaSubId);
+        scadaController.unsubscribeSqlStatus(sqlSubId);
+        logger.unsubscribe(logSubId);
     });
 });
 
@@ -86,14 +110,22 @@ app.post('/api/opcua/disconnect', async (req, res) => res.json(await opcuaManage
 
 // Settings & Control
 app.get('/api/settings', (req, res) => {
-    // ... setting get logic ...
     res.json(require('./config/scada-settings.json'));
 });
 app.get('/api/sql/status', scadaController.getSqlStatus);
 app.post('/api/control', scadaController.controlCarousel);
+app.post('/api/control/reset-error', scadaController.resetErrorTag);
+
+// System Logs API
+app.get('/api/logs', (req, res) => {
+    const filters = {};
+    if (req.query.level) filters.level = req.query.level;
+    if (req.query.source) filters.source = req.query.source;
+    res.json(logger.getHistory(filters));
+});
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
-    console.log(`listening on *:${PORT}`);
+    logger.info('SYSTEM', `Server listening on port ${PORT}`);
     opcuaManager.autoConnect();
 });

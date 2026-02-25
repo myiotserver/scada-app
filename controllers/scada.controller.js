@@ -4,34 +4,29 @@ const path = require('path');
 const settingsPath = path.join(__dirname, '../config/scada-settings.json');
 const opcUaManager = require('../utils/opcua.manager');
 const dataAggregator = require('../utils/data.aggregator');
+const logger = require('../utils/logger');
 
 // Memory for settings
 let appSettings = {};
 try {
     if (fs.existsSync(settingsPath)) {
         appSettings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
-        console.log('[INIT] Settings loaded:', {
-            sql_server: appSettings.sql_server,
-            sql_db: appSettings.sql_db,
-            table_main: appSettings.table_main,
-            table_weight: appSettings.table_weight,
-            table_zeroing: appSettings.table_zeroing
-        });
+        logger.info('SYSTEM', `Settings loaded: server=${appSettings.sql_server}, db=${appSettings.sql_db}`);
     }
 } catch (e) {
-    console.error("Error loading settings:", e);
+    logger.error('SYSTEM', `Error loading settings: ${e.message}`);
 }
 
 // Helper to construct MSSQL config from settings
 function getMssqlConfig() {
     return {
-        user: appSettings.sql_uid || 'sa',
-        password: appSettings.sql_pass || 'VPS@thinkcentre',
-        server: appSettings.sql_server || 'columba.s-net.id',
-        database: appSettings.sql_db || 'WEIGHING',
+        user: appSettings.sql_uid || '',
+        password: appSettings.sql_pass || '',
+        server: appSettings.sql_server || '',
+        database: appSettings.sql_db || '',
         port: 1433,
         options: {
-            encrypt: false,
+            encrypt: true,
             trustServerCertificate: true,
             enableArithAbort: true
         },
@@ -45,10 +40,10 @@ function getMssqlConfig() {
 
 // In-memory state for the Carousels (1-5)
 let carousels = {
-    1: { 
-        id: 1, 
-        name: 'Carousel 1', 
-        state: 'RUN', 
+    1: {
+        id: 1,
+        name: 'Carousel 1',
+        state: 'RUN',
         data: {
             productId: 'PROD001',
             productName: 'Flour 1kg',
@@ -62,12 +57,12 @@ let carousels = {
             lastGross: 0,
             lastNett: 0,
             average: 0
-        } 
+        }
     },
-    2: { 
-        id: 2, 
-        name: 'Carousel 2', 
-        state: 'STOP', 
+    2: {
+        id: 2,
+        name: 'Carousel 2',
+        state: 'STOP',
         data: {
             productId: 'PROD002',
             productName: 'Flour 2kg',
@@ -81,12 +76,12 @@ let carousels = {
             lastGross: 0,
             lastNett: 0,
             average: 0
-        } 
+        }
     },
-    3: { 
-        id: 3, 
-        name: 'Carousel 3', 
-        state: 'STOP', 
+    3: {
+        id: 3,
+        name: 'Carousel 3',
+        state: 'STOP',
         data: {
             productId: 'PROD003',
             productName: 'Flour 5kg',
@@ -100,12 +95,12 @@ let carousels = {
             lastGross: 0,
             lastNett: 0,
             average: 0
-        } 
+        }
     },
-    4: { 
-        id: 4, 
-        name: 'Carousel 4', 
-        state: 'RUN', 
+    4: {
+        id: 4,
+        name: 'Carousel 4',
+        state: 'RUN',
         data: {
             productId: 'PROD004',
             productName: 'Flour 1kg Premium',
@@ -119,12 +114,12 @@ let carousels = {
             lastGross: 0,
             lastNett: 0,
             average: 0
-        } 
+        }
     },
-    5: { 
-        id: 5, 
-        name: 'Carousel 5', 
-        state: 'STOP', 
+    5: {
+        id: 5,
+        name: 'Carousel 5',
+        state: 'STOP',
         data: {
             productId: 'PROD005',
             productName: 'Flour 10kg',
@@ -138,21 +133,63 @@ let carousels = {
             lastGross: 0,
             lastNett: 0,
             average: 0
-        } 
+        }
     }
 };
 
 let weighingPool = null;
 let pollingInterval = null;
+let sqlHealthTimer = null;
+let sqlReconnectTimer = null;
+let sqlReconnectAttempt = 0;
+const SQL_RECONNECT_DELAYS = [5000, 10000, 20000, 30000];
+const SQL_HEALTH_CHECK_INTERVAL = 30000; // 30 seconds
+const sqlStatusListeners = new Map();
+const alertListeners = new Map();
+const lastSqlInsertAlertTs = new Map();
+const SQL_ALERT_DEBOUNCE_MS = 8000;
+
+function emitSqlStatus() {
+    const connected = weighingPool && weighingPool.connected;
+    const status = {
+        connected: !!connected,
+        server: appSettings.sql_server,
+        database: appSettings.sql_db
+    };
+    sqlStatusListeners.forEach(cb => {
+        try { cb(status); } catch (e) { }
+    });
+}
+
+function notifySqlInsertFailure(payload) {
+    const now = Date.now();
+    const key = payload && payload.carousel ? String(payload.carousel) : 'GLOBAL';
+    const lastTs = lastSqlInsertAlertTs.get(key) || 0;
+    if (now - lastTs < SQL_ALERT_DEBOUNCE_MS) return;
+    lastSqlInsertAlertTs.set(key, now);
+
+    alertListeners.forEach(cb => {
+        try {
+            cb({
+                type: 'sql_insert_failed',
+                level: 'error',
+                ...payload,
+                ts: new Date().toISOString()
+            });
+        } catch (err) {
+            console.error('[Alert] Failed to deliver SQL alert:', err.message);
+        }
+    });
+}
 
 // Helper to insert weight data into SQL
 async function insertWeightData(carouselId, data) {
     if (!weighingPool) {
-        console.warn(`[SQL] Skipping insert for CR${carouselId}: Database pool not ready.`);
+        logger.warn('SQL', `Skipping insert for CR${carouselId}: Database pool not ready.`);
         return;
     }
     if (!data.productId) {
-        console.warn(`[SQL] Skipping insert for CR${carouselId}: No Product ID defined in configuration.`);
+        logger.warn('SQL', `Skipping insert for CR${carouselId}: No Product ID defined in configuration.`);
         return;
     }
 
@@ -187,9 +224,15 @@ async function insertWeightData(carouselId, data) {
                  @grossWeight, @nettWeight, @toleranceMin, @toleranceMax, @productCount, @targetCount, @status)
             `);
 
-        console.log(`[SQL] Inserted data for CR${carouselId}: ${data.lastNett}kg (${status})`);
+        logger.info('SQL', `Inserted data for CR${carouselId}: ${data.lastNett}kg (${status})`);
     } catch (err) {
-        console.error("Error inserting weight data:", err.message);
+        logger.error('SQL', `Error inserting weight data: ${err.message}`);
+        notifySqlInsertFailure({
+            message: `Gagal update ${appSettings.table_weight || 'WEIGHT_DATA'} untuk CR${carouselId}`,
+            carousel: `CR${carouselId}`,
+            table: appSettings.table_weight || 'WEIGHT_DATA',
+            reason: err.message
+        });
     }
 }
 
@@ -197,28 +240,79 @@ async function insertWeightData(carouselId, data) {
 async function connectToWeighingDB() {
     try {
         if (weighingPool) {
-            await weighingPool.close();
+            try { await weighingPool.close(); } catch (e) { }
         }
 
         const config = getMssqlConfig();
-        console.log(`[SQL] Connecting to ${config.server}/${config.database} as ${config.user}`);
-        
+        logger.info('SQL', `Connecting to ${config.server}/${config.database} as ${config.user}`);
+
         weighingPool = await new sql.ConnectionPool(config).connect();
-        console.log("✓ Connected to SQL Server (Dynamic Config)");
-        console.log(`[SQL] Using table_main: ${appSettings.table_main || 'PRESET_TABLE'}`);
+        logger.info('SQL', `✓ Connected to SQL Server (${config.database})`);
+        logger.info('SQL', `Using table_main: ${appSettings.table_main || 'PRESET_TABLE'}`);
+
+        sqlReconnectAttempt = 0; // Reset backoff on success
+        emitSqlStatus();
 
         // Initial Fetch
-        fetchCarouselConfig();
+        fetchCarouselConfig(true);
 
         // Clear existing interval if any
         if (pollingInterval) clearInterval(pollingInterval);
 
-        // Poll for config changes
-        pollingInterval = setInterval(fetchCarouselConfig, 30000);
+        // Poll for config changes (quietly in background)
+        pollingInterval = setInterval(() => fetchCarouselConfig(false), 30000);
+
+        // Start SQL health check
+        startSqlHealthCheck();
 
     } catch (err) {
-        console.error("✗ Failed to connect to DB:", err.message);
+        logger.error('SQL', `✗ Failed to connect to DB: ${err.message}`);
+        emitSqlStatus();
+        triggerSqlAutoReconnect();
     }
+}
+
+// SQL Health Check
+function startSqlHealthCheck() {
+    stopSqlHealthCheck();
+    sqlHealthTimer = setInterval(async () => {
+        if (!weighingPool) return;
+        try {
+            await weighingPool.request().query('SELECT 1');
+            // Health OK — silent
+        } catch (err) {
+            logger.error('SQL', `Health check failed: ${err.message}`);
+            emitSqlStatus();
+            triggerSqlAutoReconnect();
+        }
+    }, SQL_HEALTH_CHECK_INTERVAL);
+}
+
+function stopSqlHealthCheck() {
+    if (sqlHealthTimer) {
+        clearInterval(sqlHealthTimer);
+        sqlHealthTimer = null;
+    }
+}
+
+function triggerSqlAutoReconnect() {
+    if (!appSettings.sql_auto_reconnect) {
+        logger.info('SQL', 'Auto-reconnect disabled. Will not attempt reconnection.');
+        return;
+    }
+    if (sqlReconnectTimer) return; // already scheduled
+
+    stopSqlHealthCheck();
+    const delay = SQL_RECONNECT_DELAYS[Math.min(sqlReconnectAttempt, SQL_RECONNECT_DELAYS.length - 1)];
+    sqlReconnectAttempt++;
+
+    logger.warn('SQL', `Auto-reconnect attempt #${sqlReconnectAttempt} in ${delay / 1000}s...`);
+
+    sqlReconnectTimer = setTimeout(async () => {
+        sqlReconnectTimer = null;
+        logger.info('SQL', `Attempting auto-reconnect #${sqlReconnectAttempt}...`);
+        await connectToWeighingDB();
+    }, delay);
 }
 // Start connection
 if (appSettings.sql_server) {
@@ -257,18 +351,18 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
 
                 // RISING EDGE DETECTION (False -> True)
                 if (!oldValue && newValue) {
-                    console.log(`[OPC] Sensor Rising Edge for CR${carouselId}`);
+                    logger.info('SCADA', `Sensor Rising Edge for CR${carouselId}`);
 
                     // CHECK LOGIC: Only write and increment counter if state is RUN
                     if (carousels[carouselId].state === 'RUN') {
                         // Increment counter
                         carousels[carouselId].data.counter = (carousels[carouselId].data.counter || 0) + 1;
-                        console.log(`[OPC] CR${carouselId} counter incremented to ${carousels[carouselId].data.counter}`);
-                        
+                        logger.info('SCADA', `CR${carouselId} counter incremented to ${carousels[carouselId].data.counter}`);
+
                         // Use current data snapshot
                         insertWeightData(carouselId, carousels[carouselId].data);
                     } else {
-                        console.log(`[OPC] CR${carouselId} is ${carousels[carouselId].state}, skipping counter increment and SQL write.`);
+                        logger.info('SCADA', `CR${carouselId} is ${carousels[carouselId].state}, skipping counter increment and SQL write.`);
                     }
                 }
             }
@@ -295,25 +389,29 @@ dataAggregator.start();
 setInterval(simulateLiveValues, 100);
 
 exports.reloadSettings = () => {
-    console.log("Reloading Settings...");
+    logger.info('SYSTEM', 'Reloading Settings...');
     try {
         if (fs.existsSync(settingsPath)) {
             appSettings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
             connectToWeighingDB(); // Reconnect with new settings
-            // Reconnect OPC? logic needed in manager
         }
     } catch (e) {
-        console.error("Error reloading settings:", e);
+        logger.error('SYSTEM', `Error reloading settings: ${e.message}`);
     }
 };
 
-async function fetchCarouselConfig() {
+async function fetchCarouselConfig(showLoading = false) {
     if (!weighingPool) return;
+
+    if (showLoading) {
+        // Notify subscribers that loading started
+        listeners.forEach(callback => callback({ type: 'config-loading', loading: true }));
+    }
 
     try {
         const tableName = appSettings.table_main || 'PRESET_TABLE';
-        console.log(`[DB] Fetching carousel config from table: ${tableName}`);
-        
+        // Quiet polling — only log on first fetch or errors
+
         // Use raw SQL with table name - mssql supports this
         const query = `
             SELECT * FROM (
@@ -323,13 +421,11 @@ async function fetchCarouselConfig() {
             ) t
             WHERE rn = 1
         `;
-        
+
         const result = await weighingPool.request().query(query);
 
-        if (result.recordset.length > 0) {
-            console.log(`[DB] Found ${result.recordset.length} carousel configs`);
-        } else {
-            console.log(`[DB] No carousel configs found in ${tableName}`);
+        if (result.recordset.length === 0) {
+            logger.warn('SQL', `No carousel configs found in ${tableName}`);
         }
 
         result.recordset.forEach(row => {
@@ -360,12 +456,53 @@ async function fetchCarouselConfig() {
                     else if (st === 'STOP' || st === 'STOPPED' || st === '0' || st === '3') s = 'STOP';
 
                     carousels[carouselId].state = s;
+
+                    // Counter logic for STOP state
+                    if (s === 'STOP') {
+                        const cData = carousels[carouselId].data;
+                        if ((cData.counter || 0) >= (cData.target || 0)) {
+                            cData.counter = 0;
+                            // console.log(`[POLL] CR${carouselId} counter reset due to STOP state`);
+                        }
+                    }
                 }
             }
         });
 
+        // --- Fetch Last Counter Values based on Packing Order ---
+        const weightTable = appSettings.table_weight || 'WEIGHT_DATA';
+        const poQueries = result.recordset.map(async (row) => {
+            const carouselId = row.CAROUSEL;
+            const packingOrder = row.PACKING_ORDER;
+            if (!packingOrder) return;
+
+            try {
+                const countResult = await weighingPool.request()
+                    .input('po', sql.NVarChar, packingOrder)
+                    .input('cr', sql.NVarChar, `CR${carouselId}`)
+                    .query(`SELECT MAX(PRODUCT_COUNT) as lastCount FROM [${weightTable}] WHERE PACKING_ORDER = @po AND CAROUSEL = @cr`);
+
+                if (countResult.recordset[0] && countResult.recordset[0].lastCount !== null) {
+                    const count = countResult.recordset[0].lastCount;
+                    if (carousels[carouselId]) {
+                        carousels[carouselId].data.counter = count;
+                        logger.info('SQL', `Loaded counter for CR${carouselId}: ${count} (PO: ${packingOrder})`);
+                    }
+                }
+            } catch (err) {
+                logger.error('SQL', `Error fetching last count for CR${carouselId}: ${err.message}`);
+            }
+        });
+
+        await Promise.all(poQueries);
+
     } catch (err) {
-        console.error("Error fetching Carousel Config:", err.message);
+        logger.error('SQL', `Error fetching Carousel Config: ${err.message}`);
+    } finally {
+        if (showLoading) {
+            // Notify subscribers that loading ended
+            listeners.forEach(callback => callback({ type: 'config-loading', loading: false }));
+        }
     }
 }
 
@@ -380,6 +517,8 @@ function simulateLiveValues() {
         const isRunning = [3, 4].includes(c.id);
 
         // Simulation for Demo purposes (populate charts/counters)
+        // NOTE: This is ONLY for visual dashboard simulation when OPC is offline.
+        // SQL inserts are NEVER done from here — only from real OPC sensor rising edge detection.
         if (isRunning && !opcUaManager.connected) {
 
             // Counter Increment (approx 1 per 2-5 seconds)
@@ -387,15 +526,14 @@ function simulateLiveValues() {
                 c.data.counter = (c.data.counter || 0) + 1;
                 if (c.data.counter > c.data.target) c.data.counter = 0; // Reset loop
 
-                // Update Weight on new pack
+                // Update Weight on new pack (visual only)
                 const target = 25.1;
                 const noise = (Math.random() - 0.5) * 0.1; // +/- 0.05
 
                 c.data.lastNett = parseFloat((target + noise).toFixed(2));
                 c.data.lastGross = parseFloat((c.data.lastNett + (c.data.packWeight || 0.08)).toFixed(2));
 
-                // LOG DATA FOR AGGREGATION
-                insertWeightData(c.id, c.data).catch(e => console.error("Log error:", e.message)); // Logging Nett weight
+                // NO SQL INSERT HERE — inserts only happen from real OPC sensor data
 
                 // Recalc Average (Simple moving average simulation - for immediate feedback)
                 // This will be overwritten by Aggregator's SQL query results eventually
@@ -413,8 +551,21 @@ exports.subscribe = (id, callback) => {
     listeners.set(id, callback);
 };
 
+exports.manualRefresh = async () => {
+    logger.info('SYSTEM', 'Manual refresh requested');
+    await fetchCarouselConfig(true);
+};
+
 exports.unsubscribe = (id) => {
     listeners.delete(id);
+};
+
+exports.subscribeAlerts = (id, callback) => {
+    alertListeners.set(id, callback);
+};
+
+exports.unsubscribeAlerts = (id) => {
+    alertListeners.delete(id);
 };
 
 // Broadcast loop
@@ -442,12 +593,25 @@ exports.getWeightHistory = async (req, res) => {
         return res.status(503).json({ error: "Database not connected" });
     }
     try {
-        const limit = parseInt(req.query.limit) || 100;
-        const result = await weighingPool.request().query(`
-            SELECT TOP ${limit} * 
-            FROM ${appSettings.table_weight || 'WEIGHT_DATA'} 
-            ORDER BY TIMESTAMP DESC
-        `);
+        const parsedLimit = parseInt(req.query.limit, 10);
+        const limit = Number.isInteger(parsedLimit) && parsedLimit > 0 ? Math.min(parsedLimit, 500) : 100;
+        const requestedCarousel = (req.query.carousel || '').toString().trim().toUpperCase();
+        const carouselFilter = /^CR\d+$/.test(requestedCarousel) ? requestedCarousel : '';
+
+        const request = weighingPool.request();
+        let query = `
+            SELECT TOP ${limit} *
+            FROM ${appSettings.table_weight || 'WEIGHT_DATA'}
+        `;
+
+        if (carouselFilter) {
+            query += ` WHERE CAROUSEL = @carousel`;
+            request.input('carousel', sql.NVarChar, carouselFilter);
+        }
+
+        query += ` ORDER BY TIMESTAMP DESC`;
+
+        const result = await request.query(query);
         res.json(result.recordset);
     } catch (err) {
         console.error("Error fetching history:", err);
@@ -463,6 +627,68 @@ exports.getSqlStatus = (req, res) => {
         server: appSettings.sql_server,
         database: appSettings.sql_db
     });
+};
+
+exports.subscribeSqlStatus = (id, callback) => {
+    sqlStatusListeners.set(id, callback);
+};
+
+exports.unsubscribeSqlStatus = (id) => {
+    sqlStatusListeners.delete(id);
+};
+
+exports.resetErrorTag = async (req, res) => {
+    try {
+        const opcStatus = opcUaManager.getStatus();
+        if (!opcStatus.connected) {
+            return res.status(503).json({ error: "OPC-UA not connected" });
+        }
+
+        const opcConfig = opcUaManager.getConfig();
+        const nodes = Array.isArray(opcConfig.nodes) ? opcConfig.nodes : [];
+        const resetNode = nodes.find((n) => {
+            const name = (n.name || '').toString().trim().toUpperCase();
+            const desc = (n.description || '').toString().trim().toUpperCase();
+            return name === 'RST' || desc === 'RESET ERROR';
+        });
+
+        if (!resetNode || !resetNode.nodeId) {
+            return res.status(404).json({ error: "OPC Reset tag (RST / Reset error) not found in configuration" });
+        }
+
+        // Write pulse TRUE -> FALSE (common reset pattern for PLC/OPC tag)
+        let writeOn = await opcUaManager.writeNode(resetNode.nodeId, true, 'Boolean');
+        if (writeOn.error) {
+            // Fallback for servers expecting numeric reset signal.
+            writeOn = await opcUaManager.writeNode(resetNode.nodeId, 1, 'Int16');
+        }
+        if (writeOn.error) {
+            return res.status(500).json({ error: `Failed writing reset ON: ${writeOn.error}` });
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 250));
+
+        let writeOff = await opcUaManager.writeNode(resetNode.nodeId, false, 'Boolean');
+        if (writeOff.error) {
+            writeOff = await opcUaManager.writeNode(resetNode.nodeId, 0, 'Int16');
+        }
+        if (writeOff.error) {
+            return res.status(500).json({ error: `Reset ON sent but failed writing OFF: ${writeOff.error}` });
+        }
+
+        return res.json({
+            success: true,
+            message: "Reset error signal sent successfully",
+            node: {
+                name: resetNode.name,
+                nodeId: resetNode.nodeId,
+                description: resetNode.description || ''
+            }
+        });
+    } catch (err) {
+        console.error('[OPC] Reset error tag failed:', err.message);
+        return res.status(500).json({ error: `Reset error failed: ${err.message}` });
+    }
 };
 
 exports.controlCarousel = async (req, res) => {
@@ -483,6 +709,17 @@ exports.controlCarousel = async (req, res) => {
 
     if (!weighingPool) {
         return res.status(503).json({ error: "Database Offline. Control disabled." });
+    }
+
+    // Logic: If STOP is pressed and target is reached, reset counter
+    if (val === 'STOP' && carousels[carouselId]) {
+        const cData = carousels[carouselId].data;
+        if ((cData.counter || 0) >= (cData.target || 0)) {
+            cData.counter = 0;
+            logger.info('SCADA', `CR${carouselId} counter reset (Target reached: ${cData.target})`);
+        } else {
+            logger.info('SCADA', `CR${carouselId} counter maintained (Target not reached: ${cData.counter}/${cData.target})`);
+        }
     }
 
     try {
@@ -513,7 +750,7 @@ exports.controlCarousel = async (req, res) => {
             res.status(404).json({ error: "No active record found to update" });
         }
     } catch (err) {
-        console.error("Control DB Error:", err);
+        logger.error('SQL', `Control DB Error: ${err.message}`);
         res.status(500).json({ error: "Database Update Failed" });
     }
 };

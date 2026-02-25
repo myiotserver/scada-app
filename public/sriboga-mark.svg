@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Sriboga Mark">
+  <defs>
+    <radialGradient id="bg" cx="32%" cy="28%" r="78%">
+      <stop offset="0%" stop-color="#2b61d8"/>
+      <stop offset="100%" stop-color="#18377e"/>
+    </radialGradient>
+  </defs>
+  <circle cx="64" cy="64" r="58" fill="url(#bg)"/>
+  <path fill="#ffffff" d="M90 42c-15 1-27 8-36 23-4 7-7 14-9 21 0 1 1 2 2 1 6-7 13-12 20-16 7-4 14-5 23-4 1 0 2-1 2-2-1-8-1-14-1-23 0 0-1-1-1 0z"/>
+  <path fill="#ffffff" d="M43 56c7 1 12 5 15 12 2 3 3 7 3 10 0 1-1 2-2 1-5-3-10-6-13-11-2-3-3-6-4-10 0-1 0-2 1-2z"/>
+</svg>

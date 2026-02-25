@@ -37,13 +37,13 @@ class DataAggregator {
             if (!appSettings.sql_server) return;
 
             const config = {
-                user: appSettings.sql_uid || 'sa',
-                password: appSettings.sql_pass || 'VPS@thinkcentre',
-                server: appSettings.sql_server || 'columba.s-net.id',
-                database: appSettings.sql_db || 'WEIGHING',
+                user: appSettings.sql_uid || '',
+                password: appSettings.sql_pass || '',
+                server: appSettings.sql_server || '',
+                database: appSettings.sql_db || '',
                 port: 1433,
                 options: {
-                    encrypt: false,
+                    encrypt: true,
                     trustServerCertificate: true,
                     enableArithAbort: true
                 },
@@ -65,7 +65,7 @@ class DataAggregator {
                     MAX(NETT_WEIGHT) as max_val,
                     AVG(NETT_WEIGHT) as avg_val
                 FROM ${appSettings.table_weight || 'WEIGHT_DATA'}
-                WHERE TIMESTAMP >= DATEADD(minute, -10, SYSDATETIMEOFFSET())
+                WHERE TIMESTAMP >= DATEADD(hour, -1, SYSDATETIMEOFFSET())
                 GROUP BY PRODUCT_ID
             `);
 

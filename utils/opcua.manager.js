@@ -7,8 +7,12 @@
 const fs = require('fs');
 const path = require('path');
 const { OPCUAClient, AttributeIds, ClientSubscription, ClientMonitoredItem, TimestampsToReturn, SecurityPolicy, MessageSecurityMode, NodeClass, UserTokenType } = require("node-opcua");
+const logger = require('./logger');
 
 const CONFIG_PATH = path.join(__dirname, '..', 'config', 'opcua.config.json');
+
+const HEALTH_CHECK_INTERVAL = 15000; // 15 seconds
+const RECONNECT_DELAYS = [5000, 10000, 20000, 30000]; // Exponential backoff steps
 
 class OpcUaManager {
     constructor() {
@@ -18,11 +22,18 @@ class OpcUaManager {
         this.monitoredItems = [];
         this.connected = false;
         this.connecting = false;
+        this.reconnecting = false;
         this.config = this._loadConfig();
         this.liveValues = {};
 
         // Socket.IO subscribers
         this.subscribers = {};
+
+        // Health check & reconnect
+        this._healthCheckTimer = null;
+        this._reconnectTimer = null;
+        this._reconnectAttempt = 0;
+        this._manualDisconnect = false;
     }
 
     // --- Config ---
@@ -32,7 +43,7 @@ class OpcUaManager {
             const raw = fs.readFileSync(CONFIG_PATH, 'utf-8');
             return JSON.parse(raw);
         } catch (err) {
-            console.error('[OPC-UA] Failed to load config:', err.message);
+            logger.error('OPC', `Failed to load config: ${err.message}`);
             return {
                 endpointUrl: '',
                 securityMode: 'None',
@@ -48,7 +59,7 @@ class OpcUaManager {
         try {
             fs.writeFileSync(CONFIG_PATH, JSON.stringify(this.config, null, 4), 'utf-8');
         } catch (err) {
-            console.error('[OPC-UA] Failed to save config:', err.message);
+            logger.error('OPC', `Failed to save config: ${err.message}`);
         }
     }
 
@@ -67,6 +78,7 @@ class OpcUaManager {
         if (newConfig.autoConnect !== undefined) this.config.autoConnect = newConfig.autoConnect;
         if (newConfig.nodes !== undefined) this.config.nodes = newConfig.nodes;
         this._saveConfig();
+        logger.info('OPC', 'Configuration updated');
         return this.config;
     }
 
@@ -75,13 +87,15 @@ class OpcUaManager {
         if (exists) return { error: 'Node already exists' };
         this.config.nodes.push({ nodeId, name: name || nodeId, description: description || '' });
         this._saveConfig();
+        logger.info('OPC', `Node added: ${name || nodeId} (${nodeId})`);
         return { success: true, nodes: this.config.nodes };
     }
 
     removeNode(index) {
         if (index < 0 || index >= this.config.nodes.length) return { error: 'Invalid index' };
-        this.config.nodes.splice(index, 1);
+        const removed = this.config.nodes.splice(index, 1);
         this._saveConfig();
+        logger.info('OPC', `Node removed: ${removed[0]?.name || 'unknown'}`);
         return { success: true, nodes: this.config.nodes };
     }
 
@@ -91,11 +105,84 @@ class OpcUaManager {
         return {
             connected: this.connected,
             connecting: this.connecting,
+            reconnecting: this.reconnecting,
             endpointUrl: this.config.endpointUrl,
             monitoredNodes: this.monitoredItems.length,
             totalConfiguredNodes: this.config.nodes.length,
             liveValues: this.liveValues
         };
+    }
+
+    // --- Health Check ---
+
+    _startHealthCheck() {
+        this._stopHealthCheck();
+        this._healthCheckTimer = setInterval(async () => {
+            if (!this.connected || !this.session) return;
+            try {
+                // Read ServerStatus node (i=2256) as heartbeat
+                const dataValue = await this.session.read({
+                    nodeId: 'i=2256',
+                    attributeId: AttributeIds.Value
+                });
+                if (dataValue.statusCode.name !== 'Good') {
+                    throw new Error(`Bad status: ${dataValue.statusCode.name}`);
+                }
+                // Health check OK — silent (don't spam logs)
+            } catch (err) {
+                logger.error('OPC', `Health check failed: ${err.message}`);
+                this.connected = false;
+                this._emitStatus();
+                this._stopHealthCheck();
+                this._triggerAutoReconnect();
+            }
+        }, HEALTH_CHECK_INTERVAL);
+    }
+
+    _stopHealthCheck() {
+        if (this._healthCheckTimer) {
+            clearInterval(this._healthCheckTimer);
+            this._healthCheckTimer = null;
+        }
+    }
+
+    // --- Auto-Reconnect ---
+
+    _triggerAutoReconnect() {
+        if (this._manualDisconnect) return;
+        if (!this.config.autoConnect) {
+            logger.info('OPC', 'Auto-reconnect disabled. Will not attempt reconnection.');
+            return;
+        }
+        if (this.reconnecting || this.connecting) return;
+
+        const delay = RECONNECT_DELAYS[Math.min(this._reconnectAttempt, RECONNECT_DELAYS.length - 1)];
+        this._reconnectAttempt++;
+        this.reconnecting = true;
+        this._emitStatus();
+
+        logger.warn('OPC', `Auto-reconnect attempt #${this._reconnectAttempt} in ${delay / 1000}s...`);
+
+        this._reconnectTimer = setTimeout(async () => {
+            this.reconnecting = false;
+            if (this._manualDisconnect) return;
+
+            logger.info('OPC', `Attempting auto-reconnect #${this._reconnectAttempt}...`);
+            const result = await this.connect();
+            if (result.error) {
+                logger.error('OPC', `Auto-reconnect failed: ${result.error}`);
+                // Will be called again from connect() failure path or close event
+            }
+        }, delay);
+    }
+
+    _cancelAutoReconnect() {
+        if (this._reconnectTimer) {
+            clearTimeout(this._reconnectTimer);
+            this._reconnectTimer = null;
+        }
+        this.reconnecting = false;
+        this._reconnectAttempt = 0;
     }
 
     // --- Connection ---
@@ -108,7 +195,9 @@ class OpcUaManager {
             return { error: 'No endpoint URL configured' };
         }
 
+        this._manualDisconnect = false;
         this.connecting = true;
+        this.reconnecting = false;
         this._emitStatus();
 
         try {
@@ -134,10 +223,8 @@ class OpcUaManager {
             });
 
             // Bypass strict server certificate verification for self-signed certs
-            // (KEPServerEX and many industrial OPC-UA servers use self-signed certificates)
             if (secMode !== MessageSecurityMode.None) {
                 this.client.fetchServerCertificate = (endpointUrl, callback) => {
-                    // Use a temporary None-security client to discover the server certificate
                     const tmpClient = OPCUAClient.create({
                         endpointMustExist: false,
                         securityMode: MessageSecurityMode.None,
@@ -148,7 +235,6 @@ class OpcUaManager {
                         .then(() => tmpClient.getEndpoints())
                         .then((endpoints) => {
                             tmpClient.disconnect().catch(() => { });
-                            // Find matching endpoint by security mode and policy name
                             const policyName = this.config.securityPolicy || 'Basic256';
                             const matching = endpoints.find(ep =>
                                 ep.securityMode === secMode &&
@@ -157,12 +243,11 @@ class OpcUaManager {
                             );
                             if (matching && matching.serverCertificate) {
                                 this.client.serverCertificate = matching.serverCertificate;
-                                console.log('[OPC-UA] Server certificate accepted (bypass mode)');
-                                // Always use original endpointUrl (server may report 127.0.0.1)
+                                logger.info('OPC', 'Server certificate accepted (bypass mode)');
                                 callback(null, endpointUrl);
                             } else if (endpoints.length > 0 && endpoints[0].serverCertificate) {
                                 this.client.serverCertificate = endpoints[0].serverCertificate;
-                                console.log('[OPC-UA] Server certificate accepted (first endpoint)');
+                                logger.info('OPC', 'Server certificate accepted (first endpoint)');
                                 callback(null, endpointUrl);
                             } else {
                                 callback(new Error('No server certificate found'));
@@ -170,22 +255,27 @@ class OpcUaManager {
                         })
                         .catch((err) => {
                             tmpClient.disconnect().catch(() => { });
-                            console.error('[OPC-UA] Certificate discovery failed:', err.message);
+                            logger.error('OPC', `Certificate discovery failed: ${err.message}`);
                             callback(err);
                         });
                 };
             }
 
             this.client.on('close', () => {
-                console.log('[OPC-UA] Connection closed');
+                logger.warn('OPC', 'Connection closed');
+                const wasConnected = this.connected;
                 this.connected = false;
                 this.connecting = false;
+                this._stopHealthCheck();
                 this._emitStatus();
+                if (wasConnected && !this._manualDisconnect) {
+                    this._triggerAutoReconnect();
+                }
             });
 
-            console.log(`[OPC-UA] Connecting to ${this.config.endpointUrl} (${this.config.securityMode}/${this.config.securityPolicy || 'None'})...`);
+            logger.info('OPC', `Connecting to ${this.config.endpointUrl} (${this.config.securityMode}/${this.config.securityPolicy || 'None'})...`);
             await this.client.connect(this.config.endpointUrl);
-            console.log('[OPC-UA] Connected!');
+            logger.info('OPC', 'TCP connection established');
 
             // Build user identity
             let userIdentity = { type: UserTokenType.Anonymous };
@@ -195,45 +285,58 @@ class OpcUaManager {
                     userName: this.config.username,
                     password: this.config.password || ''
                 };
-                console.log(`[OPC-UA] Authenticating as '${this.config.username}'`);
+                logger.info('OPC', `Authenticating as '${this.config.username}'`);
             }
 
             this.session = await this.client.createSession(userIdentity);
-            console.log('[OPC-UA] Session created');
+            logger.info('OPC', 'Session created');
 
             this.connected = true;
             this.connecting = false;
+            this._reconnectAttempt = 0; // Reset backoff on success
 
             await this._createSubscription();
+            this._startHealthCheck();
             this._emitStatus();
+            logger.info('OPC', `Connected successfully. Monitoring ${this.config.nodes.length} nodes.`);
             return { success: true, message: 'Connected successfully' };
         } catch (err) {
-            console.error('[OPC-UA] Connection failed:', err.message);
+            logger.error('OPC', `Connection failed: ${err.message}`);
             this.connected = false;
             this.connecting = false;
             this._emitStatus();
             try { if (this.client) await this.client.disconnect(); } catch (e) { }
             this.client = null;
             this.session = null;
+
+            // Auto-reconnect on failure
+            if (!this._manualDisconnect && this.config.autoConnect) {
+                this._triggerAutoReconnect();
+            }
             return { error: `Connection failed: ${err.message}` };
         }
     }
 
     async disconnect() {
-        if (!this.connected && !this.connecting) return { error: 'Not connected' };
+        if (!this.connected && !this.connecting && !this.reconnecting) return { error: 'Not connected' };
+        this._manualDisconnect = true;
+        this._cancelAutoReconnect();
+        this._stopHealthCheck();
+
         try {
             if (this.subscription) { await this.subscription.terminate(); this.subscription = null; }
             if (this.session) { await this.session.close(); this.session = null; }
             if (this.client) { await this.client.disconnect(); this.client = null; }
         } catch (err) {
-            console.error('[OPC-UA] Disconnect error:', err.message);
+            logger.error('OPC', `Disconnect error: ${err.message}`);
         }
         this.connected = false;
         this.connecting = false;
+        this.reconnecting = false;
         this.monitoredItems = [];
         this.liveValues = {};
         this._emitStatus();
-        console.log('[OPC-UA] Disconnected');
+        logger.info('OPC', 'Disconnected manually');
         return { success: true, message: 'Disconnected' };
     }
 
@@ -251,10 +354,10 @@ class OpcUaManager {
         });
 
         this.subscription.on('started', () => {
-            console.log('[OPC-UA] Subscription started');
+            logger.info('OPC', 'Subscription started');
             this._monitorNodes();
         });
-        this.subscription.on('terminated', () => console.log('[OPC-UA] Subscription terminated'));
+        this.subscription.on('terminated', () => logger.info('OPC', 'Subscription terminated'));
     }
 
     async _monitorNodes() {
@@ -272,7 +375,7 @@ class OpcUaManager {
                 );
 
                 monitoredItem.on('err', (err) => {
-                    console.error(`[OPC-UA] Error for ${node.name}:`, err.message);
+                    logger.error('OPC', `Error for ${node.name}: ${err.message}`);
                 });
                 monitoredItem.on('changed', (dataValue) => {
                     const value = dataValue.value ? dataValue.value.value : null;
@@ -286,9 +389,9 @@ class OpcUaManager {
                 });
 
                 this.monitoredItems.push({ node, monitoredItem });
-                console.log(`[OPC-UA] Monitoring: ${node.name} (${node.nodeId})`);
+                logger.info('OPC', `Monitoring: ${node.name} (${node.nodeId})`);
             } catch (err) {
-                console.error(`[OPC-UA] Failed to monitor ${node.name}:`, err.message);
+                logger.error('OPC', `Failed to monitor ${node.name}: ${err.message}`);
             }
         }
         this._emitStatus();
@@ -319,16 +422,18 @@ class OpcUaManager {
     async writeNode(nodeId, value, dataType) {
         if (!this.session) return { error: 'Not connected' };
         try {
-            const { DataType, Variant } = require("node-opcua");
+            const { DataType } = require("node-opcua");
             const variantValue = {
-                dataType: DataType[dataType] || DataType.Int16, // Default to Int16
+                dataType: DataType[dataType] || DataType.Int16,
                 value: value
             };
 
             const statusCode = await this.session.write({
                 nodeId: nodeId,
                 attributeId: AttributeIds.Value,
-                value: new Variant(variantValue)
+                value: {
+                    value: variantValue
+                }
             });
 
             if (statusCode.name === 'Good') {
@@ -359,7 +464,7 @@ class OpcUaManager {
 
     async autoConnect() {
         if (this.config.autoConnect && this.config.endpointUrl) {
-            console.log('[OPC-UA] Auto-connecting...');
+            logger.info('OPC', 'Auto-connecting on startup...');
             await this.connect();
         }
     }

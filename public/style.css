@@ -228,6 +228,19 @@ body {
     box-shadow: var(--shadow-card), 0 0 60px rgba(0, 212, 170, 0.05);
 }
 
+.login-logo {
+    width: 58px;
+    height: 58px;
+    margin: 0 auto 12px;
+}
+
+.login-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
 .login-card h1 {
     font-size: 2rem;
     font-weight: 700;
@@ -335,6 +348,13 @@ header {
     justify-content: center;
     font-size: 1.1rem;
     box-shadow: 0 0 16px rgba(30, 64, 175, 0.5);
+}
+
+.logo-circle img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    display: block;
 }
 
 .logo-text h1 {
@@ -823,19 +843,65 @@ main {
     font-style: italic;
 }
 
-/* ============================================================
-   FOOTER
-   ============================================================ */
+/* Card Loading Overlay */
+.card-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(var(--bg-card-rgb), 0.85);
+    backdrop-filter: blur(4px);
+    display: none;
+    /* Hidden by default */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+    border-radius: var(--radius-md);
+    transition: all var(--transition);
+}
+
+.card-loading-overlay.active {
+    display: flex;
+}
+
+.spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(var(--accent-primary-rgb), 0.2);
+    border-top: 3px solid var(--accent-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 10px;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-text {
+    font-size: 0.8rem;
+    color: var(--accent-primary);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* FOOTER============================================================*/
 footer {
-    height: 56px;
+    height: 45px;
     background: var(--bg-secondary);
     border-top: 1px solid var(--border-subtle);
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
-    padding: 0 20px;
-    gap: 40px;
-    /* Space between the major groups */
+    padding: 0 32px;
     flex-shrink: 0;
 }
 
@@ -843,10 +909,21 @@ footer {
     display: flex;
     align-items: center;
     gap: 12px;
+    flex: 1;
+}
+
+.footer-group.center-group {
+    justify-content: center;
+    flex: 0 0 auto;
+}
+
+.footer-group:last-child {
+    justify-content: flex-end;
+    padding-right: 20px;
 }
 
 .footer-group:first-child {
-    /* justify-self: start; - Removed */
+    padding-left: 20px;
 }
 
 .footer-group:last-child {
@@ -1387,6 +1464,35 @@ input:checked+.slider:before {
 .opcua-toast.success {
     border-color: rgba(34, 197, 94, 0.4);
     color: var(--accent-success);
+}
+
+.operator-toast {
+    position: fixed;
+    top: 76px;
+    right: 24px;
+    max-width: 420px;
+    background: rgba(127, 29, 29, 0.96);
+    border: 1px solid rgba(248, 113, 113, 0.65);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #fee2e2;
+    z-index: 5500;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+    animation: operator-toast-in 180ms ease-out;
+}
+
+@keyframes operator-toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* ============================================================
@@ -2035,6 +2141,11 @@ input:checked+.slider:before {
     border-color: var(--accent-primary);
 }
 
+.footer-group .ctrl-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
 .footer-group .ctrl-btn .icon {
     font-size: 0.9rem;
 }
@@ -2108,4 +2219,144 @@ input:checked+.slider:before {
         overflow: visible;
         height: auto;
     }
+}
+
+/* ============================================================
+   BLINKING DANGER ANIMATION — Disconnected Status
+   ============================================================ */
+@keyframes blink-danger {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
+}
+
+.blink-danger {
+    animation: blink-danger 1s ease-in-out infinite;
+}
+
+.blink-danger .conn-label {
+    color: var(--accent-danger) !important;
+    font-weight: 700;
+}
+
+.blink-danger .led {
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6), 0 0 16px rgba(239, 68, 68, 0.3);
+}
+
+/* ============================================================
+   SYSTEM LOG VIEW
+   ============================================================ */
+.log-container {
+    flex: 1;
+    background: #0a0f1a;
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    overflow-y: auto;
+    font-family: var(--font-digital);
+    font-size: 0.8rem;
+    line-height: 1.7;
+    min-height: 300px;
+    max-height: calc(100vh - 200px);
+}
+
+.log-entry {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border-left: 3px solid transparent;
+    transition: background 0.15s;
+}
+
+.log-entry:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.log-ts {
+    color: var(--text-muted);
+    white-space: nowrap;
+    min-width: 140px;
+    font-size: 0.75rem;
+}
+
+.log-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    min-width: 50px;
+    text-align: center;
+}
+
+.log-badge-info {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+}
+
+.log-badge-warn {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+}
+
+.log-badge-error {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+}
+
+.log-src {
+    color: var(--accent-primary);
+    font-weight: 600;
+    font-size: 0.75rem;
+    min-width: 55px;
+    white-space: nowrap;
+}
+
+.log-msg {
+    color: var(--text-primary);
+    word-break: break-word;
+    flex: 1;
+}
+
+/* Level-based border colors */
+.log-level-info {
+    border-left-color: rgba(59, 130, 246, 0.4);
+}
+
+.log-level-warn {
+    border-left-color: rgba(245, 158, 11, 0.5);
+}
+
+.log-level-error {
+    border-left-color: rgba(239, 68, 68, 0.5);
+    background: rgba(239, 68, 68, 0.04);
+}
+
+/* Light theme overrides for logs */
+[data-theme="light"] .log-container {
+    background: #f8fafc;
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .log-entry:hover {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="light"] .log-ts {
+    color: #64748b;
+}
+
+[data-theme="light"] .log-msg {
+    color: #1e293b;
+}
+
+[data-theme="light"] .log-level-error {
+    background: rgba(239, 68, 68, 0.06);
 }

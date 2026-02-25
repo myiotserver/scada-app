@@ -1,8 +1,9 @@
 const sql = require('mssql');
-const config = require('./config/db.config.mssql');
+const dbConfig = require('./config/db.config.mssql');
 
 async function searchColumns() {
     try {
+        const config = dbConfig.getConfig ? dbConfig.getConfig() : dbConfig;
         await sql.connect(config);
 
         const keywords = ['PRODUCT', 'PACKING', 'WEIGHT', 'TARGET', 'COUNTER', 'GROSS', 'NETT'];

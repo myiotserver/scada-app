@@ -9,6 +9,10 @@ Aplikasi SCADA (Supervisory Control and Data Acquisition) untuk monitoring dan k
 - **OPC UA Integration**: Komunikasi dengan server OPC UA untuk data industri
 - **Database Integration**: Dukungan MSSQL dan PostgreSQL
 - **Data Aggregation**: Agregasi data otomatis dengan cron jobs
+- **Dashboard Offline Ready**: Dashboard menampilkan status OFFLINE dan 0.00 Kg secara otomatis saat data belum tersedia atau koneksi terputus.
+- **Persistent Counter Logic**: Counter (Product Count) tetap tersimpan berdasarkan PACKING_ORDER. Saat aplikasi mulai, counter akan mengambil nilai terakhir dari history.
+- **Smart Reset Counter**: Counter otomatis reset ke 0 jika status diganti ke STOP dan target produksi sudah tercapai.
+- **Windows Operational Scripts**: Script batch (.bat) untuk mempermudah instalasi dan menjalankan aplikasi di Windows dengan satu klik.
 - **PKI Certificates**: Manajemen sertifikat untuk keamanan OPC UA
 
 ## Prerequisites
@@ -127,16 +131,12 @@ GRANT ALL PRIVILEGES ON DATABASE scada_db TO scada_user;
    };
    ```
 
-2. **Database MSSQL** (`config/db.config.mssql.js`):
-   ```javascript
-   module.exports = {
-       user: 'yourSQLUsername',
-       password: 'yoursqlpassword',
-       server: 'yourserverIP',
-       database: 'yourDatabaseName',
-       // ... konfigurasi lainnya
-   };
-   ```
+2. **Database MSSQL** (`config/db.config.mssql.js` dan `config/db.config.weighing.js`):
+   - File config ini sekarang **dinamis** dan membaca nilai SQL dari:
+     1. Environment variable (`MSSQL_USER`, `MSSQL_PASSWORD`, `MSSQL_SERVER`, `MSSQL_DATABASE`, `MSSQL_PORT`)
+     2. `config/scada-settings.json`
+     3. Fallback default internal
+   - Artinya, jika Anda update SQL Server dari menu Settings di aplikasi (Windows UI), koneksi SQL backend akan mengikuti nilai terbaru tersebut.
 
 3. **OPC UA Configuration** (`config/opcua.config.json`):
    ```json
@@ -160,6 +160,7 @@ GRANT ALL PRIVILEGES ON DATABASE scada_db TO scada_user;
        // ... tabel dan interlocks
    }
    ```
+   - Nilai `sql_server`, `sql_uid`, `sql_pass`, dan `sql_db` adalah sumber utama konfigurasi SQL yang dipakai runtime SCADA.
 
 #### Setup Environment Variables (opsional)
 
@@ -168,25 +169,35 @@ Buat file `.env` di root directory:
 NODE_ENV=development
 PORT=3001
 JWT_SECRET=your_jwt_secret_key
+MSSQL_USER=optional_override_user
+MSSQL_PASSWORD=optional_override_password
+MSSQL_SERVER=optional_override_server
+MSSQL_DATABASE=optional_override_database
+MSSQL_PORT=1433
 ```
 
 ## Menjalankan Aplikasi
 
-### Development Mode
-
-#### Linux
-```bash
-npm start
-# atau
-node index.js
-```
-
-#### Windows
-```cmd
-npm start
-```
-
 Aplikasi akan berjalan di `http://localhost:3001`
+
+### Production Mode (Linux Server)
+
+Untuk menjalankan aplikasi di server agar tetap berjalan di background, gunakan **PM2**:
+
+```bash
+# Install PM2 jika belum ada
+sudo npm install -g pm2
+
+# Jalankan aplikasi
+pm2 start index.js --name scada-app
+
+# Perintah umum PM2
+pm2 status                # Cek status aplikasi
+pm2 logs scada-app        # Lihat log real-time
+pm2 restart scada-app     # Merestart aplikasi
+pm2 stop scada-app        # Menghentikan aplikasi
+pm2 save                  # Simpan daftar aplikasi agar auto-start saat reboot
+```
 
 ## Penggunaan
 
@@ -217,7 +228,8 @@ Aplikasi akan berjalan di `http://localhost:3001`
 - `GET /api/scada/history` - Riwayat berat
 - `GET /api/scada/alarms/active` - Alarm aktif
 - `GET /api/scada/history/:tag` - Riwayat tag spesifik
-- `POST /api/control` - Kontrol carousel
+- `POST /api/control` - Kontrol carousel (Run, Pause, Stop, Reset)
+  - *Catatan*: Counter akan reset otomatis jika command STOP dikirim saat counter >= target.
 
 ### OPC UA
 - `GET /api/opcua/status` - Status koneksi OPC UA
@@ -236,10 +248,14 @@ Aplikasi akan berjalan di `http://localhost:3001`
 
 1. **Database Connection Error**:
    - Pastikan database server berjalan
-   - Periksa kredensial di file konfigurasi
+   - Periksa kredensial di `config/scada-settings.json` atau di menu Settings aplikasi
+   - Jika menggunakan environment variable, pastikan nilainya benar (karena env override nilai file settings)
    - Untuk remote MSSQL, pastikan firewall mengizinkan koneksi
 
-2. **OPC UA Connection Failed**:
+3. **RESET Button Error**:
+   - Jika tombol RESET di footer error dengan pesan `Cannot create property 'dataType' on number '1'`, pastikan backend menggunakan update terbaru di `utils/opcua.manager.js` yang menangani konversi tipe data ke `Variant` dengan benar.
+
+4. **OPC UA Certificate Issue**:
    - Periksa endpoint URL dan kredensial
    - Pastikan OPC UA server berjalan
    - Download dan install client certificate ke server OPC UA

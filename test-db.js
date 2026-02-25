@@ -1,20 +1,10 @@
 const sql = require('mssql');
-
-const config = {
-    user: 'sa', // Using defaults from controller
-    password: 'VPS@thinkcentre',
-    server: 'columba.s-net.id',
-    database: 'WEIGHING',
-    port: 1433,
-    options: {
-        encrypt: false,
-        trustServerCertificate: true
-    }
-};
+const dbConfig = require('./config/db.config.weighing');
 
 async function testConnection() {
     try {
         console.log("Connecting...");
+        const config = dbConfig.getConfig ? dbConfig.getConfig() : dbConfig;
         const pool = await new sql.ConnectionPool(config).connect();
         console.log("Connected!");
 

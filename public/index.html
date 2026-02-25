@@ -7,7 +7,8 @@
     <title>SRIBOGA - Weighing Dashboard</title>
     <meta name="description" content="SRIBOGA Weighing Carousel SCADA Dashboard — Real-time industrial monitoring">
     <link rel="stylesheet" href="style.css">
-    <link rel="shortcut icon" href="favicon.ico">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="shortcut icon" href="favicon.svg">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <script src="/socket.io/socket.io.js"></script>
 </head>
@@ -16,6 +17,9 @@
     <!-- Login Overlay -->
     <div id="login-view">
         <div class="login-card">
+            <div class="login-logo">
+                <img src="sriboga-mark.svg" alt="SRIBOGA logo">
+            </div>
             <h1>SRIBOGA</h1>
             <p>PIONEER IN FLOUR INNOVATION</p>
             <div class="form-group">
@@ -36,8 +40,7 @@
         <header>
             <div class="logo-area">
                 <div class="logo-circle">
-                    <!-- <span>🌾</span> -->
-                    <i class='bx bxs-leaf'></i>
+                    <img src="sriboga-mark.svg" alt="SRIBOGA logo mark">
                 </div>
                 <div class="logo-text">
                     <h1>SRIBOGA</h1>
@@ -79,6 +82,10 @@
                     <button class="nav-btn" onclick="navigate('history')">
                         <i class='bx bxs-report icon'></i>
                         <span class="nav-label">History</span>
+                    </button>
+                    <button class="nav-btn" onclick="navigate('logs')">
+                        <i class='bx bx-terminal icon'></i>
+                        <span class="nav-label">Logs</span>
                     </button>
                 </nav>
 
@@ -145,8 +152,13 @@
                             </div>
                             <div class="form-row"><label>Table Weight :</label> <input type="text"
                                     id="cfg-table-weight"></div>
-                            <div class="form-row"><label>Table Main Sql :</label> <input type="text"
+                            <div class="form-row"><label>Table Preset Data :</label> <input type="text"
                                     id="cfg-table-main"></div>
+
+                            <div class="form-row" style="align-items: center; margin-top: 10px;">
+                                <label>Auto-Reconnect :</label>
+                                <input type="checkbox" id="cfg-sql-auto-reconnect" style="width: auto; margin-right: auto;">
+                            </div>
 
                             <div style="text-align: right; margin-top: 20px;">
                                 <button class="btn-save" onclick="saveSettings()">💾 SAVE SETTINGS</button>
@@ -289,7 +301,19 @@
                             <h2 style="margin: 0 0 5px 0;">Weight History</h2>
                             <p style="margin: 0; font-size: 0.85rem; color: #888;">Displaying last 100 records</p>
                         </div>
-                        <button class="btn-primary" style="width: auto;" onclick="loadHistory()">Refresh</button>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <label for="history-carousel-filter" style="font-size: 0.85rem; color: #aaa;">Carousel</label>
+                            <select id="history-carousel-filter" onchange="loadHistory()"
+                                style="height: 36px; min-width: 110px; background: #0d172a; color: #e5e7eb; border: 1px solid #334155; border-radius: 8px; padding: 0 10px;">
+                                <option value="">All</option>
+                                <option value="CR1">CR1</option>
+                                <option value="CR2">CR2</option>
+                                <option value="CR3">CR3</option>
+                                <option value="CR4">CR4</option>
+                                <option value="CR5">CR5</option>
+                            </select>
+                            <button class="btn-primary" style="width: auto;" onclick="loadHistory()">Refresh</button>
+                        </div>
                     </div>
                     <div style="overflow: auto; width: 100%; max-height: 600px; border: 1px solid #333; border-radius: 4px;">
                         <table class="data-table">
@@ -310,6 +334,49 @@
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+
+                <!-- SYSTEM LOG VIEW -->
+                <div id="view-logs" class="view-section"
+                    style="display: none; padding: 20px; width: 100%; flex-direction: column;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <h2 style="margin: 0 0 5px 0;">System Log</h2>
+                            <p style="margin: 0; font-size: 0.85rem; color: #888;">Real-time system events &
+                                diagnostics</p>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <label for="log-level-filter" style="font-size: 0.85rem; color: #aaa;">Level</label>
+                            <select id="log-level-filter" onchange="filterLogs()"
+                                style="height: 36px; min-width: 90px; background: #0d172a; color: #e5e7eb; border: 1px solid #334155; border-radius: 8px; padding: 0 10px;">
+                                <option value="">All</option>
+                                <option value="INFO">INFO</option>
+                                <option value="WARN">WARN</option>
+                                <option value="ERROR">ERROR</option>
+                            </select>
+                            <label for="log-source-filter" style="font-size: 0.85rem; color: #aaa;">Source</label>
+                            <select id="log-source-filter" onchange="filterLogs()"
+                                style="height: 36px; min-width: 100px; background: #0d172a; color: #e5e7eb; border: 1px solid #334155; border-radius: 8px; padding: 0 10px;">
+                                <option value="">All</option>
+                                <option value="OPC">OPC</option>
+                                <option value="SQL">SQL</option>
+                                <option value="SCADA">SCADA</option>
+                                <option value="SYSTEM">SYSTEM</option>
+                            </select>
+                            <button class="btn-primary" style="width: auto;" onclick="loadLogs()">Refresh</button>
+                            <button class="btn-primary" style="width: auto; background: #ef4444;"
+                                onclick="clearLogView()">Clear</button>
+                        </div>
+                    </div>
+                    <div class="log-container" id="log-container">
+                        <div class="log-entry log-level-info">
+                            <span class="log-ts">—</span>
+                            <span class="log-badge">INFO</span>
+                            <span class="log-src">SYSTEM</span>
+                            <span class="log-msg">Waiting for log entries...</span>
+                        </div>
                     </div>
                 </div>
         </div>
@@ -359,7 +426,7 @@
                 <div class="footer-group">
                     <!-- <div class="footer-header">CONTROL</div> -->
                     <div class="controls">
-                        <button class="ctrl-btn" onclick="openControlModal(currentControlId || 1, 'UNKNOWN')"><span
+                        <button class="ctrl-btn" id="btn-reset-error" onclick="triggerResetError()"><span
                                 class="icon">🔄</span> RESET</button>
                         <!-- Note: Reset usually targets a specific carousel, but here it's global? 
                          The previous button was just RESET. I will keep it but maybe it needs logic.

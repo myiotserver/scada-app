@@ -147,6 +147,11 @@ function initApp() {
         document.getElementById('current-user-display').innerText = currentUser.username;
     }
 
+    // Default to offline state before data is received
+    const offlineState = {};
+    for (let i = 1; i <= 5; i++) offlineState[i] = { id: i, state: 'OFFLINE', data: null };
+    renderCarousels(offlineState);
+
     // Connect Socket
     socket = io();
 
@@ -156,24 +161,70 @@ function initApp() {
     });
 
     socket.on('carousel-update', (data) => {
-        if (currentView === 'home') {
-            renderCarousels(data);
-        }
+        renderCarousels(data);
+    });
+
+    socket.on('config-loading', (loading) => {
+        const overlays = document.querySelectorAll('.card-loading-overlay');
+        overlays.forEach(overlay => {
+            if (loading) {
+                overlay.classList.add('active');
+            } else {
+                overlay.classList.remove('active');
+            }
+        });
     });
 
     // OPC-UA events
     socket.on('opcua-status', (status) => {
         updateOpcUaStatusUI(status);
-        updateFooterConnections({ opc: status });
+        updateFooterConnections({ opcStatus: status });
     });
     socket.on('opcua-value', (data) => updateOpcUaLiveValue(data));
+    socket.on('scada-alert', (alertData) => handleScadaAlert(alertData));
+
+    // SQL status via Socket.IO (real-time push instead of polling)
+    socket.on('sql-status', (status) => {
+        updateFooterConnections({ sql: status.connected });
+        // Update config page badge if visible
+        const badge = document.getElementById('sql-status-badge');
+        if (badge) {
+            if (status.connected) {
+                badge.className = 'opcua-badge connected';
+                badge.innerText = 'CONNECTED';
+            } else {
+                badge.className = 'opcua-badge';
+                badge.innerText = 'DISCONNECTED';
+            }
+        }
+    });
+
+    // System log real-time
+    socket.on('system-log', (entry) => {
+        appendLogEntry(entry);
+    });
 
     // Load initial settings
     loadSettings();
 
-    // Start SQL polling
+    // Start SQL polling (fallback, less frequent since Socket.IO handles most updates)
     pollSqlStatus();
     setInterval(pollSqlStatus, 10000); // Poll every 10s
+
+    // Initial OPC Status Sync
+    if (currentUser && currentUser.accessToken) {
+        fetch('/api/opcua/status', {
+            headers: { 'x-access-token': currentUser.accessToken }
+        })
+            .then(res => res.json())
+            .then(status => {
+                if (status) {
+                    updateOpcUaStatusUI(status);
+                    updateFooterConnections({ opcStatus: status });
+                }
+            })
+            .catch(err => console.error("Initial OPC status fetch failed", err));
+    }
 }
 
 // --- Footer Logic ---
@@ -205,23 +256,32 @@ let lastOpcStatus = false;
 // function pollSqlStatus removed (merged with bottom one)
 
 function updateFooterConnections(statusUpdate) {
-    // Update local state
-    if (statusUpdate.sql !== undefined) lastSqlStatus = statusUpdate.sql;
-    if (statusUpdate.opc !== undefined) lastOpcStatus = statusUpdate.opc.connected;
+    if (!statusUpdate) return;
 
-    // Update UI
-    // Update UI - SQL
+    // Update local state - SQL
+    if (statusUpdate.sql !== undefined) {
+        lastSqlStatus = !!statusUpdate.sql;
+    }
+
+    // Update local state - OPC
+    if (statusUpdate.opcStatus !== undefined) {
+        lastOpcStatus = !!statusUpdate.opcStatus.connected;
+    } else if (statusUpdate.opcConnected !== undefined) {
+        lastOpcStatus = !!statusUpdate.opcConnected;
+    }
+
+    // Update UI - SQL (with blinking for disconnected)
     const sqlIcon = document.getElementById('conn-sql');
     if (sqlIcon) {
-        sqlIcon.className = 'conn-item ' + (lastSqlStatus ? 'status-good' : 'status-bad');
+        sqlIcon.className = 'conn-item ' + (lastSqlStatus ? 'status-good' : 'status-bad blink-danger');
         const label = sqlIcon.querySelector('.conn-label');
         if (label) label.innerText = lastSqlStatus ? 'Connected' : 'Disconnected';
     }
 
-    // Update UI - OPC
+    // Update UI - OPC (with blinking for disconnected)
     const opcIcon = document.getElementById('conn-opc');
     if (opcIcon) {
-        opcIcon.className = 'conn-item ' + (lastOpcStatus ? 'status-good' : 'status-bad');
+        opcIcon.className = 'conn-item ' + (lastOpcStatus ? 'status-good' : 'status-bad blink-danger');
         const label = opcIcon.querySelector('.conn-label');
         if (label) label.innerText = lastOpcStatus ? 'Connected' : 'Disconnected';
     }
@@ -279,12 +339,21 @@ function navigate(view) {
         }
         document.getElementById('view-history').style.display = 'flex';
         loadHistory();
+    } else if (view === 'logs') {
+        // Allow Admin and User
+        if (!currentUser || !currentUser.roles || (!currentUser.roles.includes('ROLE_ADMIN') && !currentUser.roles.includes('ROLE_USER'))) {
+            alert("Access Denied.");
+            navigate('home');
+            return;
+        }
+        document.getElementById('view-logs').style.display = 'flex';
+        loadLogs();
     }
 
     // Update Nav Active State
     document.querySelectorAll('.nav-btn').forEach((btn, idx) => {
         btn.classList.remove('active');
-        const views = ['home', 'config', 'users', 'opcua', 'history'];
+        const views = ['home', 'config', 'users', 'opcua', 'history', 'logs'];
 
 
         // Hide buttons for restricted roles logic:
@@ -308,6 +377,9 @@ function navigate(view) {
         }
         if (idx === 4) { // History
             btn.style.display = (isAdmin || isUser || isGuest) ? 'flex' : 'none';
+        }
+        if (idx === 5) { // Logs
+            btn.style.display = (isAdmin || isUser) ? 'flex' : 'none';
         }
 
         if (views[idx] === view) btn.classList.add('active');
@@ -343,6 +415,12 @@ function renderSettings() {
     document.getElementById('cfg-table-zero').value = appSettings.table_zeroing || '';
     document.getElementById('cfg-table-weight').value = appSettings.table_weight || '';
     document.getElementById('cfg-table-main').value = appSettings.table_main || '';
+
+    // SQL Auto-Reconnect checkbox
+    const sqlAutoReconnect = document.getElementById('cfg-sql-auto-reconnect');
+    if (sqlAutoReconnect) {
+        sqlAutoReconnect.checked = !!appSettings.sql_auto_reconnect;
+    }
 
     // Interlocks
     const container = document.getElementById('interlock-settings');
@@ -386,6 +464,12 @@ async function saveSettings(silent = false) {
     appSettings.table_zeroing = document.getElementById('cfg-table-zero').value;
     appSettings.table_weight = document.getElementById('cfg-table-weight').value;
     appSettings.table_main = document.getElementById('cfg-table-main').value;
+
+    // SQL Auto-Reconnect checkbox
+    const sqlAutoReconnect = document.getElementById('cfg-sql-auto-reconnect');
+    if (sqlAutoReconnect) {
+        appSettings.sql_auto_reconnect = sqlAutoReconnect.checked;
+    }
 
     try {
         const token = currentUser.accessToken;
@@ -540,21 +624,21 @@ function renderCarousels(carousels) {
     updateFooterSensors(carousels);
 
     for (let i = 1; i <= 5; i++) {
-        const carousel = carousels[i];
+        const carousel = carousels ? carousels[i] : null;
         const col = document.createElement('div');
         // Map State to Class
         const stateClass =
-            (carousel.state === 'RUN') ? 'status-running' :
-                (carousel.state === 'PAUSE') ? 'status-paused' :
-                    (carousel.state === 'STOP') ? 'status-stopped' :
-                        (carousel.state === 'RESET') ? 'status-reset' : '';
+            (carousel && carousel.state === 'RUN') ? 'status-running' :
+                (carousel && carousel.state === 'PAUSE') ? 'status-paused' :
+                    (carousel && carousel.state === 'STOP') ? 'status-stopped' :
+                        (carousel && carousel.state === 'RESET') ? 'status-reset' : '';
 
         col.className = `carousel-col ${stateClass}`;
         // Add Click Handler
         col.onclick = (e) => {
             // Prevent if clicking update button
             if (e.target.closest('.update-btn')) return;
-            openControlModal(i, carousel.state);
+            openControlModal(i, carousel ? carousel.state : 'OFFLINE');
         };
         col.style.cursor = 'pointer';
 
@@ -586,6 +670,11 @@ function renderCarousels(carousels) {
 
             col.innerHTML = `
                 <div class="carousel-card">
+                    <div class="card-loading-overlay">
+                        <div class="spinner"></div>
+                        <div class="loading-text">Updating Data...</div>
+                    </div>
+
                     <div class="card-header">
                         <div class="carousel-number">Carousel ${i}</div>
                         <div class="carousel-name">${d.productName || carousel.name}</div>
@@ -629,39 +718,74 @@ function renderCarousels(carousels) {
                         </div>
                     </div>
 
-                    <div class="stats-grid">
+                    <div class="stats-grid" title="Statistics based on the last 1 hour of production">
                         <div class="stat-box">
-                            <div class="stat-label">Min</div>
-                            <div class="stat-value">0.00</div>
+                            <div class="stat-label">Min (1h)</div>
+                            <div class="stat-value">${(d.minVal || 0).toFixed(2)}</div>
                         </div>
                         <div class="stat-box">
                             <div class="stat-label">Nett</div>
                             <div class="stat-value">${(d.lastNett || 0).toFixed(2)}</div>
                         </div>
                         <div class="stat-box">
-                            <div class="stat-label">Avg</div>
+                            <div class="stat-label">Avg (1h)</div>
                             <div class="stat-value">${(d.average || 0).toFixed(2)}</div>
                         </div>
                     </div>
 
                     <div class="card-footer">
-                        <button class="update-btn">⟳ Update Data</button>
+                        <button class="update-btn" onclick="triggerManualUpdate(${i}, event)">⟳ Update Data</button>
                     </div>
                 </div>
             `;
         } else {
             col.innerHTML = `
                 <div class="empty-state">
-                    <span class="icon">📦</span>
-                    <span>Carousel ${i}</span>
-                    <span>No data</span>
+                    <div class="card-loading-overlay">
+                        <div class="spinner"></div>
+                        <div class="loading-text">Updating Data...</div>
+                    </div>
+                    <span class="icon" style="color:var(--accent-danger); opacity:0.8;">🔌</span>
+                    <span style="font-size:1rem; font-weight:600; color:var(--text-secondary);">Carousel ${i}</span>
+                    <span style="font-weight:700; color:var(--accent-danger); letter-spacing:1px; margin-top:5px; margin-bottom:15px;">OFFLINE</span>
+                    <div class="weight-section" style="width: 100%; padding: 0 14px;">
+                        <div class="weight-label">Gross Weight</div>
+                        <div class="weight-display bg-danger">0.00 Kg</div>
+                    </div>
                 </div>
             `;
+            col.style.borderColor = "var(--accent-danger)";
+            col.style.boxShadow = "none";
         }
 
         container.appendChild(col);
     }
     activateMobileCard();
+}
+
+// --- Manual Update Integration ---
+async function triggerManualUpdate(id, event) {
+    if (event) event.stopPropagation();
+
+    // Show loading immediately for better UX
+    const overlays = document.querySelectorAll('.card-loading-overlay');
+    overlays.forEach(overlay => overlay.classList.add('active'));
+
+    try {
+        const token = localStorage.getItem('scada_token');
+        const res = await fetch('/api/scada/refresh', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-access-token': token
+            }
+        });
+        if (!res.ok) throw new Error("Failed to refresh data");
+    } catch (err) {
+        console.error("Manual refresh error:", err.message);
+        // Hide on error
+        overlays.forEach(overlay => overlay.classList.remove('active'));
+    }
 }
 
 // --- Control Modal Logic ---
@@ -734,6 +858,54 @@ async function sendControlCommand(command) {
     }
 }
 
+async function triggerResetError() {
+    const btn = document.getElementById('btn-reset-error');
+    const originalHtml = btn ? btn.innerHTML : '';
+
+    try {
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="icon">⏳</span> RESETTING...';
+        }
+
+        const token = currentUser && currentUser.accessToken;
+        const res = await fetch('/api/control/reset-error', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'x-access-token': token } : {})
+            }
+        });
+        const raw = await res.text();
+        let data = null;
+        try {
+            data = raw ? JSON.parse(raw) : null;
+        } catch (parseErr) {
+            if (!res.ok) {
+                const msg = res.status === 404
+                    ? 'Endpoint reset-error belum tersedia. Restart backend lalu coba lagi.'
+                    : `Server returned non-JSON response (HTTP ${res.status})`;
+                showOpcUaToast(msg, 'error');
+                return;
+            }
+            throw parseErr;
+        }
+
+        if (res.ok && data && data.success) {
+            showOpcUaToast('Reset error signal sent', 'success');
+        } else {
+            showOpcUaToast((data && data.error) || `Failed to send reset signal (HTTP ${res.status})`, 'error');
+        }
+    } catch (e) {
+        showOpcUaToast(`Reset error failed: ${e.message}`, 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml || '<span class="icon">🔄</span> RESET';
+        }
+    }
+}
+
 // ==========================================================
 // OPC-UA Configuration Functions
 // ==========================================================
@@ -764,7 +936,9 @@ async function loadOpcUaConfig() {
             headers: { 'x-access-token': token }
         });
         if (statusRes.ok) {
-            updateOpcUaStatusUI(await statusRes.json());
+            const st = await statusRes.json();
+            updateOpcUaStatusUI(st);
+            updateFooterConnections({ opcStatus: st });
         }
     } catch (e) {
         showOpcUaToast('Failed to load OPC-UA config', 'error');
@@ -992,6 +1166,26 @@ function showOpcUaToast(msg, type) {
     setTimeout(() => { if (t.parentNode) t.remove(); }, 3000);
 }
 
+function handleScadaAlert(alertData) {
+    if (!alertData || alertData.type !== 'sql_insert_failed') return;
+
+    const carousel = alertData.carousel || 'Unknown Carousel';
+    const msg = alertData.message || `Gagal update WEIGHT_DATA untuk ${carousel}`;
+    showOperatorToast(`${msg}. Cek koneksi SQL/table.`);
+}
+
+function showOperatorToast(msg) {
+    const existing = document.querySelector('.operator-toast');
+    if (existing) existing.remove();
+
+    const t = document.createElement('div');
+    t.className = 'operator-toast';
+    t.innerText = msg;
+    document.body.appendChild(t);
+
+    setTimeout(() => { if (t.parentNode) t.remove(); }, 6000);
+}
+
 // --- SQL Status Polling ---
 async function pollSqlStatus() {
     const badge = document.getElementById('sql-status-badge');
@@ -1034,12 +1228,19 @@ setTimeout(pollSqlStatus, 1000);
 // --- History Logic ---
 async function loadHistory() {
     const tbody = document.getElementById('history-list-body');
+    const carouselFilterEl = document.getElementById('history-carousel-filter');
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Loading records...</td></tr>';
 
     try {
         const token = currentUser.accessToken;
         const limit = 100;
-        const res = await fetch(`/api/scada/history?limit=${limit}`, {
+        const params = new URLSearchParams({ limit: String(limit) });
+        const selectedCarousel = carouselFilterEl ? carouselFilterEl.value : '';
+        if (selectedCarousel) {
+            params.set('carousel', selectedCarousel);
+        }
+
+        const res = await fetch(`/api/scada/history?${params.toString()}`, {
             headers: { 'x-access-token': token }
         });
 
@@ -1090,4 +1291,113 @@ function renderHistory(data, limit = 100) {
         `;
         tbody.appendChild(tr);
     });
+}
+
+// ==========================================================
+// System Log View Functions
+// ==========================================================
+
+let allLogEntries = [];
+
+async function loadLogs() {
+    const container = document.getElementById('log-container');
+    if (!container) return;
+    container.innerHTML = '<div class="log-entry log-level-info"><span class="log-msg">Loading logs...</span></div>';
+
+    try {
+        const res = await fetch('/api/logs');
+        const data = await res.json();
+        allLogEntries = data || [];
+        renderLogEntries();
+    } catch (e) {
+        container.innerHTML = '<div class="log-entry log-level-error"><span class="log-msg">Failed to load logs</span></div>';
+    }
+}
+
+function appendLogEntry(entry) {
+    if (!entry) return;
+    allLogEntries.push(entry);
+    // Keep max 500 in frontend buffer
+    if (allLogEntries.length > 500) allLogEntries.shift();
+
+    // Check if filters match
+    const levelFilter = document.getElementById('log-level-filter')?.value || '';
+    const sourceFilter = document.getElementById('log-source-filter')?.value || '';
+    if (levelFilter && entry.level !== levelFilter) return;
+    if (sourceFilter && entry.source !== sourceFilter) return;
+
+    const container = document.getElementById('log-container');
+    if (!container) return;
+
+    // Remove placeholder
+    const placeholder = container.querySelector('.log-msg');
+    if (placeholder && placeholder.innerText === 'Waiting for log entries...') {
+        container.innerHTML = '';
+    }
+
+    const div = createLogEntryElement(entry);
+    container.appendChild(div);
+
+    // Auto-scroll to bottom
+    container.scrollTop = container.scrollHeight;
+}
+
+function createLogEntryElement(entry) {
+    const div = document.createElement('div');
+    const levelClass = `log-level-${(entry.level || 'info').toLowerCase()}`;
+    div.className = `log-entry ${levelClass}`;
+
+    const ts = new Date(entry.timestamp).toLocaleTimeString('en-GB', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const date = new Date(entry.timestamp).toLocaleDateString('en-GB');
+
+    div.innerHTML = `
+        <span class="log-ts">${date} ${ts}</span>
+        <span class="log-badge log-badge-${(entry.level || 'info').toLowerCase()}">${entry.level || 'INFO'}</span>
+        <span class="log-src">${entry.source || 'SYSTEM'}</span>
+        <span class="log-msg">${escapeHtml(entry.message || '')}</span>
+    `;
+    return div;
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+}
+
+function filterLogs() {
+    renderLogEntries();
+}
+
+function renderLogEntries() {
+    const container = document.getElementById('log-container');
+    if (!container) return;
+
+    const levelFilter = document.getElementById('log-level-filter')?.value || '';
+    const sourceFilter = document.getElementById('log-source-filter')?.value || '';
+
+    let filtered = allLogEntries;
+    if (levelFilter) filtered = filtered.filter(e => e.level === levelFilter);
+    if (sourceFilter) filtered = filtered.filter(e => e.source === sourceFilter);
+
+    container.innerHTML = '';
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="log-entry log-level-info"><span class="log-msg">No log entries found</span></div>';
+        return;
+    }
+
+    filtered.forEach(entry => {
+        container.appendChild(createLogEntryElement(entry));
+    });
+
+    // Auto-scroll to bottom
+    container.scrollTop = container.scrollHeight;
+}
+
+function clearLogView() {
+    const container = document.getElementById('log-container');
+    if (container) {
+        container.innerHTML = '<div class="log-entry log-level-info"><span class="log-msg">Log view cleared</span></div>';
+    }
+    allLogEntries = [];
 }

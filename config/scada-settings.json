@@ -6,6 +6,7 @@
     "table_zeroing": "ZEROINGPLCDATA",
     "table_weight": "WEIGHT_TABLE",
     "table_main": "PRESET_TABLE",
+    "sql_auto_reconnect": true,
     "interlocks": {
         "carousel1": false,
         "carousel2": false,
