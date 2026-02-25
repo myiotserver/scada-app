@@ -38,10 +38,120 @@ class OpcUaManager {
 
     // --- Config ---
 
+    _inferMachineId(node) {
+        const name = (node && node.name ? String(node.name) : '').trim().toUpperCase();
+        const nodeId = (node && node.nodeId ? String(node.nodeId) : '').trim().toUpperCase();
+
+        const fromName = name.match(/^(?:CR|S)([1-5])$/);
+        if (fromName) return parseInt(fromName[1], 10);
+
+        const fromNodeId = nodeId.match(/(?:CR0?([1-5])|SENSOR0?([1-5]))/);
+        if (fromNodeId) return parseInt(fromNodeId[1] || fromNodeId[2], 10);
+
+        return null;
+    }
+
+    _inferSignalType(node) {
+        const name = (node && node.name ? String(node.name) : '').trim().toUpperCase();
+        const nodeId = (node && node.nodeId ? String(node.nodeId) : '').trim().toUpperCase();
+
+        if (/^CR[1-5]$/.test(name) || /GR_CR0?[1-5]/.test(nodeId) || /GROSS/.test(nodeId)) {
+            return 'GROSS_WEIGHT';
+        }
+        if (/^S[1-5]$/.test(name) || /SENSOR0?[1-5]/.test(nodeId)) {
+            return 'PRODUCT_SENSOR';
+        }
+        if (/^RST$|^RESET$/.test(name) || /RESET/.test(nodeId)) {
+            return 'RESET';
+        }
+        return null;
+    }
+
+    _normalizeConfig(config) {
+        let changed = false;
+        const normalized = { ...config };
+        const nodes = Array.isArray(normalized.nodes) ? normalized.nodes : [];
+        if (!Array.isArray(normalized.nodes)) changed = true;
+
+        normalized.nodes = nodes.map((node) => {
+            if (!node || typeof node !== 'object') {
+                changed = true;
+                return {
+                    nodeId: '',
+                    name: '',
+                    description: '',
+                    machineId: null,
+                    signalType: null,
+                    scale: 0.01,
+                    enabled: true
+                };
+            }
+
+            const next = { ...node };
+
+            const parsedMachineId = parseInt(next.machineId, 10);
+            if (!Number.isInteger(parsedMachineId) || parsedMachineId < 1 || parsedMachineId > 5) {
+                const inferredMachineId = this._inferMachineId(next);
+                if (inferredMachineId !== null) {
+                    if (next.machineId !== inferredMachineId) changed = true;
+                    next.machineId = inferredMachineId;
+                } else if (next.machineId !== null && next.machineId !== undefined && next.machineId !== '') {
+                    changed = true;
+                    next.machineId = null;
+                }
+            } else if (next.machineId !== parsedMachineId) {
+                changed = true;
+                next.machineId = parsedMachineId;
+            }
+
+            const signalType = (next.signalType || '').toString().trim().toUpperCase();
+            if (signalType) {
+                if (next.signalType !== signalType) changed = true;
+                next.signalType = signalType;
+            } else {
+                const inferredSignalType = this._inferSignalType(next);
+                if (inferredSignalType) {
+                    changed = true;
+                    next.signalType = inferredSignalType;
+                }
+            }
+
+            const parsedScale = parseFloat(next.scale);
+            if (!Number.isFinite(parsedScale)) {
+                changed = true;
+                next.scale = 0.01;
+            } else if (next.scale !== parsedScale) {
+                changed = true;
+                next.scale = parsedScale;
+            }
+
+            if (next.enabled === undefined) {
+                changed = true;
+                next.enabled = true;
+            } else {
+                const enabled = !!next.enabled;
+                if (next.enabled !== enabled) changed = true;
+                next.enabled = enabled;
+            }
+
+            return next;
+        });
+
+        return { normalized, changed };
+    }
+
     _loadConfig() {
         try {
             const raw = fs.readFileSync(CONFIG_PATH, 'utf-8');
-            return JSON.parse(raw);
+            const parsed = JSON.parse(raw);
+            const { normalized, changed } = this._normalizeConfig(parsed);
+
+            if (changed) {
+                fs.writeFileSync(CONFIG_PATH, JSON.stringify(normalized, null, 4), 'utf-8');
+                logger.info('OPC', 'Legacy OPC-UA nodes normalized and saved to config.');
+            }
+
+            return normalized;
         } catch (err) {
             logger.error('OPC', `Failed to load config: ${err.message}`);
             return {
@@ -82,12 +192,40 @@ class OpcUaManager {
         return this.config;
     }
 
-    addNode(nodeId, name, description) {
+    addNode(nodeId, name, description, machineId, signalType, scale, enabled) {
         const exists = this.config.nodes.find(n => n.nodeId === nodeId);
         if (exists) return { error: 'Node already exists' };
-        this.config.nodes.push({ nodeId, name: name || nodeId, description: description || '' });
+
+        const newNode = {
+            nodeId,
+            name: name || nodeId,
+            description: description || '',
+            machineId: machineId ? parseInt(machineId, 10) : null,
+            signalType: signalType || null,
+            scale: scale !== undefined ? parseFloat(scale) : 0.01,
+            enabled: enabled !== undefined ? !!enabled : true
+        };
+
+        this.config.nodes.push(newNode);
         this._saveConfig();
-        logger.info('OPC', `Node added: ${name || nodeId} (${nodeId})`);
+        logger.info('OPC', `Node added: ${newNode.name} (${nodeId})`);
+        return { success: true, nodes: this.config.nodes };
+    }
+
+    updateNode(index, data) {
+        if (index < 0 || index >= this.config.nodes.length) return { error: 'Invalid index' };
+
+        const node = this.config.nodes[index];
+        if (data.nodeId !== undefined) node.nodeId = data.nodeId;
+        if (data.name !== undefined) node.name = data.name;
+        if (data.description !== undefined) node.description = data.description;
+        if (data.machineId !== undefined) node.machineId = data.machineId ? parseInt(data.machineId, 10) : null;
+        if (data.signalType !== undefined) node.signalType = data.signalType;
+        if (data.scale !== undefined) node.scale = parseFloat(data.scale);
+        if (data.enabled !== undefined) node.enabled = !!data.enabled;
+
+        this._saveConfig();
+        logger.info('OPC', `Node updated: ${node.name}`);
         return { success: true, nodes: this.config.nodes };
     }
 
@@ -365,7 +503,7 @@ class OpcUaManager {
         this.monitoredItems = [];
 
         for (const node of this.config.nodes) {
-            if (!node.nodeId) continue;
+            if (!node.nodeId || node.enabled === false) continue;
             try {
                 const monitoredItem = ClientMonitoredItem.create(
                     this.subscription,

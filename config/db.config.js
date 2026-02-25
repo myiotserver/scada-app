@@ -1,8 +1,8 @@
 module.exports = {
-    HOST: "localhost",
-    USER: "scada_user",
-    PASSWORD: "12345678",
-    DB: "scada_db",
+    HOST: process.env.PGHOST || process.env.POSTGRES_HOST || "localhost",
+    USER: process.env.PGUSER || process.env.POSTGRES_USER || "scada_user",
+    PASSWORD: process.env.PGPASSWORD || process.env.POSTGRES_PASSWORD || "secure_password",
+    DB: process.env.PGDATABASE || process.env.POSTGRES_DB || "scada_db",
     dialect: "postgres",
     pool: {
         max: 5,

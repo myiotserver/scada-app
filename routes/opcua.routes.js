@@ -63,4 +63,11 @@ module.exports = function (app) {
         [authJwt.verifyToken, authJwt.isAdmin],
         controller.updateNode
     );
+
+    // Fallback route for environments where PUT is blocked by proxy/web server
+    app.post(
+        "/api/opcua/config/nodes/:index/update",
+        [authJwt.verifyToken, authJwt.isAdmin],
+        controller.updateNode
+    );
 };

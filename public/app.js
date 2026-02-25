@@ -816,11 +816,23 @@ function closeControlModal() {
 }
 
 window.onclick = function (event) {
-    const modal = document.getElementById('control-modal');
-    if (event.target === modal) {
+    const controlModal = document.getElementById('control-modal');
+    const opcEditModal = document.getElementById('opcua-edit-modal');
+    if (event.target === controlModal) {
         closeControlModal();
     }
+    if (event.target === opcEditModal) {
+        closeOpcUaEditModal();
+    }
 }
+
+document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    const opcEditModal = document.getElementById('opcua-edit-modal');
+    if (opcEditModal && opcEditModal.style.display === 'flex') {
+        closeOpcUaEditModal();
+    }
+});
 
 async function sendControlCommand(command) {
     if (!currentControlId) return;
@@ -912,6 +924,36 @@ async function triggerResetError() {
 
 let opcuaConfig = null;
 let opcuaLiveValues = {};
+
+function getOpcUaNodeMachineId(node) {
+    if (!node) return '';
+    if (node.machineId !== undefined && node.machineId !== null && node.machineId !== '') {
+        return String(node.machineId);
+    }
+    const fromName = (node.name || '').match(/^(?:CR|S)([1-5])$/i);
+    if (fromName) return fromName[1];
+    const fromNodeId = (node.nodeId || '').match(/(?:CR0?([1-5])|SENSOR0?([1-5]))/i);
+    if (fromNodeId) return String(fromNodeId[1] || fromNodeId[2] || '');
+    return '';
+}
+
+function getOpcUaNodeSignalType(node) {
+    const current = (node && node.signalType ? String(node.signalType) : '').trim().toUpperCase();
+    if (current) return current;
+
+    const name = (node && node.name ? String(node.name) : '').trim().toUpperCase();
+    const nodeId = (node && node.nodeId ? String(node.nodeId) : '').trim().toUpperCase();
+
+    if (/^CR[1-5]$/.test(name) || /GR_CR0?[1-5]/.test(nodeId) || /GROSS/.test(nodeId)) return 'GROSS_WEIGHT';
+    if (/^S[1-5]$/.test(name) || /SENSOR0?[1-5]/.test(nodeId)) return 'PRODUCT_SENSOR';
+    if (/^RST$|^RESET$/.test(name) || /RESET/.test(nodeId)) return 'RESET';
+    return '';
+}
+
+function getOpcUaNodeScale(node) {
+    const parsed = Number(node && node.scale);
+    return Number.isFinite(parsed) ? parsed : 0.01;
+}
 
 async function loadOpcUaConfig() {
     try {
@@ -1021,6 +1063,9 @@ async function opcuaDisconnect() {
 async function addOpcUaNode() {
     const nodeId = document.getElementById('opcua-new-nodeid').value.trim();
     const name = document.getElementById('opcua-new-name').value.trim();
+    const machineId = document.getElementById('opcua-new-machine').value;
+    const signalType = document.getElementById('opcua-new-signal').value;
+    const scale = parseFloat(document.getElementById('opcua-new-scale').value) || 0.01;
     const desc = document.getElementById('opcua-new-desc').value.trim();
     if (!nodeId) { showOpcUaToast('Node ID required', 'error'); return; }
 
@@ -1029,7 +1074,7 @@ async function addOpcUaNode() {
         const res = await fetch('/api/opcua/config/nodes', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-access-token': token },
-            body: JSON.stringify({ nodeId, name: name || nodeId, description: desc })
+            body: JSON.stringify({ nodeId, name: name || nodeId, machineId, signalType, scale, description: desc })
         });
         const data = await res.json();
         if (data.success) {
@@ -1048,6 +1093,9 @@ async function addOpcUaNode() {
 }
 
 async function removeOpcUaNode(index) {
+    const targetNode = opcuaConfig && opcuaConfig.nodes ? opcuaConfig.nodes[index] : null;
+    if (!confirm(`Delete monitored node "${targetNode ? targetNode.name : index + 1}"?`)) return;
+
     try {
         const token = currentUser.accessToken;
         const res = await fetch(`/api/opcua/config/nodes/${index}`, {
@@ -1074,20 +1122,36 @@ function renderOpcUaNodes() {
     document.getElementById('opcua-node-count').innerText = `${opcuaConfig.nodes.length} node${opcuaConfig.nodes.length !== 1 ? 's' : ''}`;
 
     if (opcuaConfig.nodes.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#999; padding:20px;">No nodes configured</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#999; padding:20px;">No nodes configured</td></tr>`;
         return;
     }
 
     opcuaConfig.nodes.forEach((node, idx) => {
         const liveVal = opcuaLiveValues[node.name];
+        const machineId = getOpcUaNodeMachineId(node);
+        const machineLabel = machineId ? `CR${machineId}` : 'Global';
+        const signalType = getOpcUaNodeSignalType(node);
+        const scale = getOpcUaNodeScale(node);
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${idx + 1}</td>
             <td style="font-family: var(--font-digital); font-size: 0.8rem;">${node.nodeId}</td>
             <td style="font-weight: 600">${node.name}</td>
+            <td>${machineLabel}</td>
+            <td><span style="font-size:0.75rem; background:rgba(99,102,241,0.15); color:#818cf8; padding:2px 6px; border-radius:4px;">${signalType || '—'}</span></td>
+            <td style="font-family: var(--font-digital)">${scale}</td>
             <td>${node.description || '—'}</td>
-            <td style="font-family: var(--font-digital)" id="opcua-live-${idx}">${liveVal ? liveVal.value : '—'}</td>
-            <td><button class="btn-sm btn-danger" onclick="removeOpcUaNode(${idx})">Delete</button></td>
+            <td style="font-family: var(--font-digital)" id="opcua-live-${idx}">${liveVal !== undefined ? liveVal.value : '—'}</td>
+            <td>
+                <div class="opc-node-actions">
+                    <button class="opc-action-btn edit" title="Edit monitored node" onclick="editOpcUaNode(${idx})">
+                        <i class='bx bx-edit-alt'></i> Edit
+                    </button>
+                    <button class="opc-action-btn delete" title="Delete monitored node" onclick="removeOpcUaNode(${idx})">
+                        <i class='bx bx-trash'></i> Delete
+                    </button>
+                </div>
+            </td>
         `;
         tbody.appendChild(tr);
     });
@@ -1164,6 +1228,97 @@ function showOpcUaToast(msg, type) {
     t.innerText = msg;
     document.body.appendChild(t);
     setTimeout(() => { if (t.parentNode) t.remove(); }, 3000);
+}
+
+// --- Edit Node Logic ---
+let currentEditingNodeIndex = null;
+function setOpcUaEditSaving(isSaving) {
+    const saveBtn = document.getElementById('opcua-edit-save-btn');
+    if (!saveBtn) return;
+    saveBtn.disabled = !!isSaving;
+    saveBtn.innerText = isSaving ? 'Saving...' : 'Save Changes';
+}
+
+function editOpcUaNode(index) {
+    if (!opcuaConfig || !opcuaConfig.nodes[index]) return;
+    currentEditingNodeIndex = index;
+    const node = opcuaConfig.nodes[index];
+    const machineId = getOpcUaNodeMachineId(node);
+    const signalType = getOpcUaNodeSignalType(node);
+    const scale = getOpcUaNodeScale(node);
+
+    document.getElementById('opcua-edit-index').value = `#${index + 1}`;
+    document.getElementById('opcua-edit-nodeid').value = node.nodeId || '';
+    document.getElementById('opcua-edit-name').value = node.name || '';
+    document.getElementById('opcua-edit-machine').value = machineId || '';
+    document.getElementById('opcua-edit-signal').value = signalType || 'GROSS_WEIGHT';
+    document.getElementById('opcua-edit-scale').value = scale;
+    document.getElementById('opcua-edit-desc').value = node.description || '';
+
+    document.getElementById('opcua-edit-modal').style.display = 'flex';
+    setOpcUaEditSaving(false);
+    document.getElementById('opcua-edit-nodeid').focus();
+}
+
+function closeOpcUaEditModal() {
+    document.getElementById('opcua-edit-modal').style.display = 'none';
+    currentEditingNodeIndex = null;
+    setOpcUaEditSaving(false);
+}
+
+async function saveOpcUaNodeEdit() {
+    if (currentEditingNodeIndex === null) return;
+
+    const nodeId = document.getElementById('opcua-edit-nodeid').value.trim();
+    const name = document.getElementById('opcua-edit-name').value.trim();
+    if (!nodeId) { showOpcUaToast('Node ID required', 'error'); return; }
+    if (!name) { showOpcUaToast('Tag name required', 'error'); return; }
+
+    const payload = {
+        nodeId,
+        name,
+        machineId: document.getElementById('opcua-edit-machine').value,
+        signalType: document.getElementById('opcua-edit-signal').value,
+        scale: parseFloat(document.getElementById('opcua-edit-scale').value) || 0.01,
+        description: document.getElementById('opcua-edit-desc').value.trim()
+    };
+
+    try {
+        setOpcUaEditSaving(true);
+        const token = currentUser.accessToken;
+        const res = await fetch(`/api/opcua/config/nodes/${currentEditingNodeIndex}/update`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-access-token': token
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const raw = await res.text();
+        let data = null;
+        try {
+            data = raw ? JSON.parse(raw) : null;
+        } catch (parseErr) {
+            const hint = raw && raw.includes('<!DOCTYPE')
+                ? 'Server mengembalikan HTML (kemungkinan proxy/reverse proxy).'
+                : 'Server response bukan JSON.';
+            throw new Error(`${hint} HTTP ${res.status}`);
+        }
+
+        if (res.ok && data && data.success) {
+            opcuaConfig.nodes = data.nodes;
+            renderOpcUaNodes();
+            closeOpcUaEditModal();
+            showOpcUaToast('Node updated', 'success');
+        } else {
+            showOpcUaToast((data && data.error) || `Update failed (HTTP ${res.status})`, 'error');
+        }
+    } catch (e) {
+        showOpcUaToast('Update error: ' + e.message, 'error');
+    } finally {
+        setOpcUaEditSaving(false);
+    }
 }
 
 function handleScadaAlert(alertData) {
