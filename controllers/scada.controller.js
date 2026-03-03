@@ -427,6 +427,10 @@ async function fetchCarouselConfig(showLoading = false) {
         result.recordset.forEach(row => {
             const carouselId = row.CAROUSEL;
             if (carousels[carouselId]) {
+                // ⭐ Track old Packing Order for change detection
+                const oldPackingOrder = carousels[carouselId].data.packingOrder;
+                const newPackingOrder = row.PACKING_ORDER;
+                
                 carousels[carouselId].data = {
                     ...carousels[carouselId].data,
                     productId: row.PRODUCT_ID,
@@ -438,6 +442,11 @@ async function fetchCarouselConfig(showLoading = false) {
                     toleranceMax: row.TOLERANCE_MAX,
                     packWeight: row.PACKAGING_WEIGHT,
                 };
+                
+                // Log when Packing Order changes
+                if (oldPackingOrder && oldPackingOrder !== newPackingOrder) {
+                    logger.info('SQL', `CR${carouselId} PACKING_ORDER changed: ${oldPackingOrder} → ${newPackingOrder}`);
+                }
 
                 const dbState = row.MACHINE_STATE;
                 if (dbState !== undefined && dbState !== null) {
@@ -473,11 +482,16 @@ async function fetchCarouselConfig(showLoading = false) {
                     .input('cr', sql.NVarChar, `CR${carouselId}`)
                     .query(`SELECT MAX(PRODUCT_COUNT) as lastCount FROM [${weightTable}] WHERE PACKING_ORDER = @po AND CAROUSEL = @cr`);
 
-                if (countResult.recordset[0] && countResult.recordset[0].lastCount !== null) {
-                    const count = countResult.recordset[0].lastCount;
-                    if (carousels[carouselId]) {
+                if (carousels[carouselId]) {
+                    if (countResult.recordset[0] && countResult.recordset[0].lastCount !== null) {
+                        // PO exists in history - load the last counter
+                        const count = countResult.recordset[0].lastCount;
                         carousels[carouselId].data.counter = count;
                         logger.info('SQL', `Loaded counter for CR${carouselId}: ${count} (PO: ${packingOrder})`);
+                    } else {
+                        // ⭐ NEW PO with no history - RESET counter to 0
+                        carousels[carouselId].data.counter = 0;
+                        logger.info('SQL', `New PACKING_ORDER for CR${carouselId} (PO: ${packingOrder}), counter initialized to 0`);
                     }
                 }
             } catch (err) {

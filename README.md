@@ -10,8 +10,8 @@ Aplikasi SCADA (Supervisory Control and Data Acquisition) untuk monitoring dan k
 - **Database Integration**: Dukungan MSSQL dan PostgreSQL
 - **Data Aggregation**: Agregasi data otomatis dengan cron jobs
 - **Dashboard Offline Ready**: Dashboard menampilkan status OFFLINE dan 0.00 Kg secara otomatis saat data belum tersedia atau koneksi terputus.
-- **Persistent Counter Logic**: Counter (Product Count) tetap tersimpan berdasarkan PACKING_ORDER. Saat aplikasi mulai, counter akan mengambil nilai terakhir dari history.
-- **Smart Reset Counter**: Counter otomatis reset ke 0 jika status diganti ke STOP dan target produksi sudah tercapai.
+- **Persistent Counter Logic**: Counter (Product Count) tetap tersimpan berdasarkan PACKING_ORDER. Saat aplikasi mulai, counter akan mengambil nilai terakhir dari history. Jika PACKING_ORDER baru masuk tanpa record di WEIGHT_DATA, counter otomatis di-reset ke 0 dengan logging perubahan.
+- **Smart Reset Counter**: Counter otomatis reset ke 0 dalam dua skenario: (1) saat status diganti ke STOP dan target produksi sudah tercapai, atau (2) ketika PACKING_ORDER baru terdeteksi tanpa history di database.
 - **Windows Operational Scripts**: Script batch (.bat) untuk mempermudah instalasi dan menjalankan aplikasi di Windows dengan satu klik.
 - **PKI Certificates**: Manajemen sertifikat untuk keamanan OPC UA
 
@@ -229,7 +229,7 @@ pm2 save                  # Simpan daftar aplikasi agar auto-start saat reboot
 - `GET /api/scada/alarms/active` - Alarm aktif
 - `GET /api/scada/history/:tag` - Riwayat tag spesifik
 - `POST /api/control` - Kontrol carousel (Run, Pause, Stop, Reset)
-  - *Catatan*: Counter akan reset otomatis jika command STOP dikirim saat counter >= target.
+  - *Catatan*: Counter akan reset otomatis dalam dua kasus: (1) jika command STOP dikirim saat counter >= target, atau (2) ketika PACKING_ORDER baru terdeteksi tanpa history di WEIGHT_DATA.
 
 ### OPC UA
 - `GET /api/opcua/status` - Status koneksi OPC UA
