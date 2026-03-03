@@ -6,6 +6,8 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 const logger = require('./utils/logger');
+const jwt = require('jsonwebtoken');
+const authConfig = require('./config/auth.config');
 
 // Parse requests of content-type - application/json
 app.use(express.json());
@@ -53,6 +55,21 @@ require('./routes/opcua.routes')(app);
 const scadaController = require("./controllers/scada.controller");
 const opcuaManager = require("./utils/opcua.manager");
 const scadaSim = scadaController.scadaSim;
+
+// Socket.IO authentication middleware
+io.use((socket, next) => {
+    const token = socket.handshake.auth.token || socket.handshake.query.token;
+    if (!token) {
+        return next(new Error('Authentication required'));
+    }
+    jwt.verify(token, authConfig.secret, (err, decoded) => {
+        if (err) {
+            return next(new Error('Invalid token'));
+        }
+        socket.userId = decoded.id;
+        next();
+    });
+});
 
 io.on('connection', (socket) => {
     logger.info('SYSTEM', `User connected to SCADA dashboard (${socket.id})`);
@@ -104,20 +121,12 @@ io.on('connection', (socket) => {
     });
 });
 
-app.get('/api/opcua/status', (req, res) => res.json(opcuaManager.getStatus()));
-app.post('/api/opcua/connect', async (req, res) => res.json(await opcuaManager.connect()));
-app.post('/api/opcua/disconnect', async (req, res) => res.json(await opcuaManager.disconnect()));
+// NOTE: OPC-UA, Settings, and Control routes are handled in their respective
+// route files with proper auth middleware. Do NOT add duplicate routes here.
 
-// Settings & Control
-app.get('/api/settings', (req, res) => {
-    res.json(require('./config/scada-settings.json'));
-});
-app.get('/api/sql/status', scadaController.getSqlStatus);
-app.post('/api/control', scadaController.controlCarousel);
-app.post('/api/control/reset-error', scadaController.resetErrorTag);
-
-// System Logs API
-app.get('/api/logs', (req, res) => {
+// System Logs API (protected)
+const { authJwt } = require('./middleware');
+app.get('/api/logs', [authJwt.verifyToken], (req, res) => {
     const filters = {};
     if (req.query.level) filters.level = req.query.level;
     if (req.query.source) filters.source = req.query.source;

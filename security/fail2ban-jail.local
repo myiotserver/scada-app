@@ -1,0 +1,80 @@
+# =============================================================
+# Fail2ban Jail Configuration — SCADA Server Security
+# Deploy ke: /etc/fail2ban/jail.local
+# =============================================================
+
+[DEFAULT]
+# Ban selama 1 jam
+bantime = 3600
+
+# Window pemantauan 15 menit
+findtime = 900
+
+# Default: 5 kali salah sebelum di-ban
+maxretry = 5
+
+# Backend untuk monitoring log
+backend = systemd
+
+# Action default: ban IP via iptables
+banaction = iptables-multiport
+
+# Email notifikasi (opsional, isi jika pakai mail)
+# destemail = admin@yourdomain.com
+# sendername = Fail2ban
+# action = %(action_mwl)s
+
+
+# =============================================================
+# [1] SSH — Perlindungan brute-force utama
+# =============================================================
+[sshd]
+enabled = true
+port    = ssh
+filter  = sshd
+logpath = /var/log/auth.log
+# Agresif: hanya 3 kali salah dalam 10 menit → ban 24 jam
+maxretry = 3
+findtime = 600
+bantime  = 86400
+
+
+# =============================================================
+# [2] SSH — Repeat Offenders (1 minggu ban)
+# =============================================================
+[sshd-ddos]
+enabled  = true
+port     = ssh
+filter   = sshd
+logpath  = /var/log/auth.log
+# Ban lebih lama untuk IP yang sudah sering gagal
+maxretry = 10
+findtime = 86400
+bantime  = 604800
+
+
+# =============================================================
+# [3] SCADA App Login — Rate limit dari Node.js log
+# (Membutuhkan filter custom, lihat fail2ban-filter-scada.conf)
+# =============================================================
+[scada-auth]
+enabled  = true
+port     = 3001
+filter   = scada-auth
+logpath  = /root/scada-app/logs/pm2-out.log
+maxretry = 10
+findtime = 900
+bantime  = 3600
+
+
+# =============================================================
+# [4] Nginx (jika digunakan sebagai reverse proxy)
+# =============================================================
+[nginx-http-auth]
+enabled = false
+
+[nginx-limit-req]
+enabled = false
+
+[nginx-botsearch]
+enabled = false
