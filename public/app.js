@@ -152,8 +152,12 @@ function initApp() {
     for (let i = 1; i <= 5; i++) offlineState[i] = { id: i, state: 'OFFLINE', data: null };
     renderCarousels(offlineState);
 
-    // Connect Socket
-    socket = io();
+    // Connect Socket with authentication
+    socket = io({
+        auth: {
+            token: currentUser.accessToken
+        }
+    });
 
     socket.on('init', (data) => {
         console.log("Init Data", data);
@@ -185,18 +189,7 @@ function initApp() {
 
     // SQL status via Socket.IO (real-time push instead of polling)
     socket.on('sql-status', (status) => {
-        updateFooterConnections({ sql: status.connected });
-        // Update config page badge if visible
-        const badge = document.getElementById('sql-status-badge');
-        if (badge) {
-            if (status.connected) {
-                badge.className = 'opcua-badge connected';
-                badge.innerText = 'CONNECTED';
-            } else {
-                badge.className = 'opcua-badge';
-                badge.innerText = 'DISCONNECTED';
-            }
-        }
+        updateSqlStatusUI(status);
     });
 
     // System log real-time
@@ -207,9 +200,10 @@ function initApp() {
     // Load initial settings
     loadSettings();
 
-    // Start SQL polling (fallback, less frequent since Socket.IO handles most updates)
-    pollSqlStatus();
-    setInterval(pollSqlStatus, 10000); // Poll every 10s
+    // Initial SQL status load - wait a bit for socket to be ready
+    setTimeout(() => pollSqlStatus(), 500);
+    // Periodic SQL status check (fallback if socket fails)
+    setInterval(pollSqlStatus, 30000); // Every 30s
 
     // Initial OPC Status Sync
     if (currentUser && currentUser.accessToken) {
@@ -252,8 +246,32 @@ function updateFooterSensors(carousels) {
 
 let lastSqlStatus = false;
 let lastOpcStatus = false;
+let lastSqlStatusData = null;
 
-// function pollSqlStatus removed (merged with bottom one)
+// Reusable function to update SQL status UI (both footer and badge)
+function updateSqlStatusUI(status) {
+    if (!status) return;
+    
+    // Store last status
+    lastSqlStatusData = status;
+    
+    // Update Footer
+    updateFooterConnections({ sql: status.connected });
+    
+    // Update Badge (if exists in DOM)
+    const badge = document.getElementById('sql-status-badge');
+    if (badge) {
+        if (status.connected) {
+            badge.className = 'status-badge connected';
+            badge.innerText = 'CONNECTED';
+            badge.title = status.database ? `Connected to ${status.database} on ${status.server}` : 'Connected';
+        } else {
+            badge.className = 'status-badge disconnected';
+            badge.innerText = 'DISCONNECTED';
+            badge.title = 'Connection Failed';
+        }
+    }
+}
 
 function updateFooterConnections(statusUpdate) {
     if (!statusUpdate) return;
@@ -312,6 +330,14 @@ function navigate(view) {
         }
         document.getElementById('view-config').style.display = 'flex';
         loadSettings();
+        // Refresh SQL status when opening config page
+        setTimeout(() => {
+            if (lastSqlStatusData) {
+                updateSqlStatusUI(lastSqlStatusData);
+            } else {
+                pollSqlStatus();
+            }
+        }, 100);
     } else if (view === 'users') {
         // Role Check
         if (!currentUser || !currentUser.roles || !currentUser.roles.includes('ROLE_ADMIN')) {
@@ -484,6 +510,8 @@ async function saveSettings(silent = false) {
 
         if (res.ok) {
             if (!silent) alert('Settings Saved Successfully');
+            // Reload SQL status after settings change
+            setTimeout(() => pollSqlStatus(), 1500); // Wait 1.5s for backend to reconnect
         } else {
             alert('Failed to save settings: ' + res.statusText);
         }
@@ -1343,42 +1371,23 @@ function showOperatorToast(msg) {
 
 // --- SQL Status Polling ---
 async function pollSqlStatus() {
-    const badge = document.getElementById('sql-status-badge');
-    // if (!badge) return; // Don't return early, we might need to update footer even if badge is missing (though it shouldn't be)
-
     try {
-        const res = await fetch('/api/sql/status');
+        const token = currentUser?.accessToken;
+        if (!token) {
+            console.warn('No token available for SQL status check');
+            return;
+        }
+        
+        const res = await fetch('/api/scada/status', {
+            headers: { 'x-access-token': token }
+        });
         const data = await res.json();
-
-        // Update Footer (Always)
-        updateFooterConnections({ sql: data.connected });
-
-        // Update Badge (If exists)
-        if (badge) {
-            if (data.connected) {
-                badge.innerText = "CONNECTED";
-                badge.className = "status-badge connected";
-                badge.title = `Connected to ${data.database} on ${data.server}`;
-            } else {
-                badge.innerText = "DISCONNECTED";
-                badge.className = "status-badge disconnected";
-                badge.title = "Connection Failed";
-            }
-        }
+        updateSqlStatusUI(data);
     } catch (e) {
-        // Error state
-        updateFooterConnections({ sql: false });
-        if (badge) {
-            badge.innerText = "ERROR";
-            badge.className = "status-badge disconnected";
-        }
+        console.error('SQL status poll failed:', e);
+        updateSqlStatusUI({ connected: false });
     }
 }
-
-// Start polling
-setInterval(pollSqlStatus, 10000);
-// Initial check after short delay to ensure DOM load
-setTimeout(pollSqlStatus, 1000);
 
 // --- History Logic ---
 async function loadHistory() {
@@ -1460,7 +1469,10 @@ async function loadLogs() {
     container.innerHTML = '<div class="log-entry log-level-info"><span class="log-msg">Loading logs...</span></div>';
 
     try {
-        const res = await fetch('/api/logs');
+        const token = localStorage.getItem('scada_token') || (currentUser && currentUser.accessToken);
+        const res = await fetch('/api/logs', {
+            headers: { 'x-access-token': token }
+        });
         const data = await res.json();
         allLogEntries = data || [];
         renderLogEntries();
