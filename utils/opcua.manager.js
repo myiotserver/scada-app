@@ -36,6 +36,13 @@ class OpcUaManager {
         this._manualDisconnect = false;
     }
 
+    _isAutoConnectEnabled() {
+        if (process.env.OPCUA_AUTO_CONNECT !== undefined) {
+            return process.env.OPCUA_AUTO_CONNECT === 'true';
+        }
+        return !!this.config.autoConnect;
+    }
+
     // --- Config ---
 
     _inferMachineId(node) {
@@ -288,7 +295,7 @@ class OpcUaManager {
 
     _triggerAutoReconnect() {
         if (this._manualDisconnect) return;
-        if (!this.config.autoConnect) {
+        if (!this._isAutoConnectEnabled()) {
             logger.info('OPC', 'Auto-reconnect disabled. Will not attempt reconnection.');
             return;
         }
@@ -448,7 +455,7 @@ class OpcUaManager {
             this.session = null;
 
             // Auto-reconnect on failure
-            if (!this._manualDisconnect && this.config.autoConnect) {
+            if (!this._manualDisconnect && this._isAutoConnectEnabled()) {
                 this._triggerAutoReconnect();
             }
             return { error: `Connection failed: ${err.message}` };
@@ -601,9 +608,11 @@ class OpcUaManager {
     // --- Auto-connect ---
 
     async autoConnect() {
-        if (this.config.autoConnect && this.config.endpointUrl) {
+        if (this._isAutoConnectEnabled() && this.config.endpointUrl) {
             logger.info('OPC', 'Auto-connecting on startup...');
             await this.connect();
+        } else {
+            logger.info('OPC', 'Startup auto-connect is disabled. Waiting for manual connect from dashboard.');
         }
     }
 }

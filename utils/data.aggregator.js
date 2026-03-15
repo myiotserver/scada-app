@@ -30,21 +30,28 @@ class DataAggregator {
             if (fs.existsSync(settingsPath)) {
                 appSettings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
             } else {
-                console.warn("[Aggregator] Settings file not found, skipping.");
-                return;
+                console.warn("[Aggregator] Settings file not found, using environment variables if available.");
             }
 
-            if (!appSettings.sql_server) return;
+            const sqlAutoConnectEnabled = process.env.SCADA_SQL_AUTO_CONNECT !== undefined
+                ? process.env.SCADA_SQL_AUTO_CONNECT === 'true'
+                : appSettings.sql_auto_connect !== false;
+            if (!sqlAutoConnectEnabled) return;
+
+            const sqlServer = process.env.MSSQL_SERVER || appSettings.sql_server || '';
+            if (!sqlServer) return;
+
+            const sqlPort = Number(process.env.MSSQL_PORT || appSettings.sql_port || 1433);
 
             const config = {
-                user: appSettings.sql_uid || '',
-                password: appSettings.sql_pass || '',
-                server: appSettings.sql_server || '',
-                database: appSettings.sql_db || '',
-                port: 1433,
+                user: process.env.MSSQL_USER || appSettings.sql_uid || '',
+                password: process.env.MSSQL_PASSWORD || appSettings.sql_pass || '',
+                server: sqlServer,
+                database: process.env.MSSQL_DATABASE || appSettings.sql_db || '',
+                port: Number.isFinite(sqlPort) ? sqlPort : 1433,
                 options: {
-                    encrypt: true,
-                    trustServerCertificate: true,
+                    encrypt: process.env.MSSQL_ENCRYPT === 'true',
+                    trustServerCertificate: process.env.MSSQL_TRUST_CERT !== 'false',
                     enableArithAbort: true
                 },
                 pool: {

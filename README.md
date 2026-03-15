@@ -83,7 +83,7 @@ npm install
 
 ### Langkah 3: Setup Database
 
-#### PostgreSQL Setup (untuk autentikasi)
+#### PostgreSQL Setup (untuk autentikasi login aplikasi scada-app - postgreSQL)
 
 **Linux:**
 ```bash
@@ -123,8 +123,8 @@ GRANT ALL PRIVILEGES ON DATABASE scada_db TO scada_user;
    ```javascript
    module.exports = {
        HOST: "localhost",  // atau IP server PostgreSQL
-       USER: "scada_user",
-       PASSWORD: "secure_password",
+       USER: "scada_user", // "scada_user" adalah username aplikasi bukan untuk login page
+       PASSWORD: "secure_password", // "secure_password" adalah password yang dipakai oleh aplikasi ini untuk membuka akses ke login page
        DB: "scada_db",
        dialect: "postgres",
        // ... konfigurasi pool
@@ -144,8 +144,8 @@ GRANT ALL PRIVILEGES ON DATABASE scada_db TO scada_user;
        "endpointUrl": "opc.tcp://147.139.196.244:49320",
        "securityMode": "Sign",
        "securityPolicy": "Basic256",
-       "username": "OPCusername",
-       "password": "OPCpassword",
+       "username": "OPCusername", // Ganti dengan username OPC server anda
+       "password": "OPCpassword", // Ganti dengan password OPC server anda
        // ... nodes configuration
    }
    ```
@@ -169,6 +169,10 @@ Buat file `.env` di root directory:
 NODE_ENV=development
 PORT=3001
 JWT_SECRET=your_jwt_secret_key
+SCADA_AUTO_SEED_ADMIN=true
+SCADA_DEFAULT_ADMIN_USER=admin
+SCADA_DEFAULT_ADMIN_PASSWORD=12345678
+SCADA_DEFAULT_ADMIN_EMAIL=admin@scada.local
 MSSQL_USER=optional_override_user
 MSSQL_PASSWORD=optional_override_password
 MSSQL_SERVER=optional_override_server
@@ -176,11 +180,30 @@ MSSQL_DATABASE=optional_override_database
 MSSQL_PORT=1433
 ```
 
+Keterangan tambahan akun default:
+- Saat startup, aplikasi akan otomatis membuat admin default **hanya jika** tabel user masih kosong.
+- Default dapat diubah lewat `SCADA_DEFAULT_ADMIN_USER`, `SCADA_DEFAULT_ADMIN_PASSWORD`, dan `SCADA_DEFAULT_ADMIN_EMAIL`.
+- Nonaktifkan auto-seed dengan `SCADA_AUTO_SEED_ADMIN=false`.
+- **Khusus production (`NODE_ENV=production`)**: jika auto-seed aktif dan password masih `12345678`, aplikasi akan menolak startup (exit) demi keamanan.
+
+
+
 ## Menjalankan Aplikasi
 
 Aplikasi akan berjalan di `http://localhost:3001`
 
+### Startup manual (via linux terminal)
+
+Untuk menjalankan aplikasi di server secara manual bisa menggunakan langkah berikut:
+
+1. Masuk ke direktori path aplikasi
+2. Ketik: npm start
+
 ### Production Mode (Linux Server)
+
+Sebelum menjalankan di production, pastikan salah satu kondisi ini terpenuhi:
+- `SCADA_DEFAULT_ADMIN_PASSWORD` sudah diganti ke password kuat.
+- atau `SCADA_AUTO_SEED_ADMIN=false` (jika provisioning user dilakukan manual).
 
 Untuk menjalankan aplikasi di server agar tetap berjalan di background, gunakan **PM2**:
 
@@ -204,6 +227,10 @@ pm2 save                  # Simpan daftar aplikasi agar auto-start saat reboot
 1. **Akses Dashboard**:
    - Buka browser dan navigasi ke `http://localhost:3001`
    - Login dengan kredensial yang valid
+   - Untuk instalasi baru (database user kosong), akun awal bisa dibuat otomatis dari env:
+     - `SCADA_DEFAULT_ADMIN_USER` (default: `admin`)
+     - `SCADA_DEFAULT_ADMIN_PASSWORD` (default dev: `12345678`)
+   - Di production, gunakan password kuat (jangan gunakan `12345678`).
 
 2. **Monitoring Real-time**:
    - Dashboard akan menampilkan berat carousel secara real-time

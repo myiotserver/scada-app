@@ -1393,7 +1393,7 @@ async function pollSqlStatus() {
 async function loadHistory() {
     const tbody = document.getElementById('history-list-body');
     const carouselFilterEl = document.getElementById('history-carousel-filter');
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Loading records...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Loading records...</td></tr>';
 
     try {
         const token = currentUser.accessToken;
@@ -1412,11 +1412,11 @@ async function loadHistory() {
             const data = await res.json();
             renderHistory(data, limit);
         } else {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:red;">Failed to load history</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:red;">Failed to load history</td></tr>';
         }
     } catch (e) {
         console.error("History Error", e);
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:red;">Network Error</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:red;">Network Error</td></tr>';
     }
 }
 
@@ -1425,7 +1425,7 @@ function renderHistory(data, limit = 100) {
     tbody.innerHTML = '';
 
     if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No records found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No records found</td></tr>';
         return;
     }
 
@@ -1443,12 +1443,14 @@ function renderHistory(data, limit = 100) {
         // Format weight values to 2 decimal places
         const grossWeight = row.GROSS_WEIGHT ? parseFloat(row.GROSS_WEIGHT).toFixed(2) : '-';
         const nettWeight = row.NETT_WEIGHT ? parseFloat(row.NETT_WEIGHT).toFixed(2) : '-';
+        const counterValue = row.PRODUCT_COUNT ?? row.COUNTER ?? '-';
 
         tr.innerHTML = `
             <td>${dateStr}</td>
             <td>${row.CAROUSEL}</td>
             <td>${row.PRODUCT_NAME} <span style="font-size:0.8em; color:#888;">(${row.PRODUCT_ID})</span></td>
             <td>${row.TARGET_COUNT || '-'}</td>
+            <td>${counterValue}</td>
             <td>${grossWeight}</td>
             <td>${nettWeight}</td>
             <td><span class="status-badge status-${(row.STATUS || '').toLowerCase()}">${row.STATUS}</span></td>

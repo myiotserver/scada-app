@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const app = express();
@@ -7,6 +9,7 @@ const { Server } = require("socket.io");
 const io = new Server(server);
 const logger = require('./utils/logger');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const authConfig = require('./config/auth.config');
 
 // Parse requests of content-type - application/json
@@ -27,19 +30,61 @@ app.get('/download/client-cert', (req, res) => {
 
 const db = require("./models");
 const Role = db.role;
+const User = db.user;
 
 // Force sync to create tables (DROP and CREATE) - user 'sync' only for prod
 // For initial setup we use force: true to drop and re-create
-db.sequelize.sync({ force: false }).then(() => {
+db.sequelize.sync({ force: false }).then(async () => {
     console.log('Drop and Resync Db');
-    initial();
+    await initial();
+}).catch((err) => {
+    logger.error('AUTH', `Database sync failed: ${err.message}`);
 });
 
-function initial() {
-    Role.findOrCreate({ where: { id: 1, name: "user" } });
-    Role.findOrCreate({ where: { id: 2, name: "moderator" } });
-    Role.findOrCreate({ where: { id: 3, name: "admin" } });
-    Role.findOrCreate({ where: { id: 4, name: "guest" } });
+async function initial() {
+    await Role.findOrCreate({ where: { id: 1, name: "user" } });
+    await Role.findOrCreate({ where: { id: 2, name: "moderator" } });
+    await Role.findOrCreate({ where: { id: 3, name: "admin" } });
+    await Role.findOrCreate({ where: { id: 4, name: "guest" } });
+    await ensureDefaultAdmin();
+}
+
+async function ensureDefaultAdmin() {
+    if (process.env.SCADA_AUTO_SEED_ADMIN === 'false') {
+        logger.info('AUTH', 'Default admin auto-seed disabled by SCADA_AUTO_SEED_ADMIN=false.');
+        return;
+    }
+
+    const userCount = await User.count();
+    if (userCount > 0) {
+        return;
+    }
+
+    const adminRole = await Role.findOne({ where: { name: 'admin' } });
+    if (!adminRole) {
+        logger.warn('AUTH', 'Admin role not found, skipping default admin creation.');
+        return;
+    }
+
+    const username = process.env.SCADA_DEFAULT_ADMIN_USER || 'admin';
+    const email = process.env.SCADA_DEFAULT_ADMIN_EMAIL || 'admin@scada.local';
+    const password = process.env.SCADA_DEFAULT_ADMIN_PASSWORD || '12345678';
+
+    const isProduction = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
+    if (isProduction && password === '12345678') {
+        logger.error('AUTH', 'Refusing startup: SCADA_DEFAULT_ADMIN_PASSWORD is still default in production.');
+        logger.error('AUTH', 'Set SCADA_DEFAULT_ADMIN_PASSWORD to a strong value or disable auto-seed with SCADA_AUTO_SEED_ADMIN=false.');
+        process.exit(1);
+    }
+
+    const user = await User.create({
+        username,
+        email,
+        password: bcrypt.hashSync(password, 8)
+    });
+
+    await user.setRoles([adminRole]);
+    logger.warn('AUTH', `Default admin user created on startup: ${username}. Change password after first login.`);
 }
 
 app.get('/', (req, res) => {

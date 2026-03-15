@@ -19,15 +19,31 @@ try {
 
 // Helper to construct MSSQL config from settings
 function getMssqlConfig() {
+    const envServer   = process.env.MSSQL_SERVER;
+    const envUser     = process.env.MSSQL_USER;
+    const envPassword = process.env.MSSQL_PASSWORD;
+    const envDatabase = process.env.MSSQL_DATABASE;
+    const envPort     = process.env.MSSQL_PORT;
+
+    const server   = envServer   || appSettings.sql_server || '';
+    const user     = envUser     || appSettings.sql_uid    || '';
+    const password = envPassword || appSettings.sql_pass   || '';
+    const database = envDatabase || appSettings.sql_db     || '';
+    const port     = Number(envPort || appSettings.sql_port || 1433);
+
+    // Log the active source for each critical field so operators can diagnose config priority issues
+    const src = (envVal, label) => envVal ? `env(${label})` : `settings.json`;
+    logger.info('SQL', `Config source — server:${src(envServer,'MSSQL_SERVER')} user:${src(envUser,'MSSQL_USER')} db:${src(envDatabase,'MSSQL_DATABASE')} port:${src(envPort,'MSSQL_PORT')}`);
+
     return {
-        user: appSettings.sql_uid || '',
-        password: appSettings.sql_pass || '',
-        server: appSettings.sql_server || '',
-        database: appSettings.sql_db || '',
-        port: 1433,
+        user,
+        password,
+        server,
+        database,
+        port: Number.isFinite(port) ? port : 1433,
         options: {
-            encrypt: true,
-            trustServerCertificate: true,
+            encrypt: process.env.MSSQL_ENCRYPT === 'true',
+            trustServerCertificate: process.env.MSSQL_TRUST_CERT !== 'false',
             enableArithAbort: true
         },
         pool: {
@@ -36,6 +52,13 @@ function getMssqlConfig() {
             idleTimeoutMillis: 30000
         }
     };
+}
+
+function isSqlStartupAutoConnectEnabled() {
+    if (process.env.SCADA_SQL_AUTO_CONNECT !== undefined) {
+        return process.env.SCADA_SQL_AUTO_CONNECT === 'true';
+    }
+    return appSettings.sql_auto_connect !== false;
 }
 
 // In-memory state for the Carousels (1-5)
@@ -151,10 +174,11 @@ const SQL_ALERT_DEBOUNCE_MS = 8000;
 
 function emitSqlStatus() {
     const connected = weighingPool && weighingPool.connected;
+    const config = getMssqlConfig();
     const status = {
         connected: !!connected,
-        server: appSettings.sql_server,
-        database: appSettings.sql_db
+        server: config.server,
+        database: config.database
     };
     sqlStatusListeners.forEach(cb => {
         try { cb(status); } catch (e) { }
@@ -315,8 +339,11 @@ function triggerSqlAutoReconnect() {
     }, delay);
 }
 // Start connection
-if (appSettings.sql_server) {
+const startupSqlConfig = getMssqlConfig();
+if (isSqlStartupAutoConnectEnabled() && startupSqlConfig.server) {
     connectToWeighingDB();
+} else {
+    logger.info('SQL', 'Startup auto-connect is disabled. Waiting for manual connect via settings reload.');
 }
 
 // --- OPC-UA Integration ---
@@ -586,10 +613,11 @@ exports.getWeightHistory = async (req, res) => {
 exports.getSqlStatus = (req, res) => {
     // Check if pool exists and is connected
     const connected = weighingPool && weighingPool.connected;
+    const config = getMssqlConfig();
     res.json({
         connected: !!connected,
-        server: appSettings.sql_server,
-        database: appSettings.sql_db
+        server: config.server,
+        database: config.database
     });
 };
 
