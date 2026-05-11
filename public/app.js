@@ -5,6 +5,64 @@
 let socket = null;
 let currentUser = null;
 
+function getDialogTheme() {
+    return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+}
+
+function getAlertIcon(type) {
+    if (['success', 'error', 'warning', 'info', 'question'].includes(type)) return type;
+    return 'info';
+}
+
+function showAppAlert(message, type = 'info', title) {
+    if (!window.Swal) {
+        alert(message);
+        return Promise.resolve();
+    }
+
+    return Swal.fire({
+        title: title || (type === 'error' ? 'Error' : type === 'success' ? 'Success' : 'Notification'),
+        text: message,
+        icon: getAlertIcon(type),
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#00d4aa',
+        background: getDialogTheme() === 'light' ? '#ffffff' : '#1a2332',
+        color: getDialogTheme() === 'light' ? '#1e293b' : '#f1f5f9',
+        customClass: {
+            popup: 'scada-swal-popup',
+            title: 'scada-swal-title',
+            confirmButton: 'scada-swal-confirm'
+        }
+    });
+}
+
+async function showAppConfirm(message, options = {}) {
+    if (!window.Swal) {
+        return confirm(message);
+    }
+
+    const result = await Swal.fire({
+        title: options.title || 'Are you sure?',
+        text: message,
+        icon: options.icon || 'warning',
+        showCancelButton: true,
+        confirmButtonText: options.confirmButtonText || 'Yes',
+        cancelButtonText: options.cancelButtonText || 'Cancel',
+        confirmButtonColor: options.confirmButtonColor || '#ef4444',
+        cancelButtonColor: '#64748b',
+        background: getDialogTheme() === 'light' ? '#ffffff' : '#1a2332',
+        color: getDialogTheme() === 'light' ? '#1e293b' : '#f1f5f9',
+        customClass: {
+            popup: 'scada-swal-popup',
+            title: 'scada-swal-title',
+            confirmButton: 'scada-swal-confirm',
+            cancelButton: 'scada-swal-cancel'
+        }
+    });
+
+    return result.isConfirmed;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     checkAuth();
     startClock();
@@ -324,7 +382,7 @@ function navigate(view) {
     } else if (view === 'config') {
         // Allow Admin AND User
         if (!currentUser || !currentUser.roles || (!currentUser.roles.includes('ROLE_ADMIN') && !currentUser.roles.includes('ROLE_USER'))) {
-            alert("Access Denied.");
+            showAppAlert("Access Denied.", 'warning', 'Access Denied');
             navigate('home');
             return;
         }
@@ -341,7 +399,7 @@ function navigate(view) {
     } else if (view === 'users') {
         // Role Check
         if (!currentUser || !currentUser.roles || !currentUser.roles.includes('ROLE_ADMIN')) {
-            alert("Access Denied: Admin privileges required.");
+            showAppAlert("Access Denied: Admin privileges required.", 'warning', 'Access Denied');
             navigate('home');
             return;
         }
@@ -349,7 +407,7 @@ function navigate(view) {
         loadUsers();
     } else if (view === 'opcua') {
         if (!currentUser || !currentUser.roles || !currentUser.roles.includes('ROLE_ADMIN')) {
-            alert("Access Denied: Admin privileges required.");
+            showAppAlert("Access Denied: Admin privileges required.", 'warning', 'Access Denied');
             navigate('home');
             return;
         }
@@ -359,7 +417,7 @@ function navigate(view) {
     } else if (view === 'history') {
         // Allow Admin AND User (maybe guest too? Let's say Admin/User for now)
         if (!currentUser || !currentUser.roles) {
-            alert("Access Denied.");
+            showAppAlert("Access Denied.", 'warning', 'Access Denied');
             navigate('home');
             return;
         }
@@ -368,7 +426,7 @@ function navigate(view) {
     } else if (view === 'logs') {
         // Allow Admin and User
         if (!currentUser || !currentUser.roles || (!currentUser.roles.includes('ROLE_ADMIN') && !currentUser.roles.includes('ROLE_USER'))) {
-            alert("Access Denied.");
+            showAppAlert("Access Denied.", 'warning', 'Access Denied');
             navigate('home');
             return;
         }
@@ -425,7 +483,7 @@ async function loadSettings() {
             renderSettings();
         } else {
             // Handle 403 or other errors
-            if (res.status === 403) alert("Access Denied to Settings");
+            if (res.status === 403) showAppAlert("Access Denied to Settings", 'warning', 'Access Denied');
         }
     } catch (e) {
         console.error("Failed to load settings", e);
@@ -509,11 +567,11 @@ async function saveSettings(silent = false) {
         });
 
         if (res.ok) {
-            if (!silent) alert('Settings Saved Successfully');
+            if (!silent) showAppAlert('Settings Saved Successfully', 'success');
             // Reload SQL status after settings change
             setTimeout(() => pollSqlStatus(), 1500); // Wait 1.5s for backend to reconnect
         } else {
-            alert('Failed to save settings: ' + res.statusText);
+            showAppAlert('Failed to save settings: ' + res.statusText, 'error');
         }
     } catch (e) {
         console.error("Save error", e);
@@ -524,7 +582,7 @@ async function saveSettings(silent = false) {
 async function loadUsers() {
     try {
         if (!currentUser || !currentUser.accessToken) {
-            alert("Error: No access token found. Please Logout and Login again.");
+            showAppAlert("Error: No access token found. Please Logout and Login again.", 'error');
             return;
         }
         const token = currentUser.accessToken;
@@ -536,22 +594,22 @@ async function loadUsers() {
             const users = await res.json();
             if (Array.isArray(users)) {
                 renderUsers(users);
-                if (users.length === 0) alert("No users found in database.");
+                if (users.length === 0) showAppAlert("No users found in database.", 'info');
             } else {
-                alert("Error: Invalid response format");
+                showAppAlert("Error: Invalid response format", 'error');
             }
         } else {
             const err = await res.text();
             try {
                 const jsonErr = JSON.parse(err);
-                alert("Failed to load users: " + jsonErr.message);
+                showAppAlert("Failed to load users: " + jsonErr.message, 'error');
             } catch (e) {
-                alert("Failed to load users: " + res.statusText);
+                showAppAlert("Failed to load users: " + res.statusText, 'error');
             }
         }
     } catch (e) {
         console.error("Failed to load users", e);
-        alert("Network Error loading users: " + e.message);
+        showAppAlert("Network Error loading users: " + e.message, 'error');
     }
 }
 
@@ -592,7 +650,7 @@ async function submitUserCreation() {
     const role = document.getElementById('new-role').value;
 
     if (!username || !password) {
-        alert("Username and Password are required");
+        showAppAlert("Username and Password are required", 'warning');
         return;
     }
 
@@ -613,20 +671,24 @@ async function createUser(userData) {
             body: JSON.stringify(userData)
         });
         if (res.ok) {
-            alert('User Created');
+            showAppAlert('User Created', 'success');
             closeUserModal();
             loadUsers();
         } else {
             const err = await res.json();
-            alert('Error: ' + err.message);
+            showAppAlert('Error: ' + err.message, 'error');
         }
     } catch (e) {
-        alert('Create failed');
+        showAppAlert('Create failed', 'error');
     }
 }
 
 async function deleteUser(id) {
-    if (!confirm('Are you sure you want to delete this user?')) return;
+    const confirmed = await showAppConfirm('Are you sure you want to delete this user?', {
+        title: 'Delete User',
+        confirmButtonText: 'Delete'
+    });
+    if (!confirmed) return;
 
     try {
         const token = currentUser.accessToken;
@@ -637,10 +699,10 @@ async function deleteUser(id) {
         if (res.ok) {
             loadUsers();
         } else {
-            alert('Failed to delete');
+            showAppAlert('Failed to delete', 'error');
         }
     } catch (e) {
-        alert('Delete error');
+        showAppAlert('Delete error', 'error');
     }
 }
 
@@ -870,7 +932,7 @@ async function sendControlCommand(command) {
     /*
     const badge = document.getElementById('opcua-status-badge');
     if (badge && badge.innerText === 'DISCONNECTED') {
-        alert("Cannot send command: OPC-UA is Disconnected");
+        showAppAlert("Cannot send command: OPC-UA is Disconnected", 'warning');
         return;
     }
     */
@@ -888,13 +950,13 @@ async function sendControlCommand(command) {
 
         const data = await res.json();
         if (res.ok) {
-            alert(data.message);
+            showAppAlert(data.message, 'success');
             closeControlModal();
         } else {
-            alert("Error: " + (data.error || 'Command Failed'));
+            showAppAlert("Error: " + (data.error || 'Command Failed'), 'error');
         }
     } catch (e) {
-        alert("Command Error: " + e.message);
+        showAppAlert("Command Error: " + e.message, 'error');
     }
 }
 
@@ -1122,7 +1184,11 @@ async function addOpcUaNode() {
 
 async function removeOpcUaNode(index) {
     const targetNode = opcuaConfig && opcuaConfig.nodes ? opcuaConfig.nodes[index] : null;
-    if (!confirm(`Delete monitored node "${targetNode ? targetNode.name : index + 1}"?`)) return;
+    const confirmed = await showAppConfirm(`Delete monitored node "${targetNode ? targetNode.name : index + 1}"?`, {
+        title: 'Delete Monitored Node',
+        confirmButtonText: 'Delete'
+    });
+    if (!confirmed) return;
 
     try {
         const token = currentUser.accessToken;
