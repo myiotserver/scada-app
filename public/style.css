@@ -186,6 +186,26 @@ body {
     color: var(--bg-primary);
 }
 
+.scada-swal-popup {
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 20px 70px rgba(0, 0, 0, 0.45);
+    font-family: var(--font-main);
+}
+
+.scada-swal-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: 0;
+}
+
+.scada-swal-confirm,
+.scada-swal-cancel {
+    border-radius: var(--radius-sm) !important;
+    font-weight: 700;
+    letter-spacing: 0;
+}
+
 /* scrollbar */
 ::-webkit-scrollbar {
     width: 6px;

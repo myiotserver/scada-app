@@ -7,6 +7,7 @@ const http = require('http');
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
+const path = require('path');
 const logger = require('./utils/logger');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
@@ -18,11 +19,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(express.static('public'));
+app.use('/vendor/sweetalert2', express.static(path.join(__dirname, 'node_modules', 'sweetalert2', 'dist')));
 
 // Download route for OPC-UA client certificate (needed for KEPServer trust)
 app.get('/download/client-cert', (req, res) => {
-    const certPath = require('path').join(__dirname, 'pki', 'own', 'certs', 'client_certificate.pem');
-    const derPath = require('path').join(__dirname, 'public', 'client_certificate.der');
+    const certPath = path.join(__dirname, 'pki', 'own', 'certs', 'client_certificate.pem');
+    const derPath = path.join(__dirname, 'public', 'client_certificate.der');
     const format = req.query.format || 'der';
     const filePath = format === 'pem' ? certPath : derPath;
     res.download(filePath, `client_certificate.${format}`);
