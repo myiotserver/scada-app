@@ -523,23 +523,50 @@ class OpcUaManager {
                     logger.error('OPC', `Error for ${node.name}: ${err.message}`);
                 });
                 monitoredItem.on('changed', (dataValue) => {
-                    const value = dataValue.value ? dataValue.value.value : null;
-                    this.liveValues[node.name] = {
-                        value,
-                        timestamp: new Date().toISOString(),
-                        nodeId: node.nodeId,
-                        statusCode: dataValue.statusCode ? dataValue.statusCode.toString() : 'Good'
-                    };
-                    this._emitUpdate(node.name, this.liveValues[node.name]);
+                    this._recordNodeValue(node, dataValue);
                 });
 
                 this.monitoredItems.push({ node, monitoredItem });
                 logger.info('OPC', `Monitoring: ${node.name} (${node.nodeId})`);
+
+                this.session.read({
+                    nodeId: node.nodeId,
+                    attributeId: AttributeIds.Value
+                }).then((dataValue) => {
+                    this._recordNodeValue(node, dataValue);
+                }).catch((err) => {
+                    logger.error('OPC', `Initial read failed for ${node.name}: ${err.message}`);
+                });
             } catch (err) {
                 logger.error('OPC', `Failed to monitor ${node.name}: ${err.message}`);
             }
         }
         this._emitStatus();
+    }
+
+    _recordNodeValue(node, dataValue) {
+        const value = dataValue && dataValue.value ? dataValue.value.value : null;
+        const statusCode = dataValue && dataValue.statusCode
+            ? (dataValue.statusCode.name || dataValue.statusCode.toString())
+            : 'Good';
+        const name = node.name || node.nodeId;
+
+        this.liveValues[name] = {
+            name,
+            value,
+            timestamp: new Date().toISOString(),
+            nodeId: node.nodeId,
+            machineId: node.machineId !== undefined ? node.machineId : null,
+            signalType: node.signalType || null,
+            scale: node.scale !== undefined ? node.scale : 1,
+            statusCode
+        };
+
+        if (statusCode !== 'Good') {
+            logger.warn('OPC', `Read ${name} returned ${statusCode}`);
+        }
+
+        this._emitUpdate(name, this.liveValues[name]);
     }
 
     // --- Browse ---

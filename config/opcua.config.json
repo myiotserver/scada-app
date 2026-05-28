@@ -27,12 +27,12 @@
             "enabled": true
         },
         {
-            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.GR_CR03",
+            "nodeId": "ns=2;s=SIEMENS CAROUSEL.CAROUSEL 03.PRODUCT_WEIGHT",
             "name": "CR3",
             "description": "Gross weight CR3",
             "machineId": 3,
             "signalType": "GROSS_WEIGHT",
-            "scale": 0.01,
+            "scale": 1,
             "enabled": true
         },
         {
@@ -72,7 +72,7 @@
             "enabled": true
         },
         {
-            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.SENSOR03",
+            "nodeId": "ns=2;s=SIEMENS CAROUSEL.CAROUSEL 03.PRODUCT_SENSOR",
             "name": "S3",
             "description": "Product sensor CR3",
             "machineId": 3,

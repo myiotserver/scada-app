@@ -347,51 +347,78 @@ if (isSqlStartupAutoConnectEnabled() && startupSqlConfig.server) {
 }
 
 // --- OPC-UA Integration ---
+function inferOpcMachineId(data) {
+    const configuredMachineId = parseInt(data.machineId, 10);
+    if (Number.isInteger(configuredMachineId) && configuredMachineId >= 1 && configuredMachineId <= 5) {
+        return configuredMachineId;
+    }
+
+    const tagName = (data.name || '').toString().trim().toUpperCase();
+    const nodeId = (data.nodeId || '').toString().trim().toUpperCase();
+    const fromName = tagName.match(/^(?:CR|S)([1-5])$/);
+    if (fromName) return parseInt(fromName[1], 10);
+
+    const fromNodeId = nodeId.match(/(?:CR0?([1-5])|SENSOR0?([1-5]))/);
+    if (fromNodeId) return parseInt(fromNodeId[1] || fromNodeId[2], 10);
+
+    return null;
+}
+
+function inferOpcSignalType(data) {
+    const configuredSignalType = (data.signalType || '').toString().trim().toUpperCase();
+    if (configuredSignalType) return configuredSignalType;
+
+    const tagName = (data.name || '').toString().trim().toUpperCase();
+    const nodeId = (data.nodeId || '').toString().trim().toUpperCase();
+    if (/^CR[1-5]$/.test(tagName) || /GR_CR0?[1-5]/.test(nodeId) || /GROSS/.test(nodeId)) return 'GROSS_WEIGHT';
+    if (/^S[1-5]$/.test(tagName) || /SENSOR0?[1-5]/.test(nodeId)) return 'PRODUCT_SENSOR';
+    if (/^RST$|^RESET$/.test(tagName) || /RESET/.test(nodeId)) return 'RESET';
+    return '';
+}
+
+function parseOpcBoolean(value) {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value !== 0;
+    const normalized = (value || '').toString().trim().toLowerCase();
+    return ['true', '1', 'on', 'yes'].includes(normalized);
+}
+
 // Subscribe to OPC Manager updates
 opcUaManager.subscribe('scada-controller', (event, data) => {
-    if (event === 'opcua-value' && data && data.name) {
-        // Map CR1..CR5 to Carousel 1..5
-        const match = data.name.match(/^CR(\d+)$/);
-        if (match) {
-            const carouselId = parseInt(match[1]);
-            if (carousels[carouselId]) {
-                const val = parseFloat(data.value) / 100;
-                if (!isNaN(val)) {
-                    carousels[carouselId].data.lastGross = parseFloat(val.toFixed(2));
-                    // Calc Nett
-                    const packWeight = carousels[carouselId].data.packWeight || 0;
-                    carousels[carouselId].data.lastNett = parseFloat((val - packWeight).toFixed(2));
-                }
-            }
+    if (event !== 'opcua-value' || !data || !data.name) return;
+
+    const carouselId = inferOpcMachineId(data);
+    if (!carouselId || !carousels[carouselId]) return;
+
+    const signalType = inferOpcSignalType(data);
+
+    if (signalType === 'GROSS_WEIGHT') {
+        const rawValue = parseFloat(data.value);
+        const scale = Number.isFinite(parseFloat(data.scale)) ? parseFloat(data.scale) : 1;
+        const val = rawValue * scale;
+        if (!Number.isNaN(val)) {
+            carousels[carouselId].data.lastGross = parseFloat(val.toFixed(2));
+            const packWeight = carousels[carouselId].data.packWeight || 0;
+            carousels[carouselId].data.lastNett = parseFloat((val - packWeight).toFixed(2));
         }
+        return;
+    }
 
-        // Map S1..S5 (Sensors)
-        const matchSensor = data.name.match(/^S(\d+)$/);
-        if (matchSensor) {
-            const carouselId = parseInt(matchSensor[1]);
-            if (carousels[carouselId]) {
-                const newValue = !!data.value;
-                const oldValue = carousels[carouselId].data.sensorStatus;
+    if (signalType === 'PRODUCT_SENSOR') {
+        const newValue = parseOpcBoolean(data.value);
+        const oldValue = carousels[carouselId].data.sensorStatus;
 
-                // Update status
-                carousels[carouselId].data.sensorStatus = newValue;
+        carousels[carouselId].data.sensorStatus = newValue;
 
-                // RISING EDGE DETECTION (False -> True)
-                if (!oldValue && newValue) {
-                    logger.info('SCADA', `Sensor Rising Edge for CR${carouselId}`);
+        if (!oldValue && newValue) {
+            logger.info('SCADA', `Sensor Rising Edge for CR${carouselId}`);
 
-                    // CHECK LOGIC: Only write and increment counter if state is RUN
-                    if (carousels[carouselId].state === 'RUN') {
-                        // Increment counter
-                        carousels[carouselId].data.counter = (carousels[carouselId].data.counter || 0) + 1;
-                        logger.info('SCADA', `CR${carouselId} counter incremented to ${carousels[carouselId].data.counter}`);
-
-                        // Use current data snapshot
-                        insertWeightData(carouselId, carousels[carouselId].data);
-                    } else {
-                        logger.info('SCADA', `CR${carouselId} is ${carousels[carouselId].state}, skipping counter increment and SQL write.`);
-                    }
-                }
+            if (carousels[carouselId].state === 'RUN') {
+                carousels[carouselId].data.counter = (carousels[carouselId].data.counter || 0) + 1;
+                logger.info('SCADA', `CR${carouselId} counter incremented to ${carousels[carouselId].data.counter}`);
+                insertWeightData(carouselId, carousels[carouselId].data);
+            } else {
+                logger.info('SCADA', `CR${carouselId} is ${carousels[carouselId].state}, skipping counter increment and SQL write.`);
             }
         }
     }
