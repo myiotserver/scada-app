@@ -145,6 +145,15 @@
             "machineId": 5,
             "scale": 0.01,
             "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=SIEMENS CAROUSEL.CAROUSEL 03.ZEROING_BUTTON",
+            "name": "ZERO3",
+            "description": "Zeroing button for Carousel 3",
+            "machineId": 3,
+            "signalType": "ZEROING",
+            "scale": 0.01,
+            "enabled": true
         }
     ]
 }

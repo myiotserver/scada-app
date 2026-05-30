@@ -170,6 +170,7 @@ const SQL_HEALTH_CHECK_INTERVAL = 30000; // 30 seconds
 const sqlStatusListeners = new Map();
 const alertListeners = new Map();
 const lastSqlInsertAlertTs = new Map();
+const pendingInsertTimers = new Map();
 const SQL_ALERT_DEBOUNCE_MS = 8000;
 
 function emitSqlStatus() {
@@ -210,11 +211,11 @@ function notifySqlInsertFailure(payload) {
 async function insertWeightData(carouselId, data) {
     if (!weighingPool) {
         logger.warn('SQL', `Skipping insert for CR${carouselId}: Database pool not ready.`);
-        return;
+        return false;
     }
     if (!data.productId) {
         logger.warn('SQL', `Skipping insert for CR${carouselId}: No Product ID defined in configuration.`);
-        return;
+        return false;
     }
 
     try {
@@ -249,6 +250,7 @@ async function insertWeightData(carouselId, data) {
             `);
 
         logger.info('SQL', `Inserted data for CR${carouselId}: ${data.lastNett}kg (${status})`);
+        return true;
     } catch (err) {
         logger.error('SQL', `Error inserting weight data: ${err.message}`);
         notifySqlInsertFailure({
@@ -257,6 +259,7 @@ async function insertWeightData(carouselId, data) {
             table: appSettings.table_weight || 'WEIGHT_DATA',
             reason: err.message
         });
+        return false;
     }
 }
 
@@ -414,9 +417,25 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
             logger.info('SCADA', `Sensor Rising Edge for CR${carouselId}`);
 
             if (carousels[carouselId].state === 'RUN') {
-                carousels[carouselId].data.counter = (carousels[carouselId].data.counter || 0) + 1;
-                logger.info('SCADA', `CR${carouselId} counter incremented to ${carousels[carouselId].data.counter}`);
-                insertWeightData(carouselId, carousels[carouselId].data);
+                const currentCounter = carousels[carouselId].data.counter || 0;
+                const nextCounter = currentCounter + 1;
+                logger.info('SCADA', `CR${carouselId} rising edge detected, scheduling SQL insert with counter ${nextCounter}`);
+
+                const insertPayload = { ...carousels[carouselId].data, counter: nextCounter };
+                if (pendingInsertTimers.has(carouselId)) {
+                    clearTimeout(pendingInsertTimers.get(carouselId));
+                }
+
+                const timer = setTimeout(async () => {
+                    pendingInsertTimers.delete(carouselId);
+                    const inserted = await insertWeightData(carouselId, insertPayload);
+                    if (inserted) {
+                        carousels[carouselId].data.counter = nextCounter;
+                        logger.info('SCADA', `CR${carouselId} counter updated to ${nextCounter} after SQL insert`);
+                    }
+                }, 500);
+                pendingInsertTimers.set(carouselId, timer);
+                logger.info('SCADA', `Scheduled SQL insert for CR${carouselId} in 500ms`);
             } else {
                 logger.info('SCADA', `CR${carouselId} is ${carousels[carouselId].state}, skipping counter increment and SQL write.`);
             }
