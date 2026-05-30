@@ -61,6 +61,15 @@ function isSqlStartupAutoConnectEnabled() {
     return appSettings.sql_auto_connect !== false;
 }
 
+// Get insert delay (ms). Priority: ENV `SCADA_INSERT_DELAY_MS` -> settings.insert_delay_ms -> default 500
+function getInsertDelayMs() {
+    const envVal = process.env.SCADA_INSERT_DELAY_MS;
+    const cfgVal = appSettings && appSettings.insert_delay_ms;
+    const raw = envVal !== undefined ? envVal : (cfgVal !== undefined ? cfgVal : 500);
+    const num = Number(raw);
+    return Number.isFinite(num) && num >= 0 ? Math.floor(num) : 500;
+}
+
 // In-memory state for the Carousels (1-5)
 let carousels = {
     1: {
@@ -426,6 +435,7 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
                     clearTimeout(pendingInsertTimers.get(carouselId));
                 }
 
+                const delayMs = getInsertDelayMs();
                 const timer = setTimeout(async () => {
                     pendingInsertTimers.delete(carouselId);
                     const inserted = await insertWeightData(carouselId, insertPayload);
@@ -433,9 +443,9 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
                         carousels[carouselId].data.counter = nextCounter;
                         logger.info('SCADA', `CR${carouselId} counter updated to ${nextCounter} after SQL insert`);
                     }
-                }, 500);
+                }, delayMs);
                 pendingInsertTimers.set(carouselId, timer);
-                logger.info('SCADA', `Scheduled SQL insert for CR${carouselId} in 500ms`);
+                logger.info('SCADA', `Scheduled SQL insert for CR${carouselId} in ${delayMs}ms`);
             } else {
                 logger.info('SCADA', `CR${carouselId} is ${carousels[carouselId].state}, skipping counter increment and SQL write.`);
             }
