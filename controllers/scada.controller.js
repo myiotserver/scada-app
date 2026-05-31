@@ -70,6 +70,15 @@ function getInsertDelayMs() {
     return Number.isFinite(num) && num >= 0 ? Math.floor(num) : 500;
 }
 
+// Get dedupe window for repeated inserts (ms). Priority: ENV `SCADA_INSERT_DEDUPE_MS` -> settings.insert_dedupe_ms -> default 2000
+function getInsertDedupeMs() {
+    const envVal = process.env.SCADA_INSERT_DEDUPE_MS;
+    const cfgVal = appSettings && appSettings.insert_dedupe_ms;
+    const raw = envVal !== undefined ? envVal : (cfgVal !== undefined ? cfgVal : 2000);
+    const num = Number(raw);
+    return Number.isFinite(num) && num >= 0 ? Math.floor(num) : 2000;
+}
+
 // In-memory state for the Carousels (1-5)
 let carousels = {
     1: {
@@ -180,6 +189,7 @@ const sqlStatusListeners = new Map();
 const alertListeners = new Map();
 const lastSqlInsertAlertTs = new Map();
 const pendingInsertTimers = new Map();
+const lastInsertRecord = new Map();
 const SQL_ALERT_DEBOUNCE_MS = 8000;
 
 function emitSqlStatus() {
@@ -233,6 +243,21 @@ async function insertWeightData(carouselId, data) {
         if (data.lastGross < data.toleranceMin) status = 'Underweight';
         else if (data.lastGross > data.toleranceMax) status = 'Overweight';
 
+        // Dedupe: skip if same record was inserted recently for this carousel
+        try {
+            const dedupeWindow = getInsertDedupeMs();
+            const recordHash = `${data.packingOrder}|${data.productId}|${data.counter||0}|${Number(data.lastNett||0).toFixed(2)}|${Number(data.lastGross||0).toFixed(2)}`;
+            const lastRec = lastInsertRecord.get(carouselId);
+            if (lastRec && lastRec.hash === recordHash && (Date.now() - lastRec.ts) < dedupeWindow) {
+                logger.warn('SQL', `Skipping duplicate insert for CR${carouselId} (dedupe ${dedupeWindow}ms)`);
+                return false;
+            }
+        } catch (e) {
+            // ignore dedupe errors
+        }
+        const insertStartTs = Date.now();
+        logger.info('SQL', `Insert start CR${carouselId} ts=${insertStartTs}`);
+
         await weighingPool.request()
             .input('packingOrder', sql.NVarChar, data.packingOrder)
             .input('productId', sql.NVarChar, data.productId)
@@ -258,7 +283,15 @@ async function insertWeightData(carouselId, data) {
                  @grossWeight, @nettWeight, @toleranceMin, @toleranceMax, @productCount, @targetCount, @status)
             `);
 
-        logger.info('SQL', `Inserted data for CR${carouselId}: ${data.lastNett}kg (${status})`);
+        const insertEndTs = Date.now();
+        logger.info('SQL', `Inserted data for CR${carouselId}: ${data.lastNett}kg (${status}) — db_ms=${insertEndTs - insertStartTs}`);
+
+        // Record last insert to prevent duplicates in short time window
+        try {
+            const recordHash = `${data.packingOrder}|${data.productId}|${data.counter||0}|${Number(data.lastNett||0).toFixed(2)}|${Number(data.lastGross||0).toFixed(2)}`;
+            lastInsertRecord.set(carouselId, { hash: recordHash, ts: Date.now() });
+        } catch (e) { }
+
         return true;
     } catch (err) {
         logger.error('SQL', `Error inserting weight data: ${err.message}`);
