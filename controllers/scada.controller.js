@@ -172,6 +172,36 @@ const alertListeners = new Map();
 const lastSqlInsertAlertTs = new Map();
 const SQL_ALERT_DEBOUNCE_MS = 8000;
 const SENSOR_WEIGHT_CAPTURE_DELAY_MS = 700;
+const pendingWeightInserts = new Set();
+
+function weightInsertKey(carouselId, data) {
+    const po = (data.packingOrder || '').toString().trim();
+    const counter = parseInt(data.counter, 10);
+    return `CR${carouselId}|${po}|${counter}`;
+}
+
+async function weightRecordExists(carouselId, data) {
+    const packingOrder = (data.packingOrder || '').toString().trim();
+    const counter = parseInt(data.counter, 10);
+    if (!packingOrder || !Number.isInteger(counter) || counter < 0) {
+        return false;
+    }
+
+    const table = appSettings.table_weight || 'WEIGHT_DATA';
+    const result = await weighingPool.request()
+        .input('packingOrder', sql.NVarChar, packingOrder)
+        .input('carousel', sql.NVarChar, `CR${carouselId}`)
+        .input('productCount', sql.Int, counter)
+        .query(`
+            SELECT TOP 1 1 AS found
+            FROM [${table}]
+            WHERE PACKING_ORDER = @packingOrder
+              AND CAROUSEL = @carousel
+              AND PRODUCT_COUNT = @productCount
+        `);
+
+    return result.recordset.length > 0;
+}
 
 function emitSqlStatus() {
     const connected = weighingPool && weighingPool.connected;
@@ -243,6 +273,19 @@ async function insertWeightData(carouselId, data) {
         return;
     }
 
+    const insertKey = weightInsertKey(carouselId, data);
+    if (pendingWeightInserts.has(insertKey)) {
+        logger.warn('SQL', `Skipping duplicate insert (in-flight) for CR${carouselId} PO=${data.packingOrder} counter=${data.counter}`);
+        return;
+    }
+
+    if (await weightRecordExists(carouselId, data)) {
+        logger.warn('SQL', `Skipping duplicate insert (already in DB) for CR${carouselId} PO=${data.packingOrder} counter=${data.counter}`);
+        return;
+    }
+
+    pendingWeightInserts.add(insertKey);
+
     try {
         // Calculate STATUS based on GROSS_WEIGHT
         let status = 'Normal';
@@ -274,7 +317,7 @@ async function insertWeightData(carouselId, data) {
                  @grossWeight, @nettWeight, @toleranceMin, @toleranceMax, @productCount, @targetCount, @status)
             `);
 
-        logger.info('SQL', `Inserted data for CR${carouselId}: ${data.lastNett}kg (${status})`);
+        logger.info('SQL', `Inserted data for CR${carouselId}: ${data.lastNett}kg (${status}) PO=${data.packingOrder} counter=${data.counter}`);
     } catch (err) {
         logger.error('SQL', `Error inserting weight data: ${err.message}`);
         notifySqlInsertFailure({
@@ -283,6 +326,8 @@ async function insertWeightData(carouselId, data) {
             table: appSettings.table_weight || 'WEIGHT_DATA',
             reason: err.message
         });
+    } finally {
+        pendingWeightInserts.delete(insertKey);
     }
 }
 
@@ -544,15 +589,19 @@ async function fetchCarouselConfig(showLoading = false) {
                     .query(`SELECT MAX(PRODUCT_COUNT) as lastCount FROM [${weightTable}] WHERE PACKING_ORDER = @po AND CAROUSEL = @cr`);
 
                 if (carousels[carouselId]) {
+                    const localCounter = carousels[carouselId].data.counter || 0;
                     if (countResult.recordset[0] && countResult.recordset[0].lastCount !== null) {
-                        // PO exists in history - load the last counter
-                        const count = countResult.recordset[0].lastCount;
-                        carousels[carouselId].data.counter = count;
-                        logger.info('SQL', `Loaded counter for CR${carouselId}: ${count} (PO: ${packingOrder})`);
+                        const dbCount = countResult.recordset[0].lastCount;
+                        const nextCounter = Math.max(localCounter, dbCount);
+                        carousels[carouselId].data.counter = nextCounter;
+                        if (nextCounter > dbCount) {
+                            logger.info('SQL', `Counter for CR${carouselId} kept at ${nextCounter} (DB max ${dbCount}, PO: ${packingOrder})`);
+                        } else {
+                            logger.info('SQL', `Loaded counter for CR${carouselId}: ${nextCounter} (PO: ${packingOrder})`);
+                        }
                     } else {
-                        // ⭐ NEW PO with no history - RESET counter to 0
-                        carousels[carouselId].data.counter = 0;
-                        logger.info('SQL', `New PACKING_ORDER for CR${carouselId} (PO: ${packingOrder}), counter initialized to 0`);
+                        carousels[carouselId].data.counter = Math.max(localCounter, 0);
+                        logger.info('SQL', `New PACKING_ORDER for CR${carouselId} (PO: ${packingOrder}), counter at ${carousels[carouselId].data.counter}`);
                     }
                 }
             } catch (err) {
