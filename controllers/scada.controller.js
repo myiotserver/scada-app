@@ -171,7 +171,7 @@ const sqlStatusListeners = new Map();
 const alertListeners = new Map();
 const lastSqlInsertAlertTs = new Map();
 const SQL_ALERT_DEBOUNCE_MS = 8000;
-const SENSOR_WEIGHT_CAPTURE_DELAY_MS = 500;
+const SENSOR_WEIGHT_CAPTURE_DELAY_MS = 700;
 
 function emitSqlStatus() {
     const connected = weighingPool && weighingPool.connected;
