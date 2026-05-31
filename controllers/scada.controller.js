@@ -79,8 +79,7 @@ let carousels = {
             counter: 0,
             lastGross: 0,
             lastNett: 0,
-            average: 0,
-            scaleCleared: true
+            average: 0
         }
     },
     2: {
@@ -99,8 +98,7 @@ let carousels = {
             counter: 0,
             lastGross: 0,
             lastNett: 0,
-            average: 0,
-            scaleCleared: true
+            average: 0
         }
     },
     3: {
@@ -119,8 +117,7 @@ let carousels = {
             counter: 0,
             lastGross: 0,
             lastNett: 0,
-            average: 0,
-            scaleCleared: true
+            average: 0
         }
     },
     4: {
@@ -139,8 +136,7 @@ let carousels = {
             counter: 0,
             lastGross: 0,
             lastNett: 0,
-            average: 0,
-            scaleCleared: true
+            average: 0
         }
     },
     5: {
@@ -159,8 +155,7 @@ let carousels = {
             counter: 0,
             lastGross: 0,
             lastNett: 0,
-            average: 0,
-            scaleCleared: true
+            average: 0
         }
     }
 };
@@ -179,8 +174,6 @@ const SQL_ALERT_DEBOUNCE_MS = 8000;
 const SENSOR_WEIGHT_CAPTURE_DELAY_MS = Number(process.env.SENSOR_WEIGHT_CAPTURE_DELAY_MS) || 1000;
 /** Ignore sensor rising edges closer than this (bounce / double trigger). */
 const SENSOR_MIN_GAP_MS = Number(process.env.SENSOR_MIN_GAP_MS) || 1500;
-/** Gross must drop below this between bags so the next insert uses a fresh reading. */
-const SCALE_CLEAR_THRESHOLD_KG = Number(process.env.SCALE_CLEAR_THRESHOLD_KG) || 3;
 /** Reject inserts below this gross (empty scale / noise). */
 const MIN_VALID_GROSS_KG = Number(process.env.MIN_VALID_GROSS_KG) || 1;
 const pendingWeightInserts = new Set();
@@ -302,7 +295,6 @@ function scheduleWeightCapture(carouselId) {
 
         if (!Number.isFinite(gross) || gross < MIN_VALID_GROSS_KG) {
             logger.warn('SCADA', `CR${carouselId} insert skipped: gross ${gross} below minimum ${MIN_VALID_GROSS_KG} kg (counter=${capturedCounter})`);
-            current.data.scaleCleared = gross < SCALE_CLEAR_THRESHOLD_KG;
             return;
         }
 
@@ -378,8 +370,6 @@ async function insertWeightData(carouselId, data) {
         if (carousels[carouselId]) {
             carousels[carouselId].data.lastGross = data.lastGross;
             carousels[carouselId].data.lastNett = data.lastNett;
-            carousels[carouselId].data.lastInsertedGross = data.lastGross;
-            carousels[carouselId].data.scaleCleared = false;
             emitCarouselSnapshot();
         }
     } catch (err) {
@@ -509,10 +499,6 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
                     carousels[carouselId].data.lastGross = gross;
                     carousels[carouselId].data.lastNett = nett;
 
-                    if (gross < SCALE_CLEAR_THRESHOLD_KG) {
-                        carousels[carouselId].data.scaleCleared = true;
-                    }
-
                     const pending = carousels[carouselId].data._pendingCapture;
                     if (pending && gross >= pending.maxGross) {
                         pending.maxGross = gross;
@@ -544,11 +530,6 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
                         const lastEdge = carousels[carouselId].data._lastSensorEdgeTs || 0;
                         if (now - lastEdge < SENSOR_MIN_GAP_MS) {
                             logger.warn('SCADA', `CR${carouselId} sensor bounce ignored (${now - lastEdge}ms < ${SENSOR_MIN_GAP_MS}ms)`);
-                            return;
-                        }
-
-                        if (carousels[carouselId].data.scaleCleared === false) {
-                            logger.warn('SCADA', `CR${carouselId} sensor ignored: scale not cleared (gross=${carousels[carouselId].data.lastGross} kg, need < ${SCALE_CLEAR_THRESHOLD_KG} kg between bags)`);
                             return;
                         }
 
