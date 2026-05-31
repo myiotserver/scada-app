@@ -171,6 +171,7 @@ const sqlStatusListeners = new Map();
 const alertListeners = new Map();
 const lastSqlInsertAlertTs = new Map();
 const SQL_ALERT_DEBOUNCE_MS = 8000;
+const SENSOR_WEIGHT_CAPTURE_DELAY_MS = 500;
 
 function emitSqlStatus() {
     const connected = weighingPool && weighingPool.connected;
@@ -204,6 +205,31 @@ function notifySqlInsertFailure(payload) {
             console.error('[Alert] Failed to deliver SQL alert:', err.message);
         }
     });
+}
+
+function scheduleWeightCapture(carouselId) {
+    const carousel = carousels[carouselId];
+    if (!carousel) return;
+
+    const capturedCounter = carousel.data.counter;
+
+    setTimeout(() => {
+        const current = carousels[carouselId];
+        if (!current || current.state !== 'RUN') {
+            logger.info('SCADA', `CR${carouselId} weight capture skipped (${SENSOR_WEIGHT_CAPTURE_DELAY_MS}ms): state is ${current?.state || 'missing'}`);
+            return;
+        }
+
+        const snapshot = {
+            ...current.data,
+            counter: capturedCounter,
+            lastGross: current.data.lastGross,
+            lastNett: current.data.lastNett
+        };
+
+        logger.info('SCADA', `CR${carouselId} weight captured after ${SENSOR_WEIGHT_CAPTURE_DELAY_MS}ms: gross=${snapshot.lastGross} nett=${snapshot.lastNett} counter=${snapshot.counter}`);
+        insertWeightData(carouselId, snapshot);
+    }, SENSOR_WEIGHT_CAPTURE_DELAY_MS);
 }
 
 // Helper to insert weight data into SQL
@@ -346,6 +372,15 @@ if (isSqlStartupAutoConnectEnabled() && startupSqlConfig.server) {
     logger.info('SQL', 'Startup auto-connect is disabled. Waiting for manual connect via settings reload.');
 }
 
+function getOpcNodeScale(tagName) {
+    const opcConfig = opcUaManager.getConfig();
+    const nodes = Array.isArray(opcConfig.nodes) ? opcConfig.nodes : [];
+    const normalized = (tagName || '').toString().trim().toUpperCase();
+    const node = nodes.find(n => (n.name || '').toString().trim().toUpperCase() === normalized);
+    const scale = parseFloat(node?.scale);
+    return Number.isFinite(scale) ? scale : 0.01;
+}
+
 // --- OPC-UA Integration ---
 // Subscribe to OPC Manager updates
 opcUaManager.subscribe('scada-controller', (event, data) => {
@@ -355,7 +390,8 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
         if (match) {
             const carouselId = parseInt(match[1]);
             if (carousels[carouselId]) {
-                const val = parseFloat(data.value) / 100;
+                const scale = getOpcNodeScale(data.name);
+                const val = parseFloat(data.value) * scale;
                 if (!isNaN(val)) {
                     carousels[carouselId].data.lastGross = parseFloat(val.toFixed(2));
                     // Calc Nett
@@ -382,12 +418,10 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
 
                     // CHECK LOGIC: Only write and increment counter if state is RUN
                     if (carousels[carouselId].state === 'RUN') {
-                        // Increment counter
                         carousels[carouselId].data.counter = (carousels[carouselId].data.counter || 0) + 1;
                         logger.info('SCADA', `CR${carouselId} counter incremented to ${carousels[carouselId].data.counter}`);
 
-                        // Use current data snapshot
-                        insertWeightData(carouselId, carousels[carouselId].data);
+                        scheduleWeightCapture(carouselId);
                     } else {
                         logger.info('SCADA', `CR${carouselId} is ${carousels[carouselId].state}, skipping counter increment and SQL write.`);
                     }
