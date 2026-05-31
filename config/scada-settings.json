@@ -1,8 +1,8 @@
 {
-    "sql_server": "columba.s-net.id",
+    "sql_server": "100.127.239.116",
     "sql_uid": "sa",
     "sql_pass": "VPS@thinkcentre",
-    "sql_db": "WEIGHING",
+    "sql_db": "SFM Main",
     "table_zeroing": "ZEROINGPLCDATA",
     "table_weight": "WEIGHT_TABLE",
     "table_main": "PRESET_TABLE",
