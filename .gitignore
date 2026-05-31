@@ -5,3 +5,4 @@ node_modules/
 *.bak
 certs/
 seed-guest.js
+data/weight-history-export.json
