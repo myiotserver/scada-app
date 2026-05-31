@@ -1389,16 +1389,123 @@ async function pollSqlStatus() {
     }
 }
 
-// --- History Logic ---
-async function loadHistory() {
+// --- History Logic (server-side pagination) ---
+let historyTotalCount = 0;
+let historyCurrentPage = 1;
+let historyPageSize = 50;
+let historyLoading = false;
+
+function getHistoryTotalPages() {
+    if (!historyTotalCount) return 1;
+    return Math.max(1, Math.ceil(historyTotalCount / historyPageSize));
+}
+
+function updateHistorySubtitle() {
+    const subtitle = document.getElementById('history-subtitle');
+    if (!subtitle) return;
+    const pages = getHistoryTotalPages();
+    subtitle.textContent = `${historyTotalCount.toLocaleString()} record(s) · ${historyPageSize} per page · ${pages} page(s)`;
+}
+
+function updateHistoryPaginationUi() {
+    const totalPages = getHistoryTotalPages();
+    const pageInfo = document.getElementById('history-page-info');
+    const rangeInfo = document.getElementById('history-range-info');
+    const prevBtn = document.getElementById('history-prev-btn');
+    const nextBtn = document.getElementById('history-next-btn');
+    const firstBtn = document.getElementById('history-first-btn');
+    const lastBtn = document.getElementById('history-last-btn');
+
+    if (pageInfo) pageInfo.textContent = `Page ${historyCurrentPage} of ${totalPages}`;
+
+    if (rangeInfo) {
+        if (!historyTotalCount) {
+            rangeInfo.textContent = 'No records';
+        } else {
+            const start = (historyCurrentPage - 1) * historyPageSize + 1;
+            const end = Math.min(historyCurrentPage * historyPageSize, historyTotalCount);
+            rangeInfo.textContent = `Rows ${start}–${end} of ${historyTotalCount.toLocaleString()}`;
+        }
+    }
+
+    const atStart = historyCurrentPage <= 1;
+    const atEnd = historyCurrentPage >= totalPages;
+    [prevBtn, firstBtn].forEach(btn => { if (btn) btn.disabled = atStart; });
+    [nextBtn, lastBtn].forEach(btn => { if (btn) btn.disabled = atEnd; });
+}
+
+function renderHistoryRow(row) {
+    const tr = document.createElement('tr');
+    const date = new Date(row.TIMESTAMP || row.createdAt);
+    const dateStr = date.toLocaleString('en-GB');
+    const grossWeight = row.GROSS_WEIGHT != null ? parseFloat(row.GROSS_WEIGHT).toFixed(2) : '-';
+    const nettWeight = row.NETT_WEIGHT != null ? parseFloat(row.NETT_WEIGHT).toFixed(2) : '-';
+    const counterValue = row.PRODUCT_COUNT ?? row.COUNTER ?? '-';
+
+    tr.innerHTML = `
+        <td>${dateStr}</td>
+        <td>${row.CAROUSEL}</td>
+        <td>${row.PRODUCT_NAME} <span style="font-size:0.8em; color:#888;">(${row.PRODUCT_ID})</span></td>
+        <td>${row.TARGET_COUNT || '-'}</td>
+        <td>${counterValue}</td>
+        <td>${grossWeight}</td>
+        <td>${nettWeight}</td>
+        <td><span class="status-badge status-${(row.STATUS || '').toLowerCase()}">${row.STATUS}</span></td>
+    `;
+    return tr;
+}
+
+function renderHistoryRows(rows) {
+    const tbody = document.getElementById('history-list-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No records found</td></tr>';
+        updateHistoryPaginationUi();
+        return;
+    }
+
+    rows.forEach(row => tbody.appendChild(renderHistoryRow(row)));
+    updateHistoryPaginationUi();
+}
+
+function historyChangePage(delta) {
+    const totalPages = getHistoryTotalPages();
+    const next = historyCurrentPage + delta;
+    if (next < 1 || next > totalPages || historyLoading) return;
+    fetchHistoryPage(next);
+}
+
+function historyGoToPage(target) {
+    const totalPages = getHistoryTotalPages();
+    const page = target === 'last' ? totalPages : Math.max(1, parseInt(target, 10) || 1);
+    if (page === historyCurrentPage || historyLoading) return;
+    fetchHistoryPage(page);
+}
+
+function onHistoryPageSizeChange() {
+    const select = document.getElementById('history-page-size');
+    historyPageSize = parseInt(select?.value, 10) || 50;
+    fetchHistoryPage(1);
+}
+
+async function fetchHistoryPage(page) {
     const tbody = document.getElementById('history-list-body');
     const carouselFilterEl = document.getElementById('history-carousel-filter');
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Loading records...</td></tr>';
+    if (historyLoading) return;
+    historyLoading = true;
+
+    if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Loading records...</td></tr>';
+    }
 
     try {
         const token = currentUser.accessToken;
-        const limit = 100;
-        const params = new URLSearchParams({ limit: String(limit) });
+        const params = new URLSearchParams({
+            page: String(page),
+            pageSize: String(historyPageSize)
+        });
         const selectedCarousel = carouselFilterEl ? carouselFilterEl.value : '';
         if (selectedCarousel) {
             params.set('carousel', selectedCarousel);
@@ -1410,53 +1517,32 @@ async function loadHistory() {
 
         if (res.ok) {
             const data = await res.json();
-            renderHistory(data, limit);
-        } else {
+            historyTotalCount = data.total || 0;
+            historyCurrentPage = data.page || page;
+            historyPageSize = data.pageSize || historyPageSize;
+            updateHistorySubtitle();
+            renderHistoryRows(data.records || []);
+            const wrap = document.querySelector('.history-table-wrap');
+            if (wrap) wrap.scrollTop = 0;
+        } else if (tbody) {
             tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:red;">Failed to load history</td></tr>';
+            updateHistoryPaginationUi();
         }
     } catch (e) {
-        console.error("History Error", e);
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:red;">Network Error</td></tr>';
+        console.error('History Error', e);
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:red;">Network Error</td></tr>';
+        }
+        updateHistoryPaginationUi();
+    } finally {
+        historyLoading = false;
     }
 }
 
-function renderHistory(data, limit = 100) {
-    const tbody = document.getElementById('history-list-body');
-    tbody.innerHTML = '';
-
-    if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No records found</td></tr>';
-        return;
-    }
-
-    // Check if we hit the limit
-    if (data.length >= limit) {
-        console.log(`[History] Showing ${limit} most recent records out of possibly more`);
-    }
-
-    data.forEach(row => {
-        const tr = document.createElement('tr');
-        // Format Date
-        const date = new Date(row.TIMESTAMP || row.createdAt); // Fallback
-        const dateStr = date.toLocaleString('en-GB');
-
-        // Format weight values to 2 decimal places
-        const grossWeight = row.GROSS_WEIGHT ? parseFloat(row.GROSS_WEIGHT).toFixed(2) : '-';
-        const nettWeight = row.NETT_WEIGHT ? parseFloat(row.NETT_WEIGHT).toFixed(2) : '-';
-        const counterValue = row.PRODUCT_COUNT ?? row.COUNTER ?? '-';
-
-        tr.innerHTML = `
-            <td>${dateStr}</td>
-            <td>${row.CAROUSEL}</td>
-            <td>${row.PRODUCT_NAME} <span style="font-size:0.8em; color:#888;">(${row.PRODUCT_ID})</span></td>
-            <td>${row.TARGET_COUNT || '-'}</td>
-            <td>${counterValue}</td>
-            <td>${grossWeight}</td>
-            <td>${nettWeight}</td>
-            <td><span class="status-badge status-${(row.STATUS || '').toLowerCase()}">${row.STATUS}</span></td>
-        `;
-        tbody.appendChild(tr);
-    });
+function loadHistory() {
+    historyTotalCount = 0;
+    historyCurrentPage = 1;
+    fetchHistoryPage(1);
 }
 
 // ==========================================================

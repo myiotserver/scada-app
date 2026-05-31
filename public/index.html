@@ -321,19 +321,15 @@
                 </div>
 
                 <!-- HISTORY VIEW -->
-                <div id="view-history" class="view-section"
-                    style="display: none; padding: 20px; width: 100%; flex-direction: column;">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div id="view-history" class="view-section history-view" style="display: none;">
+                    <div class="history-toolbar">
                         <div>
-                            <h2 style="margin: 0 0 5px 0;">Weight History</h2>
-                            <p style="margin: 0; font-size: 0.85rem; color: #888;">Displaying last 100 records</p>
+                            <h2 class="history-title">Weight History</h2>
+                            <p id="history-subtitle" class="history-subtitle">Loading…</p>
                         </div>
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <label for="history-carousel-filter"
-                                style="font-size: 0.85rem; color: #aaa;">Carousel</label>
-                            <select id="history-carousel-filter" onchange="loadHistory()"
-                                style="height: 36px; min-width: 110px; background: #0d172a; color: #e5e7eb; border: 1px solid #334155; border-radius: 8px; padding: 0 10px;">
+                        <div class="history-toolbar-actions">
+                            <label for="history-carousel-filter" class="history-filter-label">Carousel</label>
+                            <select id="history-carousel-filter" class="history-select" onchange="loadHistory()">
                                 <option value="">All</option>
                                 <option value="CR1">CR1</option>
                                 <option value="CR2">CR2</option>
@@ -341,12 +337,11 @@
                                 <option value="CR4">CR4</option>
                                 <option value="CR5">CR5</option>
                             </select>
-                            <button class="btn-primary" style="width: auto;" onclick="loadHistory()">Refresh</button>
+                            <button class="btn-primary history-refresh-btn" type="button" onclick="loadHistory()">Refresh</button>
                         </div>
                     </div>
-                    <div
-                        style="overflow: auto; width: 100%; max-height: 600px; border: 1px solid #333; border-radius: 4px;">
-                        <table class="data-table">
+                    <div class="history-table-wrap">
+                        <table class="data-table history-table">
                             <thead>
                                 <tr>
                                     <th>Time</th>
@@ -365,6 +360,30 @@
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                    <div class="history-pagination">
+                        <div class="history-pagination-left">
+                            <label for="history-page-size" class="history-filter-label">Rows</label>
+                            <select id="history-page-size" class="history-select history-page-size-select"
+                                onchange="onHistoryPageSizeChange()">
+                                <option value="25">25</option>
+                                <option value="50" selected>50</option>
+                                <option value="100">100</option>
+                                <option value="200">200</option>
+                            </select>
+                        </div>
+                        <div class="history-pagination-center">
+                            <button type="button" class="history-page-btn" id="history-first-btn"
+                                onclick="historyGoToPage(1)" title="First page">«</button>
+                            <button type="button" class="history-page-btn" id="history-prev-btn"
+                                onclick="historyChangePage(-1)">Prev</button>
+                            <span id="history-page-info" class="history-page-info">Page 1 of 1</span>
+                            <button type="button" class="history-page-btn" id="history-next-btn"
+                                onclick="historyChangePage(1)">Next</button>
+                            <button type="button" class="history-page-btn" id="history-last-btn"
+                                onclick="historyGoToPage('last')" title="Last page">»</button>
+                        </div>
+                        <div id="history-range-info" class="history-range-info">—</div>
                     </div>
                 </div>
 

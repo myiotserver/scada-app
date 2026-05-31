@@ -79,7 +79,8 @@ let carousels = {
             counter: 0,
             lastGross: 0,
             lastNett: 0,
-            average: 0
+            average: 0,
+            scaleCleared: true
         }
     },
     2: {
@@ -98,7 +99,8 @@ let carousels = {
             counter: 0,
             lastGross: 0,
             lastNett: 0,
-            average: 0
+            average: 0,
+            scaleCleared: true
         }
     },
     3: {
@@ -117,7 +119,8 @@ let carousels = {
             counter: 0,
             lastGross: 0,
             lastNett: 0,
-            average: 0
+            average: 0,
+            scaleCleared: true
         }
     },
     4: {
@@ -136,7 +139,8 @@ let carousels = {
             counter: 0,
             lastGross: 0,
             lastNett: 0,
-            average: 0
+            average: 0,
+            scaleCleared: true
         }
     },
     5: {
@@ -155,7 +159,8 @@ let carousels = {
             counter: 0,
             lastGross: 0,
             lastNett: 0,
-            average: 0
+            average: 0,
+            scaleCleared: true
         }
     }
 };
@@ -171,8 +176,30 @@ const sqlStatusListeners = new Map();
 const alertListeners = new Map();
 const lastSqlInsertAlertTs = new Map();
 const SQL_ALERT_DEBOUNCE_MS = 8000;
-const SENSOR_WEIGHT_CAPTURE_DELAY_MS = 700;
+const SENSOR_WEIGHT_CAPTURE_DELAY_MS = Number(process.env.SENSOR_WEIGHT_CAPTURE_DELAY_MS) || 1000;
+/** Ignore sensor rising edges closer than this (bounce / double trigger). */
+const SENSOR_MIN_GAP_MS = Number(process.env.SENSOR_MIN_GAP_MS) || 1500;
+/** Gross must drop below this between bags so the next insert uses a fresh reading. */
+const SCALE_CLEAR_THRESHOLD_KG = Number(process.env.SCALE_CLEAR_THRESHOLD_KG) || 3;
+/** Reject inserts below this gross (empty scale / noise). */
+const MIN_VALID_GROSS_KG = Number(process.env.MIN_VALID_GROSS_KG) || 1;
 const pendingWeightInserts = new Set();
+const CAROUSEL_BROADCAST_DEBOUNCE_MS = 100;
+let carouselBroadcastTimer = null;
+
+function emitCarouselSnapshot() {
+    listeners.forEach(cb => {
+        try { cb(carousels); } catch (e) { /* ignore */ }
+    });
+}
+
+function scheduleCarouselBroadcast() {
+    if (carouselBroadcastTimer) return;
+    carouselBroadcastTimer = setTimeout(() => {
+        carouselBroadcastTimer = null;
+        emitCarouselSnapshot();
+    }, CAROUSEL_BROADCAST_DEBOUNCE_MS);
+}
 
 function weightInsertKey(carouselId, data) {
     const po = (data.packingOrder || '').toString().trim();
@@ -241,23 +268,52 @@ function scheduleWeightCapture(carouselId) {
     const carousel = carousels[carouselId];
     if (!carousel) return;
 
-    const capturedCounter = carousel.data.counter;
+    if (carousel.data._captureTimer) {
+        clearTimeout(carousel.data._captureTimer);
+        carousel.data._captureTimer = null;
+    }
 
-    setTimeout(() => {
+    const capturedCounter = carousel.data.counter;
+    const grossAtTrigger = carousel.data.lastGross;
+    const nettAtTrigger = carousel.data.lastNett;
+
+    // Track peak gross during capture window (stable reading while bag is on scale).
+    carousel.data._pendingCapture = {
+        maxGross: grossAtTrigger,
+        maxNett: nettAtTrigger,
+        grossAtTrigger,
+        nettAtTrigger
+    };
+
+    carousel.data._captureTimer = setTimeout(() => {
+        carousel.data._captureTimer = null;
         const current = carousels[carouselId];
         if (!current || current.state !== 'RUN') {
+            if (current?.data) delete current.data._pendingCapture;
             logger.info('SCADA', `CR${carouselId} weight capture skipped (${SENSOR_WEIGHT_CAPTURE_DELAY_MS}ms): state is ${current?.state || 'missing'}`);
+            return;
+        }
+
+        const pending = current.data._pendingCapture;
+        delete current.data._pendingCapture;
+
+        const gross = pending?.maxGross ?? current.data.lastGross;
+        const nett = pending?.maxNett ?? current.data.lastNett;
+
+        if (!Number.isFinite(gross) || gross < MIN_VALID_GROSS_KG) {
+            logger.warn('SCADA', `CR${carouselId} insert skipped: gross ${gross} below minimum ${MIN_VALID_GROSS_KG} kg (counter=${capturedCounter})`);
+            current.data.scaleCleared = gross < SCALE_CLEAR_THRESHOLD_KG;
             return;
         }
 
         const snapshot = {
             ...current.data,
             counter: capturedCounter,
-            lastGross: current.data.lastGross,
-            lastNett: current.data.lastNett
+            lastGross: gross,
+            lastNett: nett
         };
 
-        logger.info('SCADA', `CR${carouselId} weight captured after ${SENSOR_WEIGHT_CAPTURE_DELAY_MS}ms: gross=${snapshot.lastGross} nett=${snapshot.lastNett} counter=${snapshot.counter}`);
+        logger.info('SCADA', `CR${carouselId} weight captured after ${SENSOR_WEIGHT_CAPTURE_DELAY_MS}ms (peak): trigger gross=${grossAtTrigger} → saved gross=${gross} nett=${nett} counter=${snapshot.counter}`);
         insertWeightData(carouselId, snapshot);
     }, SENSOR_WEIGHT_CAPTURE_DELAY_MS);
 }
@@ -317,7 +373,15 @@ async function insertWeightData(carouselId, data) {
                  @grossWeight, @nettWeight, @toleranceMin, @toleranceMax, @productCount, @targetCount, @status)
             `);
 
-        logger.info('SQL', `Inserted data for CR${carouselId}: ${data.lastNett}kg (${status}) PO=${data.packingOrder} counter=${data.counter}`);
+        logger.info('SQL', `Inserted data for CR${carouselId}: gross=${data.lastGross}kg nett=${data.lastNett}kg (${status}) PO=${data.packingOrder} counter=${data.counter}`);
+
+        if (carousels[carouselId]) {
+            carousels[carouselId].data.lastGross = data.lastGross;
+            carousels[carouselId].data.lastNett = data.lastNett;
+            carousels[carouselId].data.lastInsertedGross = data.lastGross;
+            carousels[carouselId].data.scaleCleared = false;
+            emitCarouselSnapshot();
+        }
     } catch (err) {
         logger.error('SQL', `Error inserting weight data: ${err.message}`);
         notifySqlInsertFailure({
@@ -438,10 +502,24 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
                 const scale = getOpcNodeScale(data.name);
                 const val = parseFloat(data.value) * scale;
                 if (!isNaN(val)) {
-                    carousels[carouselId].data.lastGross = parseFloat(val.toFixed(2));
-                    // Calc Nett
+                    const gross = parseFloat(val.toFixed(2));
                     const packWeight = carousels[carouselId].data.packWeight || 0;
-                    carousels[carouselId].data.lastNett = parseFloat((val - packWeight).toFixed(2));
+                    const nett = parseFloat((val - packWeight).toFixed(2));
+
+                    carousels[carouselId].data.lastGross = gross;
+                    carousels[carouselId].data.lastNett = nett;
+
+                    if (gross < SCALE_CLEAR_THRESHOLD_KG) {
+                        carousels[carouselId].data.scaleCleared = true;
+                    }
+
+                    const pending = carousels[carouselId].data._pendingCapture;
+                    if (pending && gross >= pending.maxGross) {
+                        pending.maxGross = gross;
+                        pending.maxNett = nett;
+                    }
+
+                    scheduleCarouselBroadcast();
                 }
             }
         }
@@ -461,8 +539,20 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
                 if (!oldValue && newValue) {
                     logger.info('SCADA', `Sensor Rising Edge for CR${carouselId}`);
 
-                    // CHECK LOGIC: Only write and increment counter if state is RUN
                     if (carousels[carouselId].state === 'RUN') {
+                        const now = Date.now();
+                        const lastEdge = carousels[carouselId].data._lastSensorEdgeTs || 0;
+                        if (now - lastEdge < SENSOR_MIN_GAP_MS) {
+                            logger.warn('SCADA', `CR${carouselId} sensor bounce ignored (${now - lastEdge}ms < ${SENSOR_MIN_GAP_MS}ms)`);
+                            return;
+                        }
+
+                        if (carousels[carouselId].data.scaleCleared === false) {
+                            logger.warn('SCADA', `CR${carouselId} sensor ignored: scale not cleared (gross=${carousels[carouselId].data.lastGross} kg, need < ${SCALE_CLEAR_THRESHOLD_KG} kg between bags)`);
+                            return;
+                        }
+
+                        carousels[carouselId].data._lastSensorEdgeTs = now;
                         carousels[carouselId].data.counter = (carousels[carouselId].data.counter || 0) + 1;
                         logger.info('SCADA', `CR${carouselId} counter incremented to ${carousels[carouselId].data.counter}`);
 
@@ -642,12 +732,10 @@ exports.unsubscribeAlerts = (id) => {
     alertListeners.delete(id);
 };
 
-// Broadcast loop
+// Periodic broadcast for config/counter/stats (weight also pushed on OPC change)
 setInterval(() => {
-    // Convert carousel object to array or map for frontend
-    const snapshot = carousels;
-    listeners.forEach(cb => cb(snapshot));
-}, 1000); // Send updates every 1s
+    emitCarouselSnapshot();
+}, 1000);
 
 exports.getSnapshot = () => carousels;
 
@@ -661,21 +749,40 @@ exports.getTagHistory = (req, res) => {
     res.json([]);
 };
 
-// New: Get Weight Data History
+// Weight history — server-side pagination (only fetch one page per request)
 exports.getWeightHistory = async (req, res) => {
     if (!weighingPool) {
         return res.status(503).json({ error: "Database not connected" });
     }
     try {
-        const parsedLimit = parseInt(req.query.limit, 10);
-        const limit = Number.isInteger(parsedLimit) && parsedLimit > 0 ? Math.min(parsedLimit, 500) : 100;
+        const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+        const parsedPageSize = parseInt(req.query.pageSize, 10);
+        const pageSize = Number.isInteger(parsedPageSize) && parsedPageSize > 0
+            ? Math.min(parsedPageSize, 200)
+            : 50;
+        const offset = (page - 1) * pageSize;
+
         const requestedCarousel = (req.query.carousel || '').toString().trim().toUpperCase();
         const carouselFilter = /^CR\d+$/.test(requestedCarousel) ? requestedCarousel : '';
+        const table = appSettings.table_weight || 'WEIGHT_DATA';
 
         const request = weighingPool.request();
+        request.input('offset', sql.Int, offset);
+        request.input('pageSize', sql.Int, pageSize);
+
         let query = `
-            SELECT TOP ${limit} *
-            FROM ${appSettings.table_weight || 'WEIGHT_DATA'}
+            SELECT
+                TIMESTAMP,
+                CAROUSEL,
+                PRODUCT_ID,
+                PRODUCT_NAME,
+                TARGET_COUNT,
+                PRODUCT_COUNT,
+                GROSS_WEIGHT,
+                NETT_WEIGHT,
+                STATUS,
+                COUNT(*) OVER() AS _totalCount
+            FROM ${table}
         `;
 
         if (carouselFilter) {
@@ -683,10 +790,23 @@ exports.getWeightHistory = async (req, res) => {
             request.input('carousel', sql.NVarChar, carouselFilter);
         }
 
-        query += ` ORDER BY TIMESTAMP DESC`;
+        query += `
+            ORDER BY TIMESTAMP DESC
+            OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY
+        `;
 
         const result = await request.query(query);
-        res.json(result.recordset);
+        const rows = result.recordset || [];
+        const total = rows.length > 0 ? Number(rows[0]._totalCount) : 0;
+        const records = rows.map(({ _totalCount, ...row }) => row);
+
+        res.json({
+            records,
+            total,
+            page,
+            pageSize,
+            totalPages: total > 0 ? Math.ceil(total / pageSize) : 1
+        });
     } catch (err) {
         console.error("Error fetching history:", err);
         res.status(500).json({ error: "Failed to fetch history" });
