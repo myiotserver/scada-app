@@ -1062,6 +1062,12 @@ footer {
     border: none;
 }
 
+.led.status-warning {
+    background: var(--accent-warning);
+    box-shadow: 0 0 6px var(--accent-warning);
+    border: none;
+}
+
 .led.status-neutral {
     background: var(--text-muted);
     opacity: 0.3;

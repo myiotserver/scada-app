@@ -224,9 +224,7 @@ function initApp() {
 // --- Footer Logic ---
 
 function updateFooterSensors(carousels) {
-    if (!carousels) return;
     for (let i = 1; i <= 5; i++) {
-        const carousel = carousels[i];
         const el = document.getElementById(`sensor-${i}`);
         if (!el) continue;
 
@@ -236,10 +234,28 @@ function updateFooterSensors(carousels) {
         // Reset classes
         led.className = 'led';
 
-        if (carousel && carousel.data && carousel.data.sensorStatus) {
-            led.classList.add('status-good');
+        if (!lastOpcStatus) {
+            led.classList.add('status-neutral'); // Gray: OPC UA Offline
+            continue;
+        }
+
+        const liveVal = opcuaLiveValues[`S${i}`];
+        if (liveVal) {
+            if (!liveVal.statusCode || !liveVal.statusCode.toString().startsWith('Good')) {
+                led.classList.add('status-neutral'); // Gray: bad sensor health
+            } else if (liveVal.value === true || liveVal.value === 1 || liveVal.value === 'true') {
+                led.classList.add('status-good'); // Green: active (bag detected)
+            } else {
+                led.classList.add('status-warning'); // Yellow: connected but inactive
+            }
         } else {
-            led.classList.add('status-bad');
+            // Check if carousel sensorStatus is set as fallback
+            const carousel = carousels ? carousels[i] : null;
+            if (carousel && carousel.data && carousel.data.sensorStatus) {
+                led.classList.add('status-good');
+            } else {
+                led.classList.add('status-warning'); // Yellow: connected (default when no liveVal yet but connected)
+            }
         }
     }
 }
@@ -303,12 +319,20 @@ function updateFooterConnections(statusUpdate) {
         const label = opcIcon.querySelector('.conn-label');
         if (label) label.innerText = lastOpcStatus ? 'Connected' : 'Disconnected';
     }
+
+    // Refresh sensor LEDs on connection state change
+    updateFooterSensors();
 }
 
 let currentView = 'home';
 let appSettings = {};
+let historyIntervalId = null;
 
 function navigate(view) {
+    if (historyIntervalId) {
+        clearInterval(historyIntervalId);
+        historyIntervalId = null;
+    }
     currentView = view;
     // Hide all views
     document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
@@ -365,6 +389,9 @@ function navigate(view) {
         }
         document.getElementById('view-history').style.display = 'flex';
         loadHistory();
+
+        // Start history auto-refresh interval based on dropdown selection
+        onHistoryRefreshChange();
     } else if (view === 'logs') {
         // Allow Admin and User
         if (!currentUser || !currentUser.roles || (!currentUser.roles.includes('ROLE_ADMIN') && !currentUser.roles.includes('ROLE_USER'))) {
@@ -941,7 +968,7 @@ async function triggerResetError() {
     } finally {
         if (btn) {
             btn.disabled = false;
-            btn.innerHTML = originalHtml || '<span class="icon">🔄</span> RESET';
+            btn.innerHTML = originalHtml || '<span class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-ccw"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></span> RESET';
         }
     }
 }
@@ -1220,6 +1247,8 @@ function updateOpcUaStatusUI(status) {
         if (opcuaConfig && opcuaConfig.nodes) {
             Object.values(status.liveValues).forEach(val => updateOpcUaLiveValue(val));
         }
+        // Always refresh footer sensors
+        updateFooterSensors();
     }
 }
 
@@ -1228,13 +1257,19 @@ function updateOpcUaLiveValue(data) {
     opcuaLiveValues[data.name] = data;
     console.log('[OPC-UA] Live Value:', data.name, data.value); // Debug log
 
+    // If it's a sensor update, refresh the footer sensor indicators
+    if (/^S[1-5]$/.test(data.name)) {
+        updateFooterSensors();
+    }
+
     if (opcuaConfig) {
         const idx = opcuaConfig.nodes.findIndex(n => n.name === data.name);
         if (idx >= 0) {
             const cell = document.getElementById(`opcua-live-${idx}`);
             if (cell) {
                 cell.innerText = data.value !== null && data.value !== undefined ? data.value : '—';
-                cell.style.color = data.statusCode === 'Good' ? '#28a745' : '#ffc107';
+                const isGood = data.statusCode && data.statusCode.toString().startsWith('Good');
+                cell.style.color = isGood ? '#28a745' : '#ffc107';
 
                 // Also update row background flash? (Optional)
                 cell.style.transition = 'none';
@@ -1488,6 +1523,26 @@ function onHistoryPageSizeChange() {
     const select = document.getElementById('history-page-size');
     historyPageSize = parseInt(select?.value, 10) || 50;
     fetchHistoryPage(1);
+}
+
+function onHistoryRefreshChange() {
+    if (historyIntervalId) {
+        clearInterval(historyIntervalId);
+        historyIntervalId = null;
+    }
+
+    if (currentView === 'history') {
+        const select = document.getElementById('history-refresh-interval');
+        const seconds = select ? parseInt(select.value, 10) : 30; // default/fallback 30s
+
+        if (seconds > 0) {
+            historyIntervalId = setInterval(() => {
+                if (currentView === 'history' && !historyLoading) {
+                    fetchHistoryPage(historyCurrentPage);
+                }
+            }, seconds * 1000);
+        }
+    }
 }
 
 async function fetchHistoryPage(page) {

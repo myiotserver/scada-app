@@ -337,6 +337,14 @@
                                 <option value="CR4">CR4</option>
                                 <option value="CR5">CR5</option>
                             </select>
+                            <label for="history-refresh-interval" class="history-filter-label">Refresh Rate</label>
+                            <select id="history-refresh-interval" class="history-select" onchange="onHistoryRefreshChange()">
+                                <option value="10">10s</option>
+                                <option value="30" selected>30s</option>
+                                <option value="60">60s</option>
+                                <option value="120">120s</option>
+                                <option value="0">Off</option>
+                            </select>
                             <button class="btn-primary history-refresh-btn" type="button" onclick="loadHistory()">Refresh</button>
                         </div>
                     </div>
@@ -477,7 +485,7 @@
                     <!-- <div class="footer-header">CONTROL</div> -->
                     <div class="controls">
                         <button class="ctrl-btn" id="btn-reset-error" onclick="triggerResetError()"><span
-                                class="icon">🔄</span> RESET</button>
+                                class="icon"><img src="icons/reset.svg" alt="reset" width="14" height="14" style="vertical-align: middle;"></span> RESET</button>
                         <!-- Note: Reset usually targets a specific carousel, but here it's global? 
                          The previous button was just RESET. I will keep it but maybe it needs logic.
                          Wait, the previous code was: <button class="ctrl-btn"><span class="icon">🔄</span> RESET</button>

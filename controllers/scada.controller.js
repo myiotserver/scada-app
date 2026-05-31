@@ -171,12 +171,13 @@ const sqlStatusListeners = new Map();
 const alertListeners = new Map();
 const lastSqlInsertAlertTs = new Map();
 const SQL_ALERT_DEBOUNCE_MS = 8000;
-const SENSOR_WEIGHT_CAPTURE_DELAY_MS = Number(process.env.SENSOR_WEIGHT_CAPTURE_DELAY_MS) || 1000;
+const SENSOR_WEIGHT_CAPTURE_DELAY_MS = Number(process.env.SENSOR_WEIGHT_CAPTURE_DELAY_MS) || 1500;
 /** Ignore sensor rising edges closer than this (bounce / double trigger). */
 const SENSOR_MIN_GAP_MS = Number(process.env.SENSOR_MIN_GAP_MS) || 1500;
 /** Reject inserts below this gross (empty scale / noise). */
 const MIN_VALID_GROSS_KG = Number(process.env.MIN_VALID_GROSS_KG) || 1;
 const pendingWeightInserts = new Set();
+const captureTimers = new Map();
 const CAROUSEL_BROADCAST_DEBOUNCE_MS = 100;
 let carouselBroadcastTimer = null;
 
@@ -261,25 +262,25 @@ function scheduleWeightCapture(carouselId) {
     const carousel = carousels[carouselId];
     if (!carousel) return;
 
-    if (carousel.data._captureTimer) {
-        clearTimeout(carousel.data._captureTimer);
-        carousel.data._captureTimer = null;
+    if (captureTimers.has(carouselId)) {
+        logger.warn('SCADA', `CR${carouselId} capture skipped: previous capture still pending.`);
+        return;
     }
 
     const capturedCounter = carousel.data.counter;
     const grossAtTrigger = carousel.data.lastGross;
     const nettAtTrigger = carousel.data.lastNett;
 
-    // Track peak gross during capture window (stable reading while bag is on scale).
+    // Track peak gross during capture window (initialize to 0 to ignore previous bag's weight).
     carousel.data._pendingCapture = {
-        maxGross: grossAtTrigger,
-        maxNett: nettAtTrigger,
+        maxGross: 0,
+        maxNett: 0,
         grossAtTrigger,
         nettAtTrigger
     };
 
-    carousel.data._captureTimer = setTimeout(() => {
-        carousel.data._captureTimer = null;
+    const timer = setTimeout(() => {
+        captureTimers.delete(carouselId);
         const current = carousels[carouselId];
         if (!current || current.state !== 'RUN') {
             if (current?.data) delete current.data._pendingCapture;
@@ -290,8 +291,8 @@ function scheduleWeightCapture(carouselId) {
         const pending = current.data._pendingCapture;
         delete current.data._pendingCapture;
 
-        const gross = pending?.maxGross ?? current.data.lastGross;
-        const nett = pending?.maxNett ?? current.data.lastNett;
+        const gross = (pending && pending.maxGross > 0) ? pending.maxGross : current.data.lastGross;
+        const nett = (pending && pending.maxNett > 0) ? pending.maxNett : current.data.lastNett;
 
         if (!Number.isFinite(gross) || gross < MIN_VALID_GROSS_KG) {
             logger.warn('SCADA', `CR${carouselId} insert skipped: gross ${gross} below minimum ${MIN_VALID_GROSS_KG} kg (counter=${capturedCounter})`);
@@ -308,6 +309,8 @@ function scheduleWeightCapture(carouselId) {
         logger.info('SCADA', `CR${carouselId} weight captured after ${SENSOR_WEIGHT_CAPTURE_DELAY_MS}ms (peak): trigger gross=${grossAtTrigger} → saved gross=${gross} nett=${nett} counter=${snapshot.counter}`);
         insertWeightData(carouselId, snapshot);
     }, SENSOR_WEIGHT_CAPTURE_DELAY_MS);
+    
+    captureTimers.set(carouselId, timer);
 }
 
 // Helper to insert weight data into SQL
@@ -327,14 +330,13 @@ async function insertWeightData(carouselId, data) {
         return;
     }
 
-    if (await weightRecordExists(carouselId, data)) {
-        logger.warn('SQL', `Skipping duplicate insert (already in DB) for CR${carouselId} PO=${data.packingOrder} counter=${data.counter}`);
-        return;
-    }
-
     pendingWeightInserts.add(insertKey);
 
     try {
+        if (await weightRecordExists(carouselId, data)) {
+            logger.warn('SQL', `Skipping duplicate insert (already in DB) for CR${carouselId} PO=${data.packingOrder} counter=${data.counter}`);
+            return;
+        }
         // Calculate STATUS based on GROSS_WEIGHT
         let status = 'Normal';
         if (data.lastGross < data.toleranceMin) status = 'Underweight';
@@ -520,6 +522,9 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
 
                 // Update status
                 carousels[carouselId].data.sensorStatus = newValue;
+                if (oldValue !== newValue) {
+                    scheduleCarouselBroadcast();
+                }
 
                 // RISING EDGE DETECTION (False -> True)
                 if (!oldValue && newValue) {
@@ -530,6 +535,11 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
                         const lastEdge = carousels[carouselId].data._lastSensorEdgeTs || 0;
                         if (now - lastEdge < SENSOR_MIN_GAP_MS) {
                             logger.warn('SCADA', `CR${carouselId} sensor bounce ignored (${now - lastEdge}ms < ${SENSOR_MIN_GAP_MS}ms)`);
+                            return;
+                        }
+
+                        if (captureTimers.has(carouselId)) {
+                            logger.warn('SCADA', `CR${carouselId} sensor bounce ignored (Previous capture still in progress)`);
                             return;
                         }
 

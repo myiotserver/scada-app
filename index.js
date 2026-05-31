@@ -120,7 +120,13 @@ io.on('connection', (socket) => {
     logger.info('SYSTEM', `User connected to SCADA dashboard (${socket.id})`);
 
     // Send initial state
-    socket.emit('init', scadaController.getSnapshot());
+    
+    try {
+        console.log("Emitting init...");
+        socket.emit('init', JSON.parse(JSON.stringify(scadaController.getSnapshot())));
+        console.log("Emit init done");
+    } catch(e) { console.error("Error in init:", e); }
+
 
     // Subscribe this socket to simulator/config updates
     const subscriptionId = `socket-${socket.id}`;
@@ -128,21 +134,27 @@ io.on('connection', (socket) => {
         if (data.type === 'config-loading') {
             socket.emit('config-loading', data.loading);
         } else {
-            socket.emit('carousel-update', data);
+            socket.emit('carousel-update', JSON.parse(JSON.stringify(data)));
         }
     });
 
     const alertSubscriptionId = `alert-${socket.id}`;
     scadaController.subscribeAlerts(alertSubscriptionId, (alertData) => {
-        socket.emit('scada-alert', alertData);
+        socket.emit('scada-alert', JSON.parse(JSON.stringify(alertData)));
     });
 
     // Subscribe to OPC-UA events
     const opcuaSubId = `opcua-${socket.id}`;
     opcuaManager.subscribe(opcuaSubId, (event, data) => {
-        socket.emit(event, data);
+        socket.emit(event, JSON.parse(JSON.stringify(data)));
     });
-    socket.emit('opcua-status', opcuaManager.getStatus());
+    
+    try {
+        console.log("Emitting opcua-status...");
+        socket.emit('opcua-status', JSON.parse(JSON.stringify(opcuaManager.getStatus())));
+        console.log("Emit opcua-status done");
+    } catch(e) { console.error("Error in opcua-status:", e); }
+
 
     // Subscribe to SQL status changes
     const sqlSubId = `sql-${socket.id}`;
@@ -153,7 +165,7 @@ io.on('connection', (socket) => {
     // Subscribe to system logs (real-time)
     const logSubId = `log-${socket.id}`;
     logger.subscribe(logSubId, (entry) => {
-        socket.emit('system-log', entry);
+        socket.emit('system-log', JSON.parse(JSON.stringify(entry)));
     });
 
     socket.on('disconnect', () => {
