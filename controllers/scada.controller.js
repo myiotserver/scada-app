@@ -171,7 +171,7 @@ const sqlStatusListeners = new Map();
 const alertListeners = new Map();
 const lastSqlInsertAlertTs = new Map();
 const SQL_ALERT_DEBOUNCE_MS = 8000;
-const SENSOR_WEIGHT_CAPTURE_DELAY_MS = Number(process.env.SENSOR_WEIGHT_CAPTURE_DELAY_MS) || 2000;
+const SENSOR_WEIGHT_CAPTURE_DELAY_MS = Number(process.env.SENSOR_WEIGHT_CAPTURE_DELAY_MS) || 1000;
 /** Extra wait when scale still shows the previous bag's weight. */
 const STALE_WEIGHT_RETRY_MS = Number(process.env.STALE_WEIGHT_RETRY_MS) || 1000;
 const STALE_WEIGHT_MAX_RETRIES = Number(process.env.STALE_WEIGHT_MAX_RETRIES) || 2;
