@@ -68,5 +68,8 @@ module.exports = function (app) {
 
     // Signin with rate limiting: max 10 attempts per 15 minutes per IP
     app.post("/api/auth/signin", signinRateLimiter, controller.signin);
+
+    // Change password (requires authentication)
+    app.post("/api/auth/change-password", [authJwt.verifyToken], controller.changePassword);
 };
 

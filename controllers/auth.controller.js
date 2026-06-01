@@ -77,9 +77,47 @@ exports.signin = (req, res) => {
                     username: user.username,
                     email: user.email,
                     roles: authorities,
-                    accessToken: token
+                    accessToken: token,
+                    mustChangePassword: user.mustChangePassword || false
                 });
             });
+        })
+        .catch(err => {
+            res.status(500).send({ message: err.message });
+        });
+};
+
+exports.changePassword = (req, res) => {
+    if (!req.body.oldPassword || !req.body.newPassword) {
+        return res.status(400).send({ message: "Old password and new password are required." });
+    }
+
+    User.findByPk(req.userId)
+        .then(user => {
+            if (!user) {
+                return res.status(404).send({ message: "User not found." });
+            }
+
+            var passwordIsValid = bcrypt.compareSync(
+                req.body.oldPassword,
+                user.password
+            );
+
+            if (!passwordIsValid) {
+                return res.status(401).send({ message: "Current password is incorrect." });
+            }
+
+            // Update password and clear mustChangePassword flag
+            user.password = bcrypt.hashSync(req.body.newPassword, 8);
+            user.mustChangePassword = false;
+
+            user.save()
+                .then(() => {
+                    res.status(200).send({ message: "Password changed successfully." });
+                })
+                .catch(err => {
+                    res.status(500).send({ message: err.message });
+                });
         })
         .catch(err => {
             res.status(500).send({ message: err.message });

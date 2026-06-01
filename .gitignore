@@ -6,3 +6,15 @@ node_modules/
 certs/
 seed-guest.js
 data/weight-history-export.json
+
+# Testing and debugging scripts
+check_dupes.js
+check_dupes_detail.js
+check_dupes_recent.js
+patch.js
+test-client.js
+test2.js
+test_circular.js
+
+# Audit reports
+npm-audit-result.json

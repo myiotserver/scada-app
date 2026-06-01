@@ -80,7 +80,8 @@ async function ensureDefaultAdmin() {
     const user = await User.create({
         username,
         email,
-        password: bcrypt.hashSync(password, 8)
+        password: bcrypt.hashSync(password, 8),
+        mustChangePassword: true
     });
 
     await user.setRoles([adminRole]);

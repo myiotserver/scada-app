@@ -6,9 +6,15 @@ const crypto = require('crypto');
 const secret = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
 
 if (!process.env.JWT_SECRET) {
-    console.warn('[SECURITY] JWT_SECRET not set in environment. Using auto-generated secret.');
-    console.warn('[SECURITY] Sessions will be invalidated on server restart.');
-    console.warn('[SECURITY] Set JWT_SECRET env var for persistent sessions.');
+    console.warn('');
+    console.warn('═══════════════════════════════════════════════════════════════');
+    console.warn('  [SECURITY WARNING] JWT_SECRET not set in environment');
+    console.warn('═══════════════════════════════════════════════════════════════');
+    console.warn('  • Using auto-generated secret (sessions will be lost on restart)');
+    console.warn('  • Set JWT_SECRET environment variable for persistent sessions');
+    console.warn('  • Example: export JWT_SECRET="your-strong-random-secret-here"');
+    console.warn('═══════════════════════════════════════════════════════════════');
+    console.warn('');
 }
 
 module.exports = {
