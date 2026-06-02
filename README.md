@@ -279,6 +279,15 @@ pm2 save                  # Simpan daftar aplikasi agar auto-start saat reboot
    - Jika menggunakan environment variable, pastikan nilainya benar (karena env override nilai file settings)
    - Untuk remote MSSQL, pastikan firewall mengizinkan koneksi
 
+2. **Error Login (column "mustChangePassword" does not exist)**:
+   - Error ini terjadi setelah adanya penambahan fitur keamanan baru, sedangkan skema database (tabel `users`) pada PostgreSQL belum memiliki kolom tersebut.
+   - Karena mode produksi menggunakan `sync({ force: false })`, skema tidak akan otomatis diubah.
+   - **Solusi**: Matikan aplikasi yang sedang berjalan, kemudian jalankan script sinkronisasi berikut:
+     ```bash
+     sudo node update_db.js
+     ```
+   - Setelah selesai dan berhasil, jalankan kembali aplikasinya (misal menggunakan `sudo nohup npm start > scada.log 2>&1 &`).
+
 3. **RESET Button Error**:
    - Jika tombol RESET di footer error dengan pesan `Cannot create property 'dataType' on number '1'`, pastikan backend menggunakan update terbaru di `utils/opcua.manager.js` yang menangani konversi tipe data ke `Variant` dengan benar.
 
@@ -287,7 +296,7 @@ pm2 save                  # Simpan daftar aplikasi agar auto-start saat reboot
    - Pastikan OPC UA server berjalan
    - Download dan install client certificate ke server OPC UA
 
-3. **Port Already in Use**:
+5. **Port Already in Use**:
    - Ubah PORT di environment atau file konfigurasi
    - Kill process yang menggunakan port:
      ```bash
@@ -300,7 +309,7 @@ pm2 save                  # Simpan daftar aplikasi agar auto-start saat reboot
      taskkill /PID <PID> /F
      ```
 
-4. **Node Modules Issues**:
+6. **Node Modules Issues**:
    - Hapus `node_modules` dan `package-lock.json`
    - Jalankan `npm install` ulang
 
