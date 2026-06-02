@@ -154,6 +154,15 @@
             "signalType": "COUNTER",
             "scale": 1,
             "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=SIEMENS CAROUSEL.CAROUSEL 03.ZEROING_BUTTON",
+            "name": "ZEROING CR3",
+            "description": "Zeroing signal from CR3",
+            "machineId": 3,
+            "signalType": "ZEROING",
+            "scale": 1,
+            "enabled": true
         }
     ]
 }

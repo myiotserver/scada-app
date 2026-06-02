@@ -182,7 +182,10 @@ const MIN_VALID_GROSS_KG = Number(process.env.MIN_VALID_GROSS_KG) || 1;
 /** Skip insert when gross matches the previous saved bag (stale scale reading). */
 const STALE_WEIGHT_EPSILON_KG = Number(process.env.STALE_WEIGHT_EPSILON_KG) || 0.02;
 const pendingWeightInserts = new Set();
+const pendingZeroingInserts = new Set();
 const captureTimers = new Map();
+const zeroingTimers = new Map();
+const ZEROING_CAPTURE_DELAY_MS = Number(process.env.ZEROING_CAPTURE_DELAY_MS) || 500;
 const CAROUSEL_BROADCAST_DEBOUNCE_MS = 100;
 let carouselBroadcastTimer = null;
 
@@ -204,6 +207,21 @@ function weightInsertKey(carouselId, data) {
     const po = (data.packingOrder || '').toString().trim();
     const counter = parseInt(data.counter, 10);
     return `CR${carouselId}|${po}|${counter}`;
+}
+
+function zeroingInsertKey(carouselId, data) {
+    const po = (data.packingOrder || '').toString().trim();
+    return `CR${carouselId}|${po}`;
+}
+
+function isTruthySignal(value) {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value !== 0;
+    if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+        return normalized === 'true' || normalized === '1';
+    }
+    return !!value;
 }
 
 async function weightRecordExists(carouselId, data) {
@@ -406,6 +424,81 @@ async function insertWeightData(carouselId, data) {
     }
 }
 
+async function insertZeroingData(carouselId, data) {
+    if (!weighingPool) {
+        logger.warn('SQL', `Skipping zeroing insert for CR${carouselId}: Database pool not ready.`);
+        return;
+    }
+    if (!data.productId) {
+        logger.warn('SQL', `Skipping zeroing insert for CR${carouselId}: No Product ID defined in configuration.`);
+        return;
+    }
+
+    const gross = parseFloat(data.lastGross);
+    if (!Number.isFinite(gross)) {
+        logger.warn('SQL', `Skipping zeroing insert for CR${carouselId}: Gross weight is not valid (${data.lastGross}).`);
+        return;
+    }
+
+    const insertKey = zeroingInsertKey(carouselId, data);
+    if (pendingZeroingInserts.has(insertKey)) {
+        logger.warn('SQL', `Skipping duplicate zeroing insert (in-flight) for CR${carouselId} PO=${data.packingOrder}`);
+        return;
+    }
+
+    pendingZeroingInserts.add(insertKey);
+
+    try {
+        const table = appSettings.table_zeroing || 'ZEROINGPLCDATA';
+        await weighingPool.request()
+            .input('productId', sql.NVarChar, data.productId)
+            .input('packagingMaterial', sql.NVarChar, data.packagingMaterial)
+            .input('packingOrder', sql.NVarChar, data.packingOrder)
+            .input('carousel', sql.NVarChar, `CR${carouselId}`)
+            .input('zeroWeight', sql.Decimal(18, 2), gross)
+            .query(`
+                INSERT INTO ${table}
+                (TIMESTAMP, PRODUCT_ID, PACKAGING_MATERIAL, PACKING_ORDER, CAROUSEL, ZERO_WEIGHT)
+                VALUES
+                (GETDATE(), @productId, @packagingMaterial, @packingOrder, @carousel, @zeroWeight)
+            `);
+
+        logger.info('SQL', `Inserted zeroing data for CR${carouselId}: zero=${gross}kg PO=${data.packingOrder}`);
+    } catch (err) {
+        logger.error('SQL', `Error inserting zeroing data: ${err.message}`);
+        notifySqlInsertFailure({
+            message: `Gagal update ${appSettings.table_zeroing || 'ZEROINGPLCDATA'} untuk CR${carouselId}`,
+            carousel: `CR${carouselId}`,
+            table: appSettings.table_zeroing || 'ZEROINGPLCDATA',
+            reason: err.message
+        });
+    } finally {
+        pendingZeroingInserts.delete(insertKey);
+    }
+}
+
+function scheduleZeroingCapture(carouselId) {
+    if (zeroingTimers.has(carouselId)) {
+        logger.warn('SCADA', `CR${carouselId} zeroing capture skipped: previous capture still pending.`);
+        return;
+    }
+
+    const timer = setTimeout(() => {
+        zeroingTimers.delete(carouselId);
+
+        const current = carousels[carouselId];
+        if (!current) {
+            logger.warn('SCADA', `CR${carouselId} zeroing capture skipped: carousel missing.`);
+            return;
+        }
+
+        logger.info('SCADA', `CR${carouselId} zeroing captured after ${ZEROING_CAPTURE_DELAY_MS}ms: gross=${current.data.lastGross}`);
+        insertZeroingData(carouselId, { ...current.data });
+    }, ZEROING_CAPTURE_DELAY_MS);
+
+    zeroingTimers.set(carouselId, timer);
+}
+
 // Connect to WEIGHING DB (Configuration Data)
 async function connectToWeighingDB() {
     try {
@@ -517,6 +610,21 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
                     carousels[carouselId].data.counter = val;
                     logger.info('SCADA', `CR${carouselId} counter updated from OPC to ${val}`);
                     scheduleCarouselBroadcast();
+                }
+            }
+        }
+
+        if (node && node.signalType === 'ZEROING' && node.machineId) {
+            const carouselId = node.machineId;
+            if (carousels[carouselId]) {
+                const newValue = isTruthySignal(data.value);
+                const oldValue = isTruthySignal(carousels[carouselId].data.zeroingStatus);
+
+                carousels[carouselId].data.zeroingStatus = newValue;
+
+                if (!oldValue && newValue) {
+                    logger.info('SCADA', `Zeroing Rising Edge for CR${carouselId}; capture scheduled in ${ZEROING_CAPTURE_DELAY_MS}ms`);
+                    scheduleZeroingCapture(carouselId);
                 }
             }
         }
