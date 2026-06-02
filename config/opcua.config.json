@@ -145,6 +145,15 @@
             "machineId": 5,
             "scale": 0.01,
             "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=SIEMENS CAROUSEL.CAROUSEL 03.PRODUCT_COUNTER",
+            "name": "COUNTER CR3",
+            "description": "Product counter",
+            "machineId": 3,
+            "signalType": "COUNTER",
+            "scale": 1,
+            "enabled": true
         }
     ]
 }

@@ -71,6 +71,9 @@ class OpcUaManager {
         if (/^RST$|^RESET$/.test(name) || /RESET/.test(nodeId)) {
             return 'RESET';
         }
+        if (/COUNT/.test(name) || /COUNT/.test(nodeId)) {
+            return 'COUNTER';
+        }
         return null;
     }
 

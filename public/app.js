@@ -1002,6 +1002,7 @@ function getOpcUaNodeSignalType(node) {
     if (/^CR[1-5]$/.test(name) || /GR_CR0?[1-5]/.test(nodeId) || /GROSS/.test(nodeId)) return 'GROSS_WEIGHT';
     if (/^S[1-5]$/.test(name) || /SENSOR0?[1-5]/.test(nodeId)) return 'PRODUCT_SENSOR';
     if (/^RST$|^RESET$/.test(name) || /RESET/.test(nodeId)) return 'RESET';
+    if (/COUNT/.test(name) || /COUNT/.test(nodeId)) return 'COUNTER';
     return '';
 }
 

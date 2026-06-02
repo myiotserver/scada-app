@@ -505,6 +505,22 @@ function getOpcNodeScale(tagName) {
 // Subscribe to OPC Manager updates
 opcUaManager.subscribe('scada-controller', (event, data) => {
     if (event === 'opcua-value' && data && data.name) {
+        const opcConfig = opcUaManager.getConfig();
+        const nodes = Array.isArray(opcConfig.nodes) ? opcConfig.nodes : [];
+        const node = nodes.find(n => n.name === data.name);
+
+        if (node && node.signalType === 'COUNTER' && node.machineId) {
+            const carouselId = node.machineId;
+            if (carousels[carouselId]) {
+                const val = parseInt(data.value, 10);
+                if (!isNaN(val) && carousels[carouselId].data.counter !== val) {
+                    carousels[carouselId].data.counter = val;
+                    logger.info('SCADA', `CR${carouselId} counter updated from OPC to ${val}`);
+                    scheduleCarouselBroadcast();
+                }
+            }
+        }
+
         // Map CR1..CR5 to Carousel 1..5
         const match = data.name.match(/^CR(\d+)$/);
         if (match) {
@@ -557,9 +573,8 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
                         }
 
                         carousels[carouselId].data._lastSensorEdgeTs = now;
-                        carousels[carouselId].data.counter = (carousels[carouselId].data.counter || 0) + 1;
-                        logger.info('SCADA', `CR${carouselId} counter incremented to ${carousels[carouselId].data.counter}`);
-
+                        // Counter is now updated via OPC COUNTER node directly, not by code calculation
+                        
                         scheduleWeightCapture(carouselId);
                     } else {
                         logger.info('SCADA', `CR${carouselId} is ${carousels[carouselId].state}, skipping counter increment and SQL write.`);
