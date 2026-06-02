@@ -815,10 +815,11 @@ exports.getWeightHistory = async (req, res) => {
                 STATUS,
                 COUNT(*) OVER() AS _totalCount
             FROM ${table}
+            WHERE TIMESTAMP >= DATEADD(hour, -24, GETDATE())
         `;
 
         if (carouselFilter) {
-            query += ` WHERE CAROUSEL = @carousel`;
+            query += ` AND CAROUSEL = @carousel`;
             request.input('carousel', sql.NVarChar, carouselFilter);
         }
 
