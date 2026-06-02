@@ -804,18 +804,23 @@ exports.getWeightHistory = async (req, res) => {
 
         let query = `
             SELECT
-                TIMESTAMP,
-                CAROUSEL,
-                PRODUCT_ID,
-                PRODUCT_NAME,
-                TARGET_COUNT,
-                PRODUCT_COUNT,
-                GROSS_WEIGHT,
-                NETT_WEIGHT,
-                STATUS,
+                *,
                 COUNT(*) OVER() AS _totalCount
-            FROM ${table}
-            WHERE TIMESTAMP >= DATEADD(hour, -24, GETDATE())
+            FROM (
+                SELECT TOP 50000
+                    TIMESTAMP,
+                    CAROUSEL,
+                    PRODUCT_ID,
+                    PRODUCT_NAME,
+                    TARGET_COUNT,
+                    PRODUCT_COUNT,
+                    GROSS_WEIGHT,
+                    NETT_WEIGHT,
+                    STATUS
+                FROM ${table}
+                ORDER BY TIMESTAMP DESC
+            ) AS TopRecords
+            WHERE 1=1
         `;
 
         if (carouselFilter) {
