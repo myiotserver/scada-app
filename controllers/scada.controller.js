@@ -203,10 +203,15 @@ function scheduleCarouselBroadcast() {
     }, CAROUSEL_BROADCAST_DEBOUNCE_MS);
 }
 
+function getDbProductCount(data) {
+    const counter = parseInt(data.counter, 10);
+    return Number.isInteger(counter) ? counter + 1 : 1;
+}
+
 function weightInsertKey(carouselId, data) {
     const po = (data.packingOrder || '').toString().trim();
-    const counter = parseInt(data.counter, 10);
-    return `CR${carouselId}|${po}|${counter}`;
+    const productCount = getDbProductCount(data);
+    return `CR${carouselId}|${po}|${productCount}`;
 }
 
 function zeroingInsertKey(carouselId, data) {
@@ -226,8 +231,8 @@ function isTruthySignal(value) {
 
 async function weightRecordExists(carouselId, data) {
     const packingOrder = (data.packingOrder || '').toString().trim();
-    const counter = parseInt(data.counter, 10);
-    if (!packingOrder || !Number.isInteger(counter) || counter < 0) {
+    const productCount = getDbProductCount(data);
+    if (!packingOrder || productCount < 0) {
         return false;
     }
 
@@ -235,7 +240,7 @@ async function weightRecordExists(carouselId, data) {
     const result = await weighingPool.request()
         .input('packingOrder', sql.NVarChar, packingOrder)
         .input('carousel', sql.NVarChar, `CR${carouselId}`)
-        .input('productCount', sql.Int, counter)
+        .input('productCount', sql.Int, productCount)
         .query(`
             SELECT TOP 1 1 AS found
             FROM [${table}]
@@ -360,9 +365,10 @@ async function insertWeightData(carouselId, data) {
         return;
     }
 
+    const productCount = getDbProductCount(data);
     const insertKey = weightInsertKey(carouselId, data);
     if (pendingWeightInserts.has(insertKey)) {
-        logger.warn('SQL', `Skipping duplicate insert (in-flight) for CR${carouselId} PO=${data.packingOrder} counter=${data.counter}`);
+        logger.warn('SQL', `Skipping duplicate insert (in-flight) for CR${carouselId} PO=${data.packingOrder} counter=${data.counter} dbProductCount=${productCount}`);
         return;
     }
 
@@ -370,7 +376,7 @@ async function insertWeightData(carouselId, data) {
 
     try {
         if (await weightRecordExists(carouselId, data)) {
-            logger.warn('SQL', `Skipping duplicate insert (already in DB) for CR${carouselId} PO=${data.packingOrder} counter=${data.counter}`);
+            logger.warn('SQL', `Skipping duplicate insert (already in DB) for CR${carouselId} PO=${data.packingOrder} counter=${data.counter} dbProductCount=${productCount}`);
             return;
         }
         // Calculate STATUS based on GROSS_WEIGHT
@@ -391,7 +397,7 @@ async function insertWeightData(carouselId, data) {
             .input('baseTarget', sql.Decimal(18, 2), data.target) // Using target as product count/target count placeholder if needed? No, schema has PRODUCT_COUNT and TARGET_COUNT
             // Schema from image: PRODUCT_COUNT, TARGET_COUNT. Let's assume these are current counters or target settings.
             // data.target is likely TARGET_COUNT. PRODUCT_COUNT is likely the current counter.
-            .input('productCount', sql.Int, data.counter || 0)
+            .input('productCount', sql.Int, productCount)
             .input('targetCount', sql.Int, data.target || 0)
             .input('status', sql.NVarChar, status)
             .query(`
@@ -403,7 +409,7 @@ async function insertWeightData(carouselId, data) {
                  @grossWeight, @nettWeight, @toleranceMin, @toleranceMax, @productCount, @targetCount, @status)
             `);
 
-        logger.info('SQL', `Inserted data for CR${carouselId}: gross=${data.lastGross}kg nett=${data.lastNett}kg (${status}) PO=${data.packingOrder} counter=${data.counter}`);
+        logger.info('SQL', `Inserted data for CR${carouselId}: gross=${data.lastGross}kg nett=${data.lastNett}kg (${status}) PO=${data.packingOrder} counter=${data.counter} dbProductCount=${productCount}`);
 
         if (carousels[carouselId]) {
             carousels[carouselId].data.lastGross = data.lastGross;
