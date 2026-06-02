@@ -172,15 +172,10 @@ const alertListeners = new Map();
 const lastSqlInsertAlertTs = new Map();
 const SQL_ALERT_DEBOUNCE_MS = 8000;
 const SENSOR_WEIGHT_CAPTURE_DELAY_MS = Number(process.env.SENSOR_WEIGHT_CAPTURE_DELAY_MS) || 1000;
-/** Extra wait when scale still shows the previous bag's weight. */
-const STALE_WEIGHT_RETRY_MS = Number(process.env.STALE_WEIGHT_RETRY_MS) || 1000;
-const STALE_WEIGHT_MAX_RETRIES = Number(process.env.STALE_WEIGHT_MAX_RETRIES) || 2;
 /** Ignore sensor rising edges closer than this (bounce / double trigger). */
 const SENSOR_MIN_GAP_MS = Number(process.env.SENSOR_MIN_GAP_MS) || 1500;
 /** Reject inserts below this gross (empty scale / noise). */
 const MIN_VALID_GROSS_KG = Number(process.env.MIN_VALID_GROSS_KG) || 1;
-/** Skip insert when gross matches the previous saved bag (stale scale reading). */
-const STALE_WEIGHT_EPSILON_KG = Number(process.env.STALE_WEIGHT_EPSILON_KG) || 0.02;
 const pendingWeightInserts = new Set();
 const pendingZeroingInserts = new Set();
 const captureTimers = new Map();
@@ -286,11 +281,6 @@ function notifySqlInsertFailure(payload) {
     });
 }
 
-function isStaleWeight(gross, lastInsertedGross) {
-    return Number.isFinite(lastInsertedGross)
-        && Math.abs(gross - lastInsertedGross) < STALE_WEIGHT_EPSILON_KG;
-}
-
 function finalizeWeightCapture(carouselId, capturedCounter, grossAtTrigger, attempt) {
     const current = carousels[carouselId];
     if (!current || current.state !== 'RUN') {
@@ -300,25 +290,9 @@ function finalizeWeightCapture(carouselId, capturedCounter, grossAtTrigger, atte
 
     const gross = current.data.lastGross;
     const nett = current.data.lastNett;
-    const lastInsertedGross = current.data._lastInsertedGross;
 
     if (!Number.isFinite(gross) || gross < MIN_VALID_GROSS_KG) {
         logger.warn('SCADA', `CR${carouselId} insert skipped: gross ${gross} below minimum ${MIN_VALID_GROSS_KG} kg (counter=${capturedCounter})`);
-        return;
-    }
-
-    if (isStaleWeight(gross, lastInsertedGross)) {
-        if (attempt < STALE_WEIGHT_MAX_RETRIES) {
-            const nextAttempt = attempt + 1;
-            logger.warn('SCADA', `CR${carouselId} stale weight ${gross} kg ≈ last ${lastInsertedGross} kg — retry ${nextAttempt}/${STALE_WEIGHT_MAX_RETRIES} in ${STALE_WEIGHT_RETRY_MS}ms (counter=${capturedCounter})`);
-            const retryTimer = setTimeout(() => {
-                captureTimers.delete(carouselId);
-                finalizeWeightCapture(carouselId, capturedCounter, grossAtTrigger, nextAttempt);
-            }, STALE_WEIGHT_RETRY_MS);
-            captureTimers.set(carouselId, retryTimer);
-            return;
-        }
-        logger.warn('SCADA', `CR${carouselId} insert skipped: stale weight ${gross} kg still matches last insert ${lastInsertedGross} kg (counter=${capturedCounter})`);
         return;
     }
 
@@ -329,7 +303,7 @@ function finalizeWeightCapture(carouselId, capturedCounter, grossAtTrigger, atte
         lastNett: nett
     };
 
-    const waitedMs = SENSOR_WEIGHT_CAPTURE_DELAY_MS + (attempt * STALE_WEIGHT_RETRY_MS);
+    const waitedMs = SENSOR_WEIGHT_CAPTURE_DELAY_MS;
     logger.info('SCADA', `CR${carouselId} weight captured after ${waitedMs}ms (settled): trigger gross=${grossAtTrigger} → saved gross=${gross} nett=${nett} counter=${snapshot.counter}`);
     insertWeightData(carouselId, snapshot);
 }
