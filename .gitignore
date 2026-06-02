@@ -18,3 +18,7 @@ test_circular.js
 
 # Audit reports
 npm-audit-result.json
+
+# Ignored documentation
+DEPLOYMENT_CHECKLIST.md
+SESSION-CLAUDE*.md
