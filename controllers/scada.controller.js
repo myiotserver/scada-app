@@ -230,29 +230,6 @@ function isTruthySignal(value) {
     return !!value;
 }
 
-async function weightRecordExists(carouselId, data) {
-    const packingOrder = (data.packingOrder || '').toString().trim();
-    const productCount = getDbProductCount(data);
-    if (!packingOrder || productCount < 0) {
-        return false;
-    }
-
-    const table = appSettings.table_weight || 'WEIGHT_DATA';
-    const result = await weighingPool.request()
-        .input('packingOrder', sql.NVarChar, packingOrder)
-        .input('carousel', sql.NVarChar, `CR${carouselId}`)
-        .input('productCount', sql.Int, productCount)
-        .query(`
-            SELECT TOP 1 1 AS found
-            FROM [${table}]
-            WHERE PACKING_ORDER = @packingOrder
-              AND CAROUSEL = @carousel
-              AND PRODUCT_COUNT = @productCount
-        `);
-
-    return result.recordset.length > 0;
-}
-
 function emitSqlStatus() {
     const connected = weighingPool && weighingPool.connected;
     const config = getMssqlConfig();
@@ -355,16 +332,12 @@ async function insertWeightData(carouselId, data) {
     pendingWeightInserts.add(insertKey);
 
     try {
-        if (await weightRecordExists(carouselId, data)) {
-            logger.warn('SQL', `Skipping duplicate insert (already in DB) for CR${carouselId} PO=${data.packingOrder} counter=${data.counter} dbProductCount=${productCount}`);
-            return;
-        }
         // Calculate STATUS based on GROSS_WEIGHT
         let status = 'Normal';
         if (data.lastGross < data.toleranceMin) status = 'Underweight';
         else if (data.lastGross > data.toleranceMax) status = 'Overweight';
 
-        await weighingPool.request()
+        const result = await weighingPool.request()
             .input('packingOrder', sql.NVarChar, data.packingOrder)
             .input('productId', sql.NVarChar, data.productId)
             .input('productName', sql.NVarChar, data.productName)
@@ -381,13 +354,26 @@ async function insertWeightData(carouselId, data) {
             .input('targetCount', sql.Int, data.target || 0)
             .input('status', sql.NVarChar, status)
             .query(`
-                INSERT INTO ${appSettings.table_weight || 'WEIGHT_DATA'} 
-                (TIMESTAMP, PACKING_ORDER, PRODUCT_ID, PRODUCT_NAME, PACKAGING_MATERIAL, CAROUSEL, 
-                 GROSS_WEIGHT, NETT_WEIGHT, TOLERANCE_MIN, TOLERANCE_MAX, PRODUCT_COUNT, TARGET_COUNT, STATUS)
-                VALUES 
-                (GETDATE(), @packingOrder, @productId, @productName, @packagingMaterial, @carousel, 
-                 @grossWeight, @nettWeight, @toleranceMin, @toleranceMax, @productCount, @targetCount, @status)
+                IF NOT EXISTS (
+                    SELECT 1 FROM [${appSettings.table_weight || 'WEIGHT_DATA'}]
+                    WHERE PACKING_ORDER = @packingOrder
+                      AND CAROUSEL = @carousel
+                      AND PRODUCT_COUNT = @productCount
+                )
+                BEGIN
+                    INSERT INTO ${appSettings.table_weight || 'WEIGHT_DATA'} 
+                    (TIMESTAMP, PACKING_ORDER, PRODUCT_ID, PRODUCT_NAME, PACKAGING_MATERIAL, CAROUSEL, 
+                     GROSS_WEIGHT, NETT_WEIGHT, TOLERANCE_MIN, TOLERANCE_MAX, PRODUCT_COUNT, TARGET_COUNT, STATUS)
+                    VALUES 
+                    (GETDATE(), @packingOrder, @productId, @productName, @packagingMaterial, @carousel, 
+                     @grossWeight, @nettWeight, @toleranceMin, @toleranceMax, @productCount, @targetCount, @status)
+                END
             `);
+
+        if (!result.rowsAffected || result.rowsAffected[0] === 0) {
+            logger.warn('SQL', `Skipping duplicate insert (already in DB) for CR${carouselId} PO=${data.packingOrder} counter=${data.counter} dbProductCount=${productCount}`);
+            return;
+        }
 
         logger.info('SQL', `Inserted data for CR${carouselId}: gross=${data.lastGross}kg nett=${data.lastNett}kg (${status}) PO=${data.packingOrder} counter=${data.counter} dbProductCount=${productCount}`);
 
