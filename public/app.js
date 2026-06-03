@@ -1491,10 +1491,34 @@ function updateHistoryPaginationUi() {
     [nextBtn, lastBtn].forEach(btn => { if (btn) btn.disabled = atEnd; });
 }
 
+function formatHistoryTimestamp(timestampValue) {
+    if (!timestampValue) return '-';
+
+    const date = new Date(timestampValue);
+    if (!Number.isNaN(date.getTime())) {
+        return new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'UTC',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        }).format(date).replace(',', '');
+    }
+
+    const raw = String(timestampValue).trim();
+    const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
+    if (!match) return raw;
+
+    const [, year, month, day, hour, minute, second = '00'] = match;
+    return `${day}/${month}/${year} ${hour}:${minute}:${second}`;
+}
+
 function renderHistoryRow(row) {
     const tr = document.createElement('tr');
-    const date = new Date(row.TIMESTAMP || row.createdAt);
-    const dateStr = date.toLocaleString('en-GB');
+    const dateStr = formatHistoryTimestamp(row.TIMESTAMP || row.createdAt);
     const grossWeight = row.GROSS_WEIGHT != null ? parseFloat(row.GROSS_WEIGHT).toFixed(2) : '-';
     const nettWeight = row.NETT_WEIGHT != null ? parseFloat(row.NETT_WEIGHT).toFixed(2) : '-';
     const counterValue = row.PRODUCT_COUNT ?? row.COUNTER ?? '-';

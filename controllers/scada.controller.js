@@ -365,7 +365,7 @@ async function insertWeightData(carouselId, data) {
                     (TIMESTAMP, PACKING_ORDER, PRODUCT_ID, PRODUCT_NAME, PACKAGING_MATERIAL, CAROUSEL, 
                      GROSS_WEIGHT, NETT_WEIGHT, TOLERANCE_MIN, TOLERANCE_MAX, PRODUCT_COUNT, TARGET_COUNT, STATUS)
                     VALUES 
-                    (GETDATE(), @packingOrder, @productId, @productName, @packagingMaterial, @carousel, 
+                    (DATEADD(HOUR, 7, GETUTCDATE()), @packingOrder, @productId, @productName, @packagingMaterial, @carousel, 
                      @grossWeight, @nettWeight, @toleranceMin, @toleranceMax, @productCount, @targetCount, @status)
                 END
             `);
@@ -432,7 +432,7 @@ async function insertZeroingData(carouselId, data) {
                 INSERT INTO ${table}
                 (TIMESTAMP, PRODUCT_ID, PACKAGING_MATERIAL, PACKING_ORDER, CAROUSEL, ZERO_WEIGHT)
                 VALUES
-                (GETDATE(), @productId, @packagingMaterial, @packingOrder, @carousel, @zeroWeight)
+                (DATEADD(HOUR, 7, GETUTCDATE()), @productId, @packagingMaterial, @packingOrder, @carousel, @zeroWeight)
             `);
 
         logger.info('SQL', `Inserted zeroing data for CR${carouselId}: zero=${gross}kg PO=${data.packingOrder}`);
