@@ -703,6 +703,14 @@ function renderCarousels(carousels) {
             const target = parseInt(d.target) || 1;
             const progress = Math.min((counter / target) * 100, 100);
 
+            // Display logic: internal counter is 0-based, DB stores 1-based.
+            // If this packing order has never had an insert (no _lastInsertedGross)
+            // and the local counter is 0, show 0 in UI to match DB (no record yet).
+            // Otherwise show 1-based counter for operator-friendly display.
+            const displayedCounter = (counter === 0 && (d._lastInsertedGross === undefined || d._lastInsertedGross === null))
+                ? 0
+                : (counter + 1);
+
             // Determine Weight Class based on logic
             let weightClass = '';
 
@@ -765,7 +773,7 @@ function renderCarousels(carousels) {
 
                     <div class="progress-section">
                         <div class="progress-info">
-                            <span>Counter: ${counter + 1} Pcs</span>
+                            <span>Counter: ${displayedCounter} Pcs</span>
                             <span>Target: ${target} Pcs</span>
                         </div>
                         <div class="progress-bar-track">
