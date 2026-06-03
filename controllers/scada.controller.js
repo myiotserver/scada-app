@@ -200,7 +200,13 @@ function scheduleCarouselBroadcast() {
 
 function getDbProductCount(data) {
     const counter = parseInt(data.counter, 10);
+    // PRODUCT_COUNT in SQL is stored as 1-based, while local counter is zero-based.
     return Number.isInteger(counter) ? counter + 1 : 1;
+}
+
+function resolveLocalCounterFromProductCount(productCount) {
+    const count = parseInt(productCount, 10);
+    return Number.isInteger(count) && count > 0 ? count - 1 : 0;
 }
 
 function weightInsertKey(carouselId, data) {
@@ -790,9 +796,10 @@ async function fetchCarouselConfig(showLoading = false) {
                     }
                     if (countResult.recordset[0] && countResult.recordset[0].lastCount !== null) {
                         const dbCount = countResult.recordset[0].lastCount;
-                        const nextCounter = Math.max(localCounter, dbCount);
+                        const dbCounter = resolveLocalCounterFromProductCount(dbCount);
+                        const nextCounter = Math.max(localCounter, dbCounter);
                         carousels[carouselId].data.counter = nextCounter;
-                        if (nextCounter > dbCount) {
+                        if (nextCounter > dbCounter) {
                             logger.info('SQL', `Counter for CR${carouselId} kept at ${nextCounter} (DB max ${dbCount}, PO: ${packingOrder})`);
                         } else {
                             logger.info('SQL', `Loaded counter for CR${carouselId}: ${nextCounter} (PO: ${packingOrder})`);
