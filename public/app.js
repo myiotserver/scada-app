@@ -980,6 +980,19 @@ async function triggerResetError() {
 let opcuaConfig = null;
 let opcuaLiveValues = {};
 
+function formatOpcUaValue(value) {
+    if (value === null || value === undefined) return '—';
+    // Preserve booleans as-is
+    if (typeof value === 'boolean') return value ? 'true' : 'false';
+    // Try numeric conversion for numeric-like values
+    const num = Number(value);
+    if (!Number.isNaN(num) && Number.isFinite(num)) {
+        // If non-integer, show 2 decimal places; otherwise show integer
+        return (num % 1 !== 0) ? num.toFixed(2) : String(num);
+    }
+    return String(value);
+}
+
 function getOpcUaNodeMachineId(node) {
     if (!node) return '';
     if (node.machineId !== undefined && node.machineId !== null && node.machineId !== '') {
@@ -1197,7 +1210,7 @@ function renderOpcUaNodes() {
             <td><span style="font-size:0.75rem; background:rgba(99,102,241,0.15); color:#818cf8; padding:2px 6px; border-radius:4px;">${signalType || '—'}</span></td>
             <td style="font-family: var(--font-digital)">${scale}</td>
             <td>${node.description || '—'}</td>
-            <td style="font-family: var(--font-digital)" id="opcua-live-${idx}">${liveVal !== undefined ? liveVal.value : '—'}</td>
+            <td style="font-family: var(--font-digital)" id="opcua-live-${idx}">${liveVal !== undefined ? formatOpcUaValue(liveVal.value) : '—'}</td>
             <td>
                 <div class="opc-node-actions">
                     <button class="opc-action-btn edit" title="Edit monitored node" onclick="editOpcUaNode(${idx})">
@@ -1267,9 +1280,9 @@ function updateOpcUaLiveValue(data) {
         const idx = opcuaConfig.nodes.findIndex(n => n.name === data.name);
         if (idx >= 0) {
             const cell = document.getElementById(`opcua-live-${idx}`);
-            if (cell) {
-                cell.innerText = data.value !== null && data.value !== undefined ? data.value : '—';
-                const isGood = data.statusCode && data.statusCode.toString().startsWith('Good');
+                if (cell) {
+                    cell.innerText = formatOpcUaValue(data.value);
+                    const isGood = data.statusCode && data.statusCode.toString().startsWith('Good');
                 cell.style.color = isGood ? '#28a745' : '#ffc107';
 
                 // Also update row background flash? (Optional)
