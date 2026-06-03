@@ -765,7 +765,7 @@ function renderCarousels(carousels) {
 
                     <div class="progress-section">
                         <div class="progress-info">
-                            <span>Counter: ${counter} Pcs</span>
+                            <span>Counter: ${counter + 1} Pcs</span>
                             <span>Target: ${target} Pcs</span>
                         </div>
                         <div class="progress-bar-track">
