@@ -800,16 +800,16 @@ function renderCarousels(carousels) {
                         <div class="spinner"></div>
                         <div class="loading-text">Updating Data...</div>
                     </div>
-                    <span class="icon" style="color:var(--accent-danger); opacity:0.8;">🔌</span>
+                    <span class="icon" style="color:var(--accent-warning); opacity:0.8;">⌛</span>
                     <span style="font-size:1rem; font-weight:600; color:var(--text-secondary);">Carousel ${i}</span>
-                    <span style="font-weight:700; color:var(--accent-danger); letter-spacing:1px; margin-top:5px; margin-bottom:15px;">OFFLINE</span>
+                    <span style="font-weight:700; color:var(--accent-warning); letter-spacing:1px; margin-top:5px; margin-bottom:15px;">Waiting for Packing Order</span>
                     <div class="weight-section" style="width: 100%; padding: 0 14px;">
                         <div class="weight-label">Gross Weight</div>
-                        <div class="weight-display bg-danger">0.00 Kg</div>
+                        <div class="weight-display bg-warning">0.00 Kg</div>
                     </div>
                 </div>
             `;
-            col.style.borderColor = "var(--accent-danger)";
+            col.style.borderColor = "var(--accent-warning)";
             col.style.boxShadow = "none";
         }
 

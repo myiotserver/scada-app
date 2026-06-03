@@ -171,7 +171,7 @@ const sqlStatusListeners = new Map();
 const alertListeners = new Map();
 const lastSqlInsertAlertTs = new Map();
 const SQL_ALERT_DEBOUNCE_MS = 8000;
-const SENSOR_WEIGHT_CAPTURE_DELAY_MS = Number(process.env.SENSOR_WEIGHT_CAPTURE_DELAY_MS) || 1500;
+const SENSOR_WEIGHT_CAPTURE_DELAY_MS = Number(process.env.SENSOR_WEIGHT_CAPTURE_DELAY_MS) || 100;
 /** Ignore sensor rising edges closer than this (bounce / double trigger). */
 const SENSOR_MIN_GAP_MS = Number(process.env.SENSOR_MIN_GAP_MS) || 1500;
 /** Reject inserts below this gross (empty scale / noise). */
@@ -637,9 +637,9 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
                     scheduleCarouselBroadcast();
                 }
 
-                // RISING EDGE DETECTION (False -> True)
-                if (!oldValue && newValue) {
-                    logger.info('SCADA', `Sensor Rising Edge for CR${carouselId}`);
+                // FALLING EDGE DETECTION (True -> False)
+                if (oldValue && !newValue) {
+                    logger.info('SCADA', `Sensor Falling Edge for CR${carouselId}`);
 
                     if (carousels[carouselId].state === 'RUN') {
                         const now = Date.now();
