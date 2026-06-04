@@ -5,6 +5,9 @@ echo    SRIBOGA - Weighing SCADA Dashboard
 echo    Production Start via PM2
 echo =======================================================
 echo.
+echo [TIP] For first-time full deployment (PostgreSQL setup, .env,
+echo       admin seeding, auto-start), run:  deploy_windows.bat
+echo.
 
 REM Ensure dependencies are installed (only if node_modules is missing/empty)
 set "NEED_INSTALL=0"

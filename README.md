@@ -192,6 +192,28 @@ Keterangan tambahan akun default:
 
 Aplikasi akan berjalan di `http://localhost:3001`
 
+### 🪟 Windows — One-Click Deployment (Rekomendasi)
+
+Untuk pengguna Windows, jalankan script berikut sebagai **Administrator**:
+
+```
+deploy_windows.bat
+```
+
+Script ini akan melakukan **SEMUA** langkah secara otomatis:
+1. ✅ Cek Node.js
+2. ✅ Install PM2
+3. ✅ Setup database PostgreSQL (scada_db, user scada_user)
+4. ✅ Generate file `.env` dengan konfigurasi lengkap
+5. ✅ Install semua dependencies (`npm install`)
+6. ✅ Seed admin user
+7. ✅ Start aplikasi dengan PM2
+8. ✅ Setup auto-start saat Windows logon
+
+Setelah selesai, buka `http://localhost:3001` dan login dengan:
+- **Username:** `admin`
+- **Password:** `12345678`
+
 ### Startup manual (via linux terminal)
 
 Untuk menjalankan aplikasi di server secara manual bisa menggunakan langkah berikut:
