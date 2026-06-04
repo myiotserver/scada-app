@@ -200,7 +200,16 @@ function scheduleCarouselBroadcast() {
 
 function getDbProductCount(data) {
     const counter = parseInt(data.counter, 10);
-    // PRODUCT_COUNT in SQL is stored as 1-based, while local counter is zero-based.
+    // PRODUCT_COUNT in SQL is stored as 1-based.
+    // Normally local counter was treated as zero-based (hence +1), but the
+    // local code increments immediately on sensor edge. To avoid double-
+    // counting for the very first item (counter moved 0->1), we support a
+    // transient flag `_incrementedFromZero` carried in the snapshot. When
+    // present and the counter equals 1, return 1. Otherwise fall back to
+    // the legacy behaviour (counter + 1) to maintain compatibility.
+    if (data && data._incrementedFromZero && Number.isInteger(counter) && counter === 1) {
+        return 1;
+    }
     return Number.isInteger(counter) ? counter + 1 : 1;
 }
 
@@ -264,7 +273,7 @@ function notifySqlInsertFailure(payload) {
     });
 }
 
-function finalizeWeightCapture(carouselId, capturedCounter, grossAtTrigger, attempt) {
+function finalizeWeightCapture(carouselId, capturedCounter, grossAtTrigger, attempt, incrementedFromZero) {
     const current = carousels[carouselId];
     if (!current || current.state !== 'RUN') {
         logger.info('SCADA', `CR${carouselId} weight capture skipped: state is ${current?.state || 'missing'}`);
@@ -286,6 +295,13 @@ function finalizeWeightCapture(carouselId, capturedCounter, grossAtTrigger, atte
         lastNett: nett
     };
 
+    // Propagate transient flag so DB mapping can treat the first-from-zero
+    // case specially (avoid double-counting on first insert).
+    if (incrementedFromZero) snapshot._incrementedFromZero = true;
+
+    // Clear transient marker on local state now that it's captured
+    if (current.data && current.data._incrementedFromZero) delete current.data._incrementedFromZero;
+
     const waitedMs = SENSOR_WEIGHT_CAPTURE_DELAY_MS;
     logger.info('SCADA', `CR${carouselId} weight captured after ${waitedMs}ms (settled): trigger gross=${grossAtTrigger} → saved gross=${gross} nett=${nett} counter=${snapshot.counter}`);
     insertWeightData(carouselId, snapshot);
@@ -302,10 +318,11 @@ function scheduleWeightCapture(carouselId) {
 
     const capturedCounter = carousel.data.counter;
     const grossAtTrigger = carousel.data.lastGross;
+    const incrementedFromZero = !!carousel.data._incrementedFromZero;
 
     const timer = setTimeout(() => {
         captureTimers.delete(carouselId);
-        finalizeWeightCapture(carouselId, capturedCounter, grossAtTrigger, 0);
+        finalizeWeightCapture(carouselId, capturedCounter, grossAtTrigger, 0, incrementedFromZero);
     }, SENSOR_WEIGHT_CAPTURE_DELAY_MS);
 
     captureTimers.set(carouselId, timer);
@@ -641,7 +658,9 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
                         }
 
                         carousels[carouselId].data._lastSensorEdgeTs = now;
-                        carousels[carouselId].data.counter = (carousels[carouselId].data.counter || 0) + 1;
+                        const prevCounter = carousels[carouselId].data.counter || 0;
+                        carousels[carouselId].data.counter = prevCounter + 1;
+                        if (prevCounter === 0) carousels[carouselId].data._incrementedFromZero = true;
                         logger.info('SCADA', `CR${carouselId} counter incremented to ${carousels[carouselId].data.counter}`);
                         scheduleWeightCapture(carouselId);
                     } else {
