@@ -1,7 +1,7 @@
 const opcuaManager = require('../utils/opcua.manager');
 
 function requiresMachineId(signalType) {
-    return ['GROSS_WEIGHT', 'PRODUCT_SENSOR', 'CAROUSEL_INTERLOCK', 'GROSS_NORMAL', 'GROSS_UNDER', 'GROSS_OVER', 'MACHINE_RUN', 'ZEROING'].includes(
+    return ['GROSS_WEIGHT', 'PRODUCT_SENSOR', 'CAROUSEL_INTERLOCK', 'GROSS_NORMAL', 'GROSS_UNDER', 'GROSS_OVER', 'MACHINE_RUN', 'ZEROING', 'MD_SWITCH', 'SYSTEM_PAUSED'].includes(
         (signalType || '').toString().trim().toUpperCase()
     );
 }

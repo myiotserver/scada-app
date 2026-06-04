@@ -1023,6 +1023,8 @@ function getOpcUaNodeSignalType(node) {
     if (/^CR[1-5]$/.test(name) || /GR_CR0?[1-5]/.test(nodeId) || /GROSS/.test(nodeId)) return 'GROSS_WEIGHT';
     if (/^S[1-5]$/.test(name) || /SENSOR0?[1-5]/.test(nodeId)) return 'PRODUCT_SENSOR';
     if (/^RST$|^RESET$/.test(name) || /RESET/.test(nodeId)) return 'RESET';
+    if (/MD[_\s-]?SWITCH/.test(name) || /MD[_\s-]?SWITCH/.test(nodeId)) return 'MD_SWITCH';
+    if (/SYSTEM[_\s-]?PAUSED/.test(name) || /SYSTEM[_\s-]?PAUSED/.test(nodeId)) return 'SYSTEM_PAUSED';
     if (/COUNT/.test(name) || /COUNT/.test(nodeId)) return 'COUNTER';
     return '';
 }

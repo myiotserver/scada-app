@@ -201,14 +201,14 @@ function scheduleCarouselBroadcast() {
 function getDbProductCount(data) {
     const counter = parseInt(data.counter, 10);
     // PRODUCT_COUNT in SQL is stored as 1-based.
-    // Normally local counter was treated as zero-based (hence +1), but the
-    // local code increments immediately on sensor edge. To avoid double-
-    // counting for the very first item (counter moved 0->1), we support a
-    // transient flag `_incrementedFromZero` carried in the snapshot. When
-    // present and the counter equals 1, return 1. Otherwise fall back to
-    // the legacy behaviour (counter + 1) to maintain compatibility.
-    if (data && data._incrementedFromZero && Number.isInteger(counter) && counter === 1) {
-        return 1;
+    // When counter is incremented on sensor edge from 0 to 1, a persistent flag
+    // `_localCounterIs1Based` is set to indicate that local counter now represents
+    // the 1-based count (not zero-based anymore). This flag persists for all
+    // subsequent inserts until counter is reset to 0.
+    // - If flag is set: return counter directly (already 1-based)
+    // - If flag is not set: return counter + 1 (legacy zero-based behavior)
+    if (data && data._localCounterIs1Based) {
+        return Number.isInteger(counter) && counter > 0 ? counter : 1;
     }
     return Number.isInteger(counter) ? counter + 1 : 1;
 }
@@ -237,6 +237,23 @@ function isTruthySignal(value) {
         return normalized === 'true' || normalized === '1';
     }
     return !!value;
+}
+
+function getWorkflowSignals(data) {
+    return {
+        mdSwitch: isTruthySignal(data && data.mdSwitch),
+        systemPaused: isTruthySignal(data && data.systemPaused)
+    };
+}
+
+function canInsertWeightData(data) {
+    const signals = getWorkflowSignals(data);
+    return signals.mdSwitch && !signals.systemPaused;
+}
+
+function canInsertZeroingData(data) {
+    const signals = getWorkflowSignals(data);
+    return signals.mdSwitch && signals.systemPaused;
 }
 
 function emitSqlStatus() {
@@ -295,12 +312,10 @@ function finalizeWeightCapture(carouselId, capturedCounter, grossAtTrigger, atte
         lastNett: nett
     };
 
-    // Propagate transient flag so DB mapping can treat the first-from-zero
-    // case specially (avoid double-counting on first insert).
-    if (incrementedFromZero) snapshot._incrementedFromZero = true;
-
-    // Clear transient marker on local state now that it's captured
-    if (current.data && current.data._incrementedFromZero) delete current.data._incrementedFromZero;
+    // Propagate persistent flag so DB mapping knows counter is now 1-based.
+    // This flag is NOT cleared here; it persists for all subsequent inserts
+    // until counter is reset to 0 (at the start of a new packing order).
+    if (incrementedFromZero) snapshot._localCounterIs1Based = true;
 
     const waitedMs = SENSOR_WEIGHT_CAPTURE_DELAY_MS;
     logger.info('SCADA', `CR${carouselId} weight captured after ${waitedMs}ms (settled): trigger gross=${grossAtTrigger} → saved gross=${gross} nett=${nett} counter=${snapshot.counter}`);
@@ -330,6 +345,12 @@ function scheduleWeightCapture(carouselId) {
 
 // Helper to insert weight data into SQL
 async function insertWeightData(carouselId, data) {
+    if (!canInsertWeightData(data)) {
+        const signals = getWorkflowSignals(data);
+        logger.warn('SQL', `Skipping insert for CR${carouselId}: workflow not ready (MD_SWITCH=${signals.mdSwitch}, SYSTEM_PAUSED=${signals.systemPaused}).`);
+        return;
+    }
+
     if (!weighingPool) {
         logger.warn('SQL', `Skipping insert for CR${carouselId}: Database pool not ready.`);
         return;
@@ -414,6 +435,12 @@ async function insertWeightData(carouselId, data) {
 }
 
 async function insertZeroingData(carouselId, data) {
+    if (!canInsertZeroingData(data)) {
+        const signals = getWorkflowSignals(data);
+        logger.warn('SQL', `Skipping zeroing insert for CR${carouselId}: workflow not ready (MD_SWITCH=${signals.mdSwitch}, SYSTEM_PAUSED=${signals.systemPaused}).`);
+        return;
+    }
+
     if (!weighingPool) {
         logger.warn('SQL', `Skipping zeroing insert for CR${carouselId}: Database pool not ready.`);
         return;
@@ -589,9 +616,27 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
     if (event === 'opcua-value' && data && data.name) {
         const opcConfig = opcUaManager.getConfig();
         const nodes = Array.isArray(opcConfig.nodes) ? opcConfig.nodes : [];
-        const node = nodes.find(n => n.name === data.name);
+        const eventName = data.name.toString().trim();
+        const node = nodes.find(n => (n.name || '').toString().trim() === eventName);
+        const signalType = (node && node.signalType ? String(node.signalType) : '').trim().toUpperCase();
 
-        if (node && node.signalType === 'ZEROING' && node.machineId) {
+        if (node && ['MD_SWITCH', 'SYSTEM_PAUSED'].includes(signalType) && node.machineId) {
+            const carouselId = node.machineId;
+            if (carousels[carouselId]) {
+                const newValue = isTruthySignal(data.value);
+                const dataKey = signalType === 'MD_SWITCH' ? 'mdSwitch' : 'systemPaused';
+                const oldValue = isTruthySignal(carousels[carouselId].data[dataKey]);
+
+                carousels[carouselId].data[dataKey] = newValue;
+
+                if (oldValue !== newValue) {
+                    logger.info('SCADA', `CR${carouselId} ${signalType}=${newValue}`);
+                    scheduleCarouselBroadcast();
+                }
+            }
+        }
+
+        if (node && signalType === 'ZEROING' && node.machineId) {
             const carouselId = node.machineId;
             if (carousels[carouselId]) {
                 const newValue = isTruthySignal(data.value);
@@ -660,7 +705,9 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
                         carousels[carouselId].data._lastSensorEdgeTs = now;
                         const prevCounter = carousels[carouselId].data.counter || 0;
                         carousels[carouselId].data.counter = prevCounter + 1;
-                        if (prevCounter === 0) carousels[carouselId].data._incrementedFromZero = true;
+                        // Mark that counter is now 1-based (incremented from 0 to 1).
+                        // This flag persists for all subsequent inserts until reset.
+                        if (prevCounter === 0) carousels[carouselId].data._localCounterIs1Based = true;
                         logger.info('SCADA', `CR${carouselId} counter incremented to ${carousels[carouselId].data.counter}`);
                         scheduleWeightCapture(carouselId);
                     } else {
@@ -747,7 +794,12 @@ async function fetchCarouselConfig(showLoading = false) {
                 
                 // Log when Packing Order changes
                 if (oldPackingOrder && oldPackingOrder !== newPackingOrder) {
-                    logger.info('SQL', `CR${carouselId} PACKING_ORDER changed: ${oldPackingOrder} → ${newPackingOrder}`);
+                    logger.info('SQL', `CR${carouselId} PACKING_ORDER changed: ${oldPackingOrder} -> ${newPackingOrder}`);
+                    // Clear the 1-based flag when packing order changes, as counter will be
+                    // reloaded from DB for the new order
+                    if (carousels[carouselId].data._localCounterIs1Based) {
+                        delete carousels[carouselId].data._localCounterIs1Based;
+                    }
                 }
 
                 const dbState = row.MACHINE_STATE;
@@ -765,6 +817,8 @@ async function fetchCarouselConfig(showLoading = false) {
                         const cData = carousels[carouselId].data;
                         if ((cData.counter || 0) >= (cData.target || 0)) {
                             cData.counter = 0;
+                            // Clear the 1-based flag when counter resets
+                            if (cData._localCounterIs1Based) delete cData._localCounterIs1Based;
                         }
                     }
                 }

@@ -71,6 +71,12 @@ class OpcUaManager {
         if (/^RST$|^RESET$/.test(name) || /RESET/.test(nodeId)) {
             return 'RESET';
         }
+        if (/MD[_\s-]?SWITCH/.test(name) || /MD[_\s-]?SWITCH/.test(nodeId)) {
+            return 'MD_SWITCH';
+        }
+        if (/SYSTEM[_\s-]?PAUSED/.test(name) || /SYSTEM[_\s-]?PAUSED/.test(nodeId)) {
+            return 'SYSTEM_PAUSED';
+        }
         if (/COUNT/.test(name) || /COUNT/.test(nodeId)) {
             return 'COUNTER';
         }
