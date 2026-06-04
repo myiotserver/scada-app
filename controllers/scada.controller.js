@@ -215,7 +215,7 @@ function getDbProductCount(data) {
 
 function resolveLocalCounterFromProductCount(productCount) {
     const count = parseInt(productCount, 10);
-    return Number.isInteger(count) && count > 0 ? count - 1 : 0;
+    return Number.isInteger(count) && count > 0 ? count : 0;
 }
 
 function weightInsertKey(carouselId, data) {
@@ -419,6 +419,7 @@ async function insertWeightData(carouselId, data) {
             carousels[carouselId].data.lastGross = data.lastGross;
             carousels[carouselId].data.lastNett = data.lastNett;
             carousels[carouselId].data._lastInsertedGross = data.lastGross;
+            carousels[carouselId].data._lastInsertedProductCount = productCount;
             emitCarouselSnapshot();
         }
     } catch (err) {
@@ -855,9 +856,15 @@ async function fetchCarouselConfig(showLoading = false) {
                     }
                     if (countResult.recordset[0] && countResult.recordset[0].lastCount !== null) {
                         const dbCount = countResult.recordset[0].lastCount;
+                        carousels[carouselId].data._lastInsertedProductCount = dbCount;
                         const dbCounter = resolveLocalCounterFromProductCount(dbCount);
                         const nextCounter = Math.max(localCounter, dbCounter);
                         carousels[carouselId].data.counter = nextCounter;
+                        if (nextCounter > 0) {
+                            carousels[carouselId].data._localCounterIs1Based = true;
+                        } else if (carousels[carouselId].data._localCounterIs1Based) {
+                            delete carousels[carouselId].data._localCounterIs1Based;
+                        }
                         if (nextCounter > dbCounter) {
                             logger.info('SQL', `Counter for CR${carouselId} kept at ${nextCounter} (DB max ${dbCount}, PO: ${packingOrder})`);
                         } else {
@@ -865,6 +872,10 @@ async function fetchCarouselConfig(showLoading = false) {
                         }
                     } else {
                         carousels[carouselId].data.counter = Math.max(localCounter, 0);
+                        delete carousels[carouselId].data._lastInsertedProductCount;
+                        if (carousels[carouselId].data.counter === 0 && carousels[carouselId].data._localCounterIs1Based) {
+                            delete carousels[carouselId].data._localCounterIs1Based;
+                        }
                         logger.info('SQL', `New PACKING_ORDER for CR${carouselId} (PO: ${packingOrder}), counter at ${carousels[carouselId].data.counter}`);
                     }
                 }

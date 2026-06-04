@@ -703,13 +703,10 @@ function renderCarousels(carousels) {
             const target = parseInt(d.target) || 1;
             const progress = Math.min((counter / target) * 100, 100);
 
-            // Display logic: internal counter is 0-based, DB stores 1-based.
-            // If this packing order has never had an insert (no _lastInsertedGross)
-            // and the local counter is 0, show 0 in UI to match DB (no record yet).
-            // Otherwise show 1-based counter for operator-friendly display.
-            const displayedCounter = (counter === 0 && (d._lastInsertedGross === undefined || d._lastInsertedGross === null))
-                ? 0
-                : (counter + 1);
+            // Show the last stored PRODUCT_COUNT so the dashboard card matches SQL history.
+            const displayedCounter = (d._lastInsertedProductCount !== undefined && d._lastInsertedProductCount !== null)
+                ? (parseInt(d._lastInsertedProductCount, 10) || 0)
+                : 0;
 
             // Determine Weight Class based on logic
             let weightClass = '';

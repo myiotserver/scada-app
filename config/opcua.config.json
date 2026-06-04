@@ -163,6 +163,24 @@
             "signalType": "ZEROING",
             "scale": 1,
             "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=SIEMENS CAROUSEL.CAROUSEL 03.SYSTEM_PAUSED",
+            "name": "PAUSE CR3",
+            "description": "Pause counting system CR3",
+            "machineId": 3,
+            "signalType": "SYSTEM_PAUSED",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=SIEMENS CAROUSEL.CAROUSEL 03.MD_SWITCH",
+            "name": "MD SWITCH",
+            "description": "Switch to deactivate metal detector",
+            "machineId": 3,
+            "signalType": "MD_SWITCH",
+            "scale": 1,
+            "enabled": true
         }
     ]
 }
