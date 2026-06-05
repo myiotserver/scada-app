@@ -248,13 +248,16 @@ function getWorkflowSignals(data) {
 
 function canInsertWeightData(data) {
     const signals = getWorkflowSignals(data);
-    return signals.mdSwitch && !signals.systemPaused;
+    // MD_SWITCH check removed — sensor edge is sufficient proof of valid production.
+    // Data will be inserted regardless of MD_SWITCH status.
+    return !signals.systemPaused;
 }
 
 function canInsertZeroingData(carouselId, data) {
     const signals = getWorkflowSignals(data);
     const state = carousels[carouselId] ? carousels[carouselId].state : 'STOP';
-    return signals.mdSwitch && state === 'RUN';
+    // MD_SWITCH check removed — zeroing event from PLC is sufficient proof.
+    return state === 'RUN';
 }
 
 function emitSqlStatus() {
