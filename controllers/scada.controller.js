@@ -251,9 +251,10 @@ function canInsertWeightData(data) {
     return signals.mdSwitch && !signals.systemPaused;
 }
 
-function canInsertZeroingData(data) {
+function canInsertZeroingData(carouselId, data) {
     const signals = getWorkflowSignals(data);
-    return signals.mdSwitch && signals.systemPaused;
+    const state = carousels[carouselId] ? carousels[carouselId].state : 'STOP';
+    return signals.mdSwitch && state === 'RUN';
 }
 
 function emitSqlStatus() {
@@ -436,9 +437,10 @@ async function insertWeightData(carouselId, data) {
 }
 
 async function insertZeroingData(carouselId, data) {
-    if (!canInsertZeroingData(data)) {
+    if (!canInsertZeroingData(carouselId, data)) {
         const signals = getWorkflowSignals(data);
-        logger.warn('SQL', `Skipping zeroing insert for CR${carouselId}: workflow not ready (MD_SWITCH=${signals.mdSwitch}, SYSTEM_PAUSED=${signals.systemPaused}).`);
+        const state = carousels[carouselId] ? carousels[carouselId].state : 'UNKNOWN';
+        logger.warn('SQL', `Skipping zeroing insert for CR${carouselId}: workflow not ready (MD_SWITCH=${signals.mdSwitch}, STATE=${state}).`);
         return;
     }
 
@@ -796,8 +798,9 @@ async function fetchCarouselConfig(showLoading = false) {
                 // Log when Packing Order changes
                 if (oldPackingOrder && oldPackingOrder !== newPackingOrder) {
                     logger.info('SQL', `CR${carouselId} PACKING_ORDER changed: ${oldPackingOrder} -> ${newPackingOrder}`);
-                    // Clear the 1-based flag when packing order changes, as counter will be
-                    // reloaded from DB for the new order
+                    // Reset counter to 0 for new packing order — it will be reloaded
+                    // from DB below if the new PO already has existing records
+                    carousels[carouselId].data.counter = 0;
                     if (carousels[carouselId].data._localCounterIs1Based) {
                         delete carousels[carouselId].data._localCounterIs1Based;
                     }
@@ -871,12 +874,13 @@ async function fetchCarouselConfig(showLoading = false) {
                             logger.info('SQL', `Loaded counter for CR${carouselId}: ${nextCounter} (PO: ${packingOrder})`);
                         }
                     } else {
-                        carousels[carouselId].data.counter = Math.max(localCounter, 0);
+                        // No records exist for this PACKING_ORDER — reset counter to 0
+                        carousels[carouselId].data.counter = 0;
                         delete carousels[carouselId].data._lastInsertedProductCount;
-                        if (carousels[carouselId].data.counter === 0 && carousels[carouselId].data._localCounterIs1Based) {
+                        if (carousels[carouselId].data._localCounterIs1Based) {
                             delete carousels[carouselId].data._localCounterIs1Based;
                         }
-                        logger.info('SQL', `New PACKING_ORDER for CR${carouselId} (PO: ${packingOrder}), counter at ${carousels[carouselId].data.counter}`);
+                        logger.info('SQL', `New PACKING_ORDER for CR${carouselId} (PO: ${packingOrder}), counter reset to 0`);
                     }
                 }
             } catch (err) {
