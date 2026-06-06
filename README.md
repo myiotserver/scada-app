@@ -318,7 +318,20 @@ pm2 save                  # Simpan daftar aplikasi agar auto-start saat reboot
    - Pastikan OPC UA server berjalan
    - Download dan install client certificate ke server OPC UA
 
-5. **Port Already in Use**:
+5. **Library Compatibility Issue (Linux → Windows)**:
+   - Terdapat isu kompatibilitas library saat deploy dari Linux ke Windows:
+   - **`hexy` v0.4.0** adalah ES Module (`"type": "module"`), tidak bisa di-`require()` oleh `node-opcua-debug` (CommonJS).
+   - **Solusi**: Pastikan `hexy` di-pin ke v0.3.0 dengan menambahkan `overrides` di `package.json`:
+     ```json
+     "overrides": {
+         "hexy": "0.3.0"
+     }
+     ```
+   - **`bcrypt`** memiliki native binding (C++) yang butuh **Visual Studio Build Tools** + **Python** + **node-gyp** untuk kompilasi di Windows.
+   - **Solusi alternatif**: Ganti `bcrypt` dengan `bcryptjs` (pure JavaScript, tanpa kompilasi) — API-nya identik, tinggal mengganti `require("bcrypt")` menjadi `require("bcryptjs")`.
+   - **`node-opcua`** secara umum cross-platform, tapi beberapa sub-dependensi (seperti `@ster5/global-mutex`) mungkin memerlukan compiled binary. Disarankan test terlebih dahulu di lingkungan Windows.
+
+6. **Port Already in Use**:
    - Ubah PORT di environment atau file konfigurasi
    - Kill process yang menggunakan port:
      ```bash
