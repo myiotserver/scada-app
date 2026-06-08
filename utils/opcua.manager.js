@@ -225,13 +225,44 @@ class OpcUaManager {
         this.config.nodes.push(newNode);
         this._saveConfig();
         logger.info('OPC', `Node added: ${newNode.name} (${nodeId})`);
+
+        // Dynamically start monitoring the new node if already connected
+        if (this.connected && this.subscription) {
+            this._monitorSingleNode(newNode);
+        } else {
+            logger.info('OPC', `Node saved to config but not monitored (not connected). Will be monitored on next connection.`);
+        }
+
         return { success: true, nodes: this.config.nodes };
+    }
+
+    _removeMonitoredItemByIndex(configIndex) {
+        const itemIdx = this.monitoredItems.findIndex((_, i) => {
+            // Match by config index indirectly — use the nodeId reference
+            const mi = this.monitoredItems[i];
+            const cfgNode = this.config.nodes[configIndex];
+            return cfgNode && mi.node && mi.node.nodeId === cfgNode.nodeId;
+        });
+        if (itemIdx !== -1) {
+            const [removed] = this.monitoredItems.splice(itemIdx, 1);
+            try {
+                if (removed.monitoredItem) {
+                    removed.monitoredItem.terminate();
+                }
+            } catch (err) {
+                logger.warn('OPC', `Error terminating monitored item: ${err.message}`);
+            }
+            logger.info('OPC', `Monitored item removed for config index ${configIndex}`);
+        }
     }
 
     updateNode(index, data) {
         if (index < 0 || index >= this.config.nodes.length) return { error: 'Invalid index' };
 
         const node = this.config.nodes[index];
+        const oldNodeId = node.nodeId;
+        const wasEnabled = node.enabled;
+
         if (data.nodeId !== undefined) node.nodeId = data.nodeId;
         if (data.name !== undefined) node.name = data.name;
         if (data.description !== undefined) node.description = data.description;
@@ -242,6 +273,27 @@ class OpcUaManager {
 
         this._saveConfig();
         logger.info('OPC', `Node updated: ${node.name}`);
+
+        // Sync monitoring with the active subscription if connected
+        if (this.connected && this.subscription) {
+            const nodeIdChanged = data.nodeId !== undefined && data.nodeId !== oldNodeId;
+            const enableChanged = data.enabled !== undefined && data.enabled !== wasEnabled;
+            const nameChanged = data.name !== undefined && data.name !== node.name;
+
+            if (nodeIdChanged || (enableChanged && node.enabled) || (enableChanged && !node.enabled)) {
+                // Remove old monitored item
+                this._removeMonitoredItemByIndex(index);
+                // Add new one if now enabled
+                if (node.enabled) {
+                    this._monitorSingleNode(node);
+                } else {
+                    // Clean up live value if monitoring was removed
+                    delete this.liveValues[node.name];
+                    this._emitStatus();
+                }
+            }
+        }
+
         return { success: true, nodes: this.config.nodes };
     }
 
@@ -249,6 +301,17 @@ class OpcUaManager {
         if (index < 0 || index >= this.config.nodes.length) return { error: 'Invalid index' };
         const removed = this.config.nodes.splice(index, 1);
         this._saveConfig();
+
+        // Remove from active subscription if connected
+        if (this.connected && this.subscription) {
+            this._removeMonitoredItemByIndex(index);
+            // Also clean up live value
+            if (removed[0] && removed[0].name) {
+                delete this.liveValues[removed[0].name];
+                this._emitStatus();
+            }
+        }
+
         logger.info('OPC', `Node removed: ${removed[0]?.name || 'unknown'}`);
         return { success: true, nodes: this.config.nodes };
     }
@@ -549,6 +612,40 @@ class OpcUaManager {
             }
         }
         this._emitStatus();
+    }
+
+    _monitorSingleNode(node) {
+        if (!this.subscription || !node.nodeId || node.enabled === false) return null;
+        try {
+            const monitoredItem = ClientMonitoredItem.create(
+                this.subscription,
+                { nodeId: node.nodeId, attributeId: AttributeIds.Value },
+                { samplingInterval: this.config.samplingInterval || 500, discardOldest: true, queueSize: 10 },
+                TimestampsToReturn.Both
+            );
+
+            monitoredItem.on('err', (err) => {
+                logger.error('OPC', `Error for ${node.name}: ${err.message}`);
+            });
+            monitoredItem.on('changed', (dataValue) => {
+                const value = dataValue.value ? dataValue.value.value : null;
+                this.liveValues[node.name] = {
+                    value,
+                    timestamp: new Date().toISOString(),
+                    nodeId: node.nodeId,
+                    statusCode: dataValue.statusCode ? dataValue.statusCode.toString() : 'Good'
+                };
+                this._emitUpdate(node.name, this.liveValues[node.name]);
+            });
+
+            this.monitoredItems.push({ node, monitoredItem });
+            logger.info('OPC', `Monitoring (dynamic): ${node.name} (${node.nodeId})`);
+            this._emitStatus();
+            return monitoredItem;
+        } catch (err) {
+            logger.error('OPC', `Failed to monitor ${node.name} dynamically: ${err.message}`);
+            return null;
+        }
     }
 
     // --- Browse ---
