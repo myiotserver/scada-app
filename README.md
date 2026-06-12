@@ -15,6 +15,35 @@ Aplikasi SCADA (Supervisory Control and Data Acquisition) untuk monitoring dan k
 - **Windows Operational Scripts**: Script batch (.bat) untuk mempermudah instalasi dan menjalankan aplikasi di Windows dengan satu klik.
 - **PKI Certificates**: Manajemen sertifikat untuk keamanan OPC UA
 
+## Data Flow — Weight Data Insertion into SQL
+
+Berikut adalah diagram alur proses penyisipan data berat dari sensor OPC-UA hingga tersimpan di database SQL:
+
+```mermaid
+graph TD
+    A["OPC-UA Sensor S[n]<br/>Rising→Falling Edge"] --> B{"Bounce check<br/>> 1500ms gap?"}
+    B -->|Yes| C["scheduleWeightCapture()<br/>⏱ 100ms settle delay"]
+    B -->|No| D["❌ Ignored (bounce)"]
+    C --> E["finalizeWeightCapture()"]
+    E --> F{"State=RUN?<br/>Gross > 1kg?"}
+    F -->|Yes| G["Increment counter<br/>→ insertWeightData()"]
+    F -->|No| H["❌ Skipped"]
+    G --> I{"DB Pool ready?<br/>Product ID set?<br/>Not duplicate?"}
+    I -->|Yes| J["SQL INSERT into WEIGHT_DATA<br/>with UPSERT check"]
+    I -->|No| K["❌ Skipped / Alert"]
+    J --> L["✅ Logged + broadcast to UI"]
+```
+
+### Penjelasan Alur
+
+1. **Trigger**: Sensor OPC-UA (`S1`–`S5`) mendeteksi produk melewati sensor (falling edge `true → false`).
+2. **Bounce Protection**: Abaikan jika jeda dari edge sebelumnya < 1500ms (mencegah double-trigger).
+3. **Settle Delay**: Timer 100ms menunggu berat timbangan stabil.
+4. **Validasi**: Pastikan carousel dalam状态 `RUN` dan gross weight > 1 kg (filter noise).
+5. **Counter Increment**: Counter lokal dinaikkan, dengan flag `_localCounterIs1Based` untuk konvensi 1-based.
+6. **Insert**: Query `IF NOT EXISTS` mencegah duplikasi; data dicatat dengan timezone WIB (UTC+7).
+7. **Hasil**: Berhasil → log + broadcast ke dashboard via WebSocket. Gagal → alert ke UI (debounce 8s).
+
 ## Prerequisites
 
 Sebelum menjalankan aplikasi ini, pastikan Anda memiliki:
