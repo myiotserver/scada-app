@@ -98,5 +98,6 @@ echo   Test rotasi manual : pm2 rotate
 echo   Lihat status modul : pm2 show pm2-logrotate
 echo.
 echo  [✓] Selesai! Log akan dirotasi otomatis setiap bulan.
+pause
 echo.
 pause
