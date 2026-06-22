@@ -1,8 +1,8 @@
 {
-    "sql_server": "100.127.239.116",
+    "sql_server": "yourSQLserverIpAddress",
     "sql_uid": "sa",
-    "sql_pass": "VPS@thinkcentre",
-    "sql_db": "SFM Main",
+    "sql_pass": "yourSQLserverpass",
+    "sql_db": "yourSQLDatabase",
     "table_zeroing": "ZEROINGPLCDATA",
     "table_weight": "WEIGHT_TABLE",
     "table_main": "PRESET_TABLE",
