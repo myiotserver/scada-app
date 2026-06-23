@@ -170,7 +170,7 @@ GRANT ALL PRIVILEGES ON DATABASE scada_db TO scada_user;
 3. **OPC UA Configuration** (`config/opcua.config.json`):
    ```json
    {
-       "endpointUrl": "opc.tcp://147.139.196.244:49320",
+       "endpointUrl": "opc.tcp://your-IPServer:49320",
        "securityMode": "Sign",
        "securityPolicy": "Basic256",
        "username": "OPCusername", // Ganti dengan username OPC server anda
