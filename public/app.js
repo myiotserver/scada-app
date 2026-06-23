@@ -594,8 +594,11 @@ function renderUsers(users) {
             <td>${u.username}</td>
             <td>${u.email}</td>
             <td>${roles}</td>
-            <td>
-                <button class="btn-sm btn-danger" onclick="deleteUser(${u.id})">Delete</button>
+            <td style="white-space: nowrap; width: 180px;">
+                <div style="display: flex; flex-direction: row; gap: 8px; align-items: center; justify-content: flex-start;">
+                    <button class="btn-sm" style="background-color: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 500;" onclick="showEditUserModal(${u.id}, '${u.username}', '${roles}')">✏️ Edit</button>
+                    <button class="btn-sm btn-danger" style="margin: 0; padding: 6px 12px; font-weight: 500;" onclick="deleteUser(${u.id})">🗑️ Delete</button>
+                </div>
             </td>
         `;
         tbody.appendChild(tr);
@@ -668,6 +671,58 @@ async function deleteUser(id) {
         }
     } catch (e) {
         alert('Delete error');
+    }
+}
+
+function showEditUserModal(id, username, rolesStr) {
+    document.getElementById('edit-user-modal').style.display = 'flex';
+    document.getElementById('edit-user-id').value = id;
+    document.getElementById('edit-username').value = username;
+    document.getElementById('edit-password').value = '';
+    
+    // Determine primary role for select
+    let primaryRole = 'user';
+    if (rolesStr.includes('admin')) primaryRole = 'admin';
+    else if (rolesStr.includes('guest')) primaryRole = 'guest';
+    document.getElementById('edit-role').value = primaryRole;
+}
+
+function closeEditUserModal() {
+    document.getElementById('edit-user-modal').style.display = 'none';
+}
+
+async function submitUserEdit() {
+    const id = document.getElementById('edit-user-id').value;
+    const password = document.getElementById('edit-password').value.trim();
+    const role = document.getElementById('edit-role').value;
+
+    const updateData = {};
+    if (password) {
+        updateData.password = password;
+    }
+    updateData.roles = [role];
+
+    try {
+        const token = currentUser.accessToken;
+        const res = await fetch(`/api/users/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-access-token': token
+            },
+            body: JSON.stringify(updateData)
+        });
+        
+        if (res.ok) {
+            alert('User updated successfully');
+            closeEditUserModal();
+            loadUsers();
+        } else {
+            const err = await res.json();
+            alert('Error updating user: ' + (err.message || res.statusText));
+        }
+    } catch (e) {
+        alert('Update failed: ' + e.message);
     }
 }
 
