@@ -482,12 +482,24 @@ function renderSettings() {
     for (let i = 1; i <= 5; i++) {
         const key = `carousel${i}`;
         const isInterlocked = appSettings.interlocks ? appSettings.interlocks[key] : false;
+        const devThreshold = (appSettings.deviationThresholds && appSettings.deviationThresholds[key] !== undefined)
+            ? appSettings.deviationThresholds[key]
+            : 1.0;
 
         const row = document.createElement('div');
         row.className = 'interlock-row';
         row.innerHTML = `
             <span style="font-weight:bold;">Carousel ${i}</span>
             <div style="display:flex; align-items:center; gap:10px;">
+                <label style="font-size:0.75rem; white-space:nowrap;">Dev.Min :</label>
+                <input type="number"
+                       id="dev-threshold-${key}"
+                       value="${devThreshold}"
+                       step="0.01"
+                       min="0"
+                       style="width:72px; padding:3px 6px; font-size:0.8rem; border:1px solid #444; border-radius:4px; background:#1e1e2d; color:#e0e0e0;"
+                       onchange="updateDeviationThreshold('${key}', this.value)">
+                <span style="font-size:0.7rem; color:#888;">Kg</span>
                 <span style="font-size:0.8rem;">Normal</span>
                 <label class="switch">
                     <input type="checkbox" onchange="toggleInterlock('${key}', this.checked)" ${isInterlocked ? 'checked' : ''}>
@@ -503,8 +515,21 @@ function renderSettings() {
 async function toggleInterlock(key, checked) {
     if (!appSettings.interlocks) appSettings.interlocks = {};
     appSettings.interlocks[key] = checked;
-    // Auto save on toggle? Or wait for save button? 
+    // Auto save on toggle? Or wait for save button?
     // Usually toggles are instant, let's save.
+    await saveSettings(true);
+}
+
+async function updateDeviationThreshold(key, value) {
+    if (!appSettings.deviationThresholds) appSettings.deviationThresholds = {};
+    const numVal = parseFloat(value);
+    if (!Number.isFinite(numVal) || numVal < 0) {
+        // Reset to previously saved value
+        const prev = appSettings.deviationThresholds[key] || 1.0;
+        document.getElementById(`dev-threshold-${key}`).value = prev;
+        return;
+    }
+    appSettings.deviationThresholds[key] = parseFloat(numVal.toFixed(4));
     await saveSettings(true);
 }
 
@@ -1078,6 +1103,9 @@ function getOpcUaNodeSignalType(node) {
     if (/MD[_\s-]?SWITCH/.test(name) || /MD[_\s-]?SWITCH/.test(nodeId)) return 'MD_SWITCH';
     if (/SYSTEM[_\s-]?PAUSED/.test(name) || /SYSTEM[_\s-]?PAUSED/.test(nodeId)) return 'SYSTEM_PAUSED';
     if (/COUNT/.test(name) || /COUNT/.test(nodeId)) return 'COUNTER';
+    if (/TOLERANCE[_\s-]?MIN/.test(name) || /TOLERANCE[_\s-]?MIN/.test(nodeId)) return 'TOLERANCE_MIN';
+    if (/TOLERANCE[_\s-]?MAX/.test(name) || /TOLERANCE[_\s-]?MAX/.test(nodeId)) return 'TOLERANCE_MAX';
+    if (/DEVIATION[_\s-]?TOLERANCE[_\s-]?MIN/.test(name) || /DEVIATION[_\s-]?TOLERANCE[_\s-]?MIN/.test(nodeId)) return 'DEVIATION_TOLERANCE_MIN';
     return '';
 }
 

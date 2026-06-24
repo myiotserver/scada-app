@@ -1,8 +1,8 @@
 {
-    "sql_server": "yourSQLserverIpAddress",
+    "sql_server": "100.127.239.116",
     "sql_uid": "sa",
-    "sql_pass": "yourSQLserverpass",
-    "sql_db": "yourSQLDatabase",
+    "sql_pass": "VPS@thinkcentre",
+    "sql_db": "SFM Main",
     "table_zeroing": "ZEROINGPLCDATA",
     "table_weight": "WEIGHT_TABLE",
     "table_main": "PRESET_TABLE",
@@ -13,5 +13,12 @@
         "carousel3": false,
         "carousel4": false,
         "carousel5": false
+    },
+    "deviationThresholds": {
+        "carousel1": 1,
+        "carousel2": 1,
+        "carousel3": 2.5,
+        "carousel4": 1,
+        "carousel5": 5
     }
 }

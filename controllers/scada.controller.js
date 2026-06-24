@@ -185,6 +185,8 @@ const zeroingTimers = new Map();
 const ZEROING_CAPTURE_DELAY_MS = Number(process.env.ZEROING_CAPTURE_DELAY_MS) || 500;
 const CAROUSEL_BROADCAST_DEBOUNCE_MS = 100;
 let carouselBroadcastTimer = null;
+/** Cache last-written tolerance values per carousel to avoid redundant OPC writes */
+const lastWrittenTolerances = {};
 
 function emitCarouselSnapshot() {
     listeners.forEach(cb => {
@@ -379,9 +381,24 @@ async function insertWeightData(carouselId, data) {
 
     try {
         // Calculate STATUS based on GROSS_WEIGHT
+        // Priority: Anomaly (interlock ON + severe underweight) > Underweight > Overweight > Normal
+        // Use manual deviation threshold from appSettings if configured, otherwise calculate
+        const thresholds = appSettings.deviationThresholds || {};
+        const manualThreshold = thresholds[`carousel${carouselId}`];
+        const deviationToleranceMin = (manualThreshold !== undefined && Number.isFinite(parseFloat(manualThreshold)))
+            ? parseFloat(parseFloat(manualThreshold).toFixed(4))
+            : parseFloat((((data.toleranceMax || 0) - (data.toleranceMin || 0)) / 2).toFixed(4));
+        const interlocks = appSettings.interlocks || {};
+        const isInterlocked = !!interlocks[`carousel${carouselId}`];
+
         let status = 'Normal';
-        if (data.lastGross < data.toleranceMin) status = 'Underweight';
-        else if (data.lastGross > data.toleranceMax) status = 'Overweight';
+        if (isInterlocked && data.lastGross < (data.toleranceMin - deviationToleranceMin)) {
+            status = 'Anomaly';
+        } else if (data.lastGross < data.toleranceMin) {
+            status = 'Underweight';
+        } else if (data.lastGross > data.toleranceMax) {
+            status = 'Overweight';
+        }
 
         const result = await weighingPool.request()
             .input('packingOrder', sql.NVarChar, data.packingOrder)
@@ -523,6 +540,53 @@ function scheduleZeroingCapture(carouselId) {
     }, ZEROING_CAPTURE_DELAY_MS);
 
     zeroingTimers.set(carouselId, timer);
+}
+
+/**
+ * Write tolerance values from the database to OPC nodes so the PLC can read them.
+ * Writes TOLERANCE_MIN, TOLERANCE_MAX, and DEVIATION_TOLERANCE_MIN for a given carousel.
+ * Skips the write if values haven't changed since the last successful write.
+ *
+ * DEVIATION_TOLERANCE_MIN uses the manual threshold from appSettings.deviationThresholds
+ * if configured, otherwise falls back to (toleranceMax - toleranceMin) / 2.
+ */
+async function writeTolerancesToOpc(carouselId, data) {
+    try {
+        const opcStatus = opcUaManager.getStatus();
+        if (!opcStatus.connected) return;
+
+        const tolMin = parseFloat(data.toleranceMin);
+        const tolMax = parseFloat(data.toleranceMax);
+        if (!Number.isFinite(tolMin) || !Number.isFinite(tolMax)) return;
+
+        // Use manual threshold from settings if available, otherwise calculate
+        const thresholds = appSettings.deviationThresholds || {};
+        const manualThreshold = thresholds[`carousel${carouselId}`];
+        const deviationToleranceMin = (manualThreshold !== undefined && Number.isFinite(parseFloat(manualThreshold)))
+            ? parseFloat(parseFloat(manualThreshold).toFixed(4))
+            : parseFloat(((tolMax - tolMin) / 2).toFixed(4));
+
+        // Cache key per carousel — only write if values actually changed
+        const cacheKey = String(carouselId);
+        const prev = lastWrittenTolerances[cacheKey] || {};
+
+        if (prev.tolMin !== tolMin) {
+            await opcUaManager.writeToNodesBySignalType('TOLERANCE_MIN', carouselId, tolMin);
+            prev.tolMin = tolMin;
+        }
+        if (prev.tolMax !== tolMax) {
+            await opcUaManager.writeToNodesBySignalType('TOLERANCE_MAX', carouselId, tolMax);
+            prev.tolMax = tolMax;
+        }
+        if (prev.deviationMin !== deviationToleranceMin) {
+            await opcUaManager.writeToNodesBySignalType('DEVIATION_TOLERANCE_MIN', carouselId, deviationToleranceMin);
+            prev.deviationMin = deviationToleranceMin;
+        }
+
+        lastWrittenTolerances[cacheKey] = prev;
+    } catch (err) {
+        logger.error('OPC', `Error writing tolerances to OPC for CR${carouselId}: ${err.message}`);
+    }
 }
 
 // Connect to WEIGHING DB (Configuration Data)
@@ -850,6 +914,14 @@ async function fetchCarouselConfig(showLoading = false) {
                         }
                     }
                 }
+            }
+        });
+
+        // Write tolerance values to OPC nodes (fire-and-forget — non-blocking)
+        result.recordset.forEach(row => {
+            const carouselId = row.CAROUSEL;
+            if (carousels[carouselId]) {
+                writeTolerancesToOpc(carouselId, carousels[carouselId].data);
             }
         });
 

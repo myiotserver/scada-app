@@ -80,6 +80,15 @@ class OpcUaManager {
         if (/COUNT/.test(name) || /COUNT/.test(nodeId)) {
             return 'COUNTER';
         }
+        if (/TOLERANCE[_\s-]?MIN/.test(name) || /TOLERANCE[_\s-]?MIN/.test(nodeId)) {
+            return 'TOLERANCE_MIN';
+        }
+        if (/TOLERANCE[_\s-]?MAX/.test(name) || /TOLERANCE[_\s-]?MAX/.test(nodeId)) {
+            return 'TOLERANCE_MAX';
+        }
+        if (/DEVIATION[_\s-]?TOLERANCE[_\s-]?MIN/.test(name) || /DEVIATION[_\s-]?TOLERANCE[_\s-]?MIN/.test(nodeId)) {
+            return 'DEVIATION_TOLERANCE_MIN';
+        }
         return null;
     }
 
@@ -695,6 +704,46 @@ class OpcUaManager {
         } catch (err) {
             return { error: `Write failed: ${err.message}` };
         }
+    }
+
+    /**
+     * Write a value to all OPC nodes matching a given signalType and optional machineId.
+     * Useful for pushing tolerance / setpoint data from the app back to the PLC.
+     *
+     * @param {string} signalType - e.g. 'TOLERANCE_MIN', 'TOLERANCE_MAX', 'DEVIATION_TOLERANCE_MIN'
+     * @param {number|null} machineId - 1-5 to filter by carousel, or null for global nodes
+     * @param {number} value - the numeric value to write
+     * @returns {Promise<Array<{nodeId: string, name: string, success?: boolean, error?: string}>>}
+     */
+    async writeToNodesBySignalType(signalType, machineId, value) {
+        if (!this.session) return [];
+
+        const nodes = this.config.nodes.filter(n => {
+            if (!n.nodeId || n.enabled === false) return false;
+            if ((n.signalType || '').toString().trim().toUpperCase() !== String(signalType).toUpperCase()) return false;
+            if (machineId !== null && machineId !== undefined) {
+                const mid = parseInt(n.machineId, 10);
+                if (mid !== parseInt(machineId, 10)) return false;
+            }
+            return true;
+        });
+
+        if (nodes.length === 0) {
+            logger.warn('OPC', `No nodes found for signalType=${signalType} machineId=${machineId}`);
+            return [];
+        }
+
+        const results = [];
+        for (const node of nodes) {
+            const result = await this.writeNode(node.nodeId, value, 'Double');
+            results.push({ nodeId: node.nodeId, name: node.name, ...result });
+            if (result.success) {
+                logger.info('OPC', `Wrote ${signalType}=${value} to ${node.name} (${node.nodeId})`);
+            } else {
+                logger.error('OPC', `Failed writing ${signalType}=${value} to ${node.name}: ${result.error}`);
+            }
+        }
+        return results;
     }
 
     // --- Socket.IO Subscribers ---
