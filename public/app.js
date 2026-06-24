@@ -621,8 +621,12 @@ function renderUsers(users) {
             <td>${roles}</td>
             <td style="white-space: nowrap; width: 180px;">
                 <div style="display: flex; flex-direction: row; gap: 8px; align-items: center; justify-content: flex-start;">
-                    <button class="btn-sm" style="background-color: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 500;" onclick="showEditUserModal(${u.id}, '${u.username}', '${roles}')">✏️ Edit</button>
-                    <button class="btn-sm btn-danger" style="margin: 0; padding: 6px 12px; font-weight: 500;" onclick="deleteUser(${u.id})">🗑️ Delete</button>
+                    <button class="user-action-btn edit" onclick="showEditUserModal(${u.id}, '${u.username}', '${roles}')">
+                        <i class='bx bx-edit-alt'></i> Edit
+                    </button>
+                    <button class="user-action-btn delete" onclick="deleteUser(${u.id})">
+                        <i class='bx bx-trash'></i> Delete
+                    </button>
                 </div>
             </td>
         `;
