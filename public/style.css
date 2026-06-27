@@ -399,7 +399,7 @@ header {
 /* ---- Sidebar ---- */
 aside {
     width: 64px;
-    background: var(--bg-sidebar);
+    background: linear-gradient(180deg, #060b1a 0%, #0b1630 30%, #0f1f3d 60%, #0d1835 100%);
     border-right: 1px solid var(--border-subtle);
     display: flex;
     flex-direction: column;
@@ -504,8 +504,8 @@ nav {
 }
 
 .nav-btn.active {
-    background: rgba(30, 64, 175, 0.12);
-    color: var(--accent-blue);
+    background: rgba(139, 92, 246, 0.12);
+    color: #a78bfa;
 }
 
 .nav-btn.active::before {
@@ -516,14 +516,14 @@ nav {
     transform: translateY(-50%);
     width: 3px;
     height: 60%;
-    background: var(--accent-blue-dark);
+    background: #7c3aed;
     border-radius: 0 3px 3px 0;
-    box-shadow: 0 0 10px var(--accent-blue);
+    box-shadow: 0 0 10px #a78bfa;
 }
 
 .nav-btn.active .icon {
-    color: var(--accent-blue);
-    filter: drop-shadow(0 0 8px rgba(30, 64, 175, 0.4));
+    color: #a78bfa;
+    filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.4));
     transform: scale(1.1);
 }
 
@@ -1981,7 +1981,7 @@ input:checked+.slider:before {
         padding: 6px 8px;
         border-right: none;
         border-bottom: 1px solid var(--border-subtle);
-        background: var(--bg-sidebar);
+        background: linear-gradient(180deg, #060b1a 0%, #0b1630 30%, #0f1f3d 60%, #0d1835 100%);
     }
 
     aside:hover {
