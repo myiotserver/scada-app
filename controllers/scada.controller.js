@@ -370,35 +370,54 @@ async function insertWeightData(carouselId, data) {
         return;
     }
 
-    const productCount = getDbProductCount(data);
-    const insertKey = weightInsertKey(carouselId, data);
+    // Calculate STATUS based on GROSS_WEIGHT (must be done BEFORE insertKey so anomaly uses PRODUCT_COUNT=0)
+    // Priority: Anomaly (interlock ON + severe underweight) > Underweight > Overweight > Normal
+    const thresholds = appSettings.deviationThresholds || {};
+    const manualThreshold = thresholds[`carousel${carouselId}`];
+    const deviationToleranceMin = (manualThreshold !== undefined && Number.isFinite(parseFloat(manualThreshold)))
+        ? parseFloat(parseFloat(manualThreshold).toFixed(4))
+        : parseFloat((((data.toleranceMax || 0) - (data.toleranceMin || 0)) / 2).toFixed(4));
+    const interlocks = appSettings.interlocks || {};
+    const isInterlocked = !!interlocks[`carousel${carouselId}`];
+
+    let status = 'Normal';
+    if (isInterlocked && data.lastGross < (data.toleranceMin - deviationToleranceMin)) {
+        status = 'Anomaly';
+    } else if (data.lastGross < data.toleranceMin) {
+        status = 'Underweight';
+    } else if (data.lastGross > data.toleranceMax) {
+        status = 'Overweight';
+    }
+
+    // --- Anomaly handling: insert PRODUCT_COUNT=0 and revert local counter ---
+    // Anomaly = interlock ON + gross < (toleranceMin - deviationToleranceMin).
+    // An anomaly is NOT a real product — the counter should NOT advance.
+    // When interlock is OFF, status is only Normal/Under/Over — counter runs normally.
+    // On the next insert where gross >= toleranceMin, counting resumes from the pre-anomaly value.
+    let effectiveProductCount;
+    if (status === 'Anomaly' && carousels[carouselId]) {
+        // Revert the counter increment that happened in finalizeWeightCapture
+        const revertedCounter = Math.max(0, (carousels[carouselId].data.counter || 0) - 1);
+        carousels[carouselId].data.counter = revertedCounter;
+        if (revertedCounter === 0 && carousels[carouselId].data._localCounterIs1Based) {
+            delete carousels[carouselId].data._localCounterIs1Based;
+        }
+        effectiveProductCount = 0;
+        logger.info('SCADA', `CR${carouselId} anomaly detected — inserting PRODUCT_COUNT=0, counter reverted to ${revertedCounter}`);
+    } else {
+        effectiveProductCount = getDbProductCount(data);
+    }
+
+    // Build insert key using the effective product count for correct in-flight dedup
+    const insertKey = `CR${carouselId}|${(data.packingOrder || '').toString().trim()}|${effectiveProductCount}`;
     if (pendingWeightInserts.has(insertKey)) {
-        logger.warn('SQL', `Skipping duplicate insert (in-flight) for CR${carouselId} PO=${data.packingOrder} counter=${data.counter} dbProductCount=${productCount}`);
+        logger.warn('SQL', `Skipping duplicate insert (in-flight) for CR${carouselId} PO=${data.packingOrder} counter=${data.counter} dbProductCount=${effectiveProductCount}`);
         return;
     }
 
     pendingWeightInserts.add(insertKey);
 
     try {
-        // Calculate STATUS based on GROSS_WEIGHT
-        // Priority: Anomaly (interlock ON + severe underweight) > Underweight > Overweight > Normal
-        // Use manual deviation threshold from appSettings if configured, otherwise calculate
-        const thresholds = appSettings.deviationThresholds || {};
-        const manualThreshold = thresholds[`carousel${carouselId}`];
-        const deviationToleranceMin = (manualThreshold !== undefined && Number.isFinite(parseFloat(manualThreshold)))
-            ? parseFloat(parseFloat(manualThreshold).toFixed(4))
-            : parseFloat((((data.toleranceMax || 0) - (data.toleranceMin || 0)) / 2).toFixed(4));
-        const interlocks = appSettings.interlocks || {};
-        const isInterlocked = !!interlocks[`carousel${carouselId}`];
-
-        let status = 'Normal';
-        if (isInterlocked && data.lastGross < (data.toleranceMin - deviationToleranceMin)) {
-            status = 'Anomaly';
-        } else if (data.lastGross < data.toleranceMin) {
-            status = 'Underweight';
-        } else if (data.lastGross > data.toleranceMax) {
-            status = 'Overweight';
-        }
 
         const result = await weighingPool.request()
             .input('packingOrder', sql.NVarChar, data.packingOrder)
@@ -413,7 +432,7 @@ async function insertWeightData(carouselId, data) {
             .input('baseTarget', sql.Decimal(18, 2), data.target) // Using target as product count/target count placeholder if needed? No, schema has PRODUCT_COUNT and TARGET_COUNT
             // Schema from image: PRODUCT_COUNT, TARGET_COUNT. Let's assume these are current counters or target settings.
             // data.target is likely TARGET_COUNT. PRODUCT_COUNT is likely the current counter.
-            .input('productCount', sql.Int, productCount)
+            .input('productCount', sql.Int, effectiveProductCount)
             .input('targetCount', sql.Int, data.target || 0)
             .input('status', sql.NVarChar, status)
             .query(`
@@ -434,17 +453,17 @@ async function insertWeightData(carouselId, data) {
             `);
 
         if (!result.rowsAffected || result.rowsAffected[0] === 0) {
-            logger.warn('SQL', `Skipping duplicate insert (already in DB) for CR${carouselId} PO=${data.packingOrder} counter=${data.counter} dbProductCount=${productCount}`);
+            logger.warn('SQL', `Skipping duplicate insert (already in DB) for CR${carouselId} PO=${data.packingOrder} counter=${data.counter} dbProductCount=${effectiveProductCount}`);
             return;
         }
 
-        logger.info('SQL', `Inserted data for CR${carouselId}: gross=${data.lastGross}kg nett=${data.lastNett}kg (${status}) PO=${data.packingOrder} counter=${data.counter} dbProductCount=${productCount}`);
+        logger.info('SQL', `Inserted data for CR${carouselId}: gross=${data.lastGross}kg nett=${data.lastNett}kg (${status}) PO=${data.packingOrder} counter=${data.counter} dbProductCount=${effectiveProductCount}`);
 
         if (carousels[carouselId]) {
             carousels[carouselId].data.lastGross = data.lastGross;
             carousels[carouselId].data.lastNett = data.lastNett;
             carousels[carouselId].data._lastInsertedGross = data.lastGross;
-            carousels[carouselId].data._lastInsertedProductCount = productCount;
+            carousels[carouselId].data._lastInsertedProductCount = effectiveProductCount;
             emitCarouselSnapshot();
         }
     } catch (err) {
