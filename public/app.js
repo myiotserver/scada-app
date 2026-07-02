@@ -617,7 +617,6 @@ function renderUsers(users) {
         tr.innerHTML = `
             <td>${u.id}</td>
             <td>${u.username}</td>
-            <td>${u.email}</td>
             <td>${roles}</td>
             <td style="white-space: nowrap; width: 180px;">
                 <div style="display: flex; flex-direction: row; gap: 8px; align-items: center; justify-content: flex-start;">
