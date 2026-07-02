@@ -436,7 +436,7 @@ async function insertWeightData(carouselId, data) {
             .input('targetCount', sql.Int, data.target || 0)
             .input('status', sql.NVarChar, status)
             .query(`
-                IF NOT EXISTS (
+                IF @productCount = 0 OR NOT EXISTS (
                     SELECT 1 FROM [${appSettings.table_weight || 'WEIGHT_DATA'}]
                     WHERE PACKING_ORDER = @packingOrder
                       AND CAROUSEL = @carousel
