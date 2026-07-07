@@ -462,6 +462,7 @@ async function loadSettings() {
 function renderSettings() {
     // SQL Inputs
     document.getElementById('cfg-server').value = appSettings.sql_server || '';
+    document.getElementById('cfg-port').value = appSettings.sql_port || '';
     document.getElementById('cfg-uid').value = appSettings.sql_uid || '';
     document.getElementById('cfg-pass').value = appSettings.sql_pass || '';
     document.getElementById('cfg-db').value = appSettings.sql_db || '';
@@ -536,6 +537,7 @@ async function updateDeviationThreshold(key, value) {
 async function saveSettings(silent = false) {
     // Update local object from inputs
     appSettings.sql_server = document.getElementById('cfg-server').value;
+    appSettings.sql_port = parseInt(document.getElementById('cfg-port').value) || 1433;
     appSettings.sql_uid = document.getElementById('cfg-uid').value;
     appSettings.sql_pass = document.getElementById('cfg-pass').value;
     appSettings.sql_db = document.getElementById('cfg-db').value;
@@ -654,9 +656,7 @@ async function submitUserCreation() {
         return;
     }
 
-    const email = `${username}@example.com`; // Auto-generate email for simplicity as per previous pattern
-
-    createUser({ username, email, password, roles: [role] });
+    createUser({ username, password, roles: [role] });
 }
 
 async function createUser(userData) {

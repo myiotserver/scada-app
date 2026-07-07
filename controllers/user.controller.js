@@ -43,7 +43,7 @@ exports.findAll = (req, res) => {
 exports.createUser = (req, res) => {
     User.create({
         username: req.body.username,
-        email: req.body.email,
+        email: req.body.email || null,
         password: bcrypt.hashSync(req.body.password, 8)
     }).then(user => {
         if (req.body.roles) {

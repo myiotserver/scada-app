@@ -2,6 +2,7 @@ const cron = require('node-cron');
 const sql = require('mssql');
 const fs = require('fs');
 const path = require('path');
+const { buildMssqlConfig } = require('../config/db.helper');
 const settingsPath = path.join(__dirname, '../config/scada-settings.json');
 
 class DataAggregator {
@@ -41,25 +42,7 @@ class DataAggregator {
             const sqlServer = process.env.MSSQL_SERVER || appSettings.sql_server || '';
             if (!sqlServer) return;
 
-            const sqlPort = Number(process.env.MSSQL_PORT || appSettings.sql_port || 1433);
-
-            const config = {
-                user: process.env.MSSQL_USER || appSettings.sql_uid || '',
-                password: process.env.MSSQL_PASSWORD || appSettings.sql_pass || '',
-                server: sqlServer,
-                database: process.env.MSSQL_DATABASE || appSettings.sql_db || '',
-                port: Number.isFinite(sqlPort) ? sqlPort : 1433,
-                options: {
-                    encrypt: process.env.MSSQL_ENCRYPT === 'true',
-                    trustServerCertificate: process.env.MSSQL_TRUST_CERT !== 'false',
-                    enableArithAbort: true
-                },
-                pool: {
-                    max: 10,
-                    min: 0,
-                    idleTimeoutMillis: 30000
-                }
-            };
+            const config = buildMssqlConfig({ settings: appSettings });
 
             const pool = await new sql.ConnectionPool(config).connect();
 

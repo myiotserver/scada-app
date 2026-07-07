@@ -1,4 +1,4 @@
-// Simulation script for CR1 sensor + weight - multiple triggers (rising edge)
+// Simulation script for CR1 sensor + weight - multiple triggers
 process.env.SCADA_SQL_AUTO_CONNECT = 'false';
 process.env.OPCUA_AUTO_CONNECT = 'false';
 
@@ -16,23 +16,20 @@ function doTrigger(delay, triggerNum) {
         opc._emitUpdate('CR1', { value: 2500 + triggerNum * 10 });
         
         setTimeout(() => {
-            // Rising edge (OFF→ON) triggers capture after 550ms settle delay
             opc._emitUpdate('S1', { value: true });
         }, 20);
         
-        // Reset sensor to OFF after capture completes (~600ms) so next trigger sees a fresh rising edge
         setTimeout(() => {
             opc._emitUpdate('S1', { value: false });
-        }, 700);
+        }, 120);
     }, delay);
 }
 
-// Triggers spaced past SENSOR_MIN_GAP_MS (default 1500ms) between rising edges.
-// Each trigger needs ~700ms to complete (20ms pre-delay + 550ms settle + reset).
-// 1800ms spacing is safe (> 1500ms debounce, > 700ms processing).
+// Triggers are spaced past SENSOR_MIN_GAP_MS (default 1500ms), measured from
+// falling edge to falling edge.
 doTrigger(50, 1);
-doTrigger(1800, 2);
-doTrigger(3550, 3);
+doTrigger(1700, 2);
+doTrigger(3350, 3);
 
 // Print snapshot after all triggers
 setTimeout(() => {
@@ -43,4 +40,4 @@ setTimeout(() => {
     console.log(`lastGross: ${snap[1].data.lastGross}`);
     console.log('--- Simulation end ---');
     process.exit(0);
-}, 5000);
+}, 4200);

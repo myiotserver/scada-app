@@ -19,39 +19,17 @@ try {
 
 // Helper to construct MSSQL config from settings
 function getMssqlConfig() {
+    const { buildMssqlConfig } = require('../config/db.helper');
+    const config = buildMssqlConfig({ settings: appSettings });
+
+    // Log the active source for each critical field
     const envServer   = process.env.MSSQL_SERVER;
     const envUser     = process.env.MSSQL_USER;
-    const envPassword = process.env.MSSQL_PASSWORD;
-    const envDatabase = process.env.MSSQL_DATABASE;
     const envPort     = process.env.MSSQL_PORT;
-
-    const server   = envServer   || appSettings.sql_server || '';
-    const user     = envUser     || appSettings.sql_uid    || '';
-    const password = envPassword || appSettings.sql_pass   || '';
-    const database = envDatabase || appSettings.sql_db     || '';
-    const port     = Number(envPort || appSettings.sql_port || 1433);
-
-    // Log the active source for each critical field so operators can diagnose config priority issues
     const src = (envVal, label) => envVal ? `env(${label})` : `settings.json`;
-    logger.info('SQL', `Config source — server:${src(envServer,'MSSQL_SERVER')} user:${src(envUser,'MSSQL_USER')} db:${src(envDatabase,'MSSQL_DATABASE')} port:${src(envPort,'MSSQL_PORT')}`);
+    logger.info('SQL', `Config source — server:${src(envServer,'MSSQL_SERVER')} user:${src(envUser,'MSSQL_USER')} db:${src(process.env.MSSQL_DATABASE,'MSSQL_DATABASE')} port:${src(envPort,'MSSQL_PORT')}`);
 
-    return {
-        user,
-        password,
-        server,
-        database,
-        port: Number.isFinite(port) ? port : 1433,
-        options: {
-            encrypt: process.env.MSSQL_ENCRYPT === 'true',
-            trustServerCertificate: process.env.MSSQL_TRUST_CERT !== 'false',
-            enableArithAbort: true
-        },
-        pool: {
-            max: 10,
-            min: 0,
-            idleTimeoutMillis: 30000
-        }
-    };
+    return config;
 }
 
 function isSqlStartupAutoConnectEnabled() {
@@ -171,9 +149,11 @@ const sqlStatusListeners = new Map();
 const alertListeners = new Map();
 const lastSqlInsertAlertTs = new Map();
 const SQL_ALERT_DEBOUNCE_MS = 8000;
-const SENSOR_WEIGHT_CAPTURE_DELAY_MS = Number(process.env.SENSOR_WEIGHT_CAPTURE_DELAY_MS) || 650;
+const SENSOR_WEIGHT_CAPTURE_DELAY_MS = Number(process.env.SENSOR_WEIGHT_CAPTURE_DELAY_MS) || 50;
 /** Ignore sensor rising edges closer than this (bounce / double trigger). */
 const SENSOR_MIN_GAP_MS = Number(process.env.SENSOR_MIN_GAP_MS) || 1500;
+/** Reject sensor pulses shorter than this (noise / false trigger). */
+const SENSOR_MIN_PULSE_MS = Number(process.env.SENSOR_MIN_PULSE_MS) || 500;
 /** Reject inserts below this gross (empty scale / noise). */
 const MIN_VALID_GROSS_KG = Number(process.env.MIN_VALID_GROSS_KG) || 1;
 const pendingWeightInserts = new Set();
@@ -776,21 +756,41 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
                     scheduleCarouselBroadcast();
                 }
 
-                // RISING EDGE DETECTION (False -> True) → trigger weight capture + insert
+                // RISING EDGE DETECTION (False -> True)
                 if (!oldValue && newValue) {
-                    logger.info('SCADA', `Sensor Rising Edge for CR${carouselId}`);
+                    // Record when sensor turned ON so we can measure pulse duration at falling edge
+                    carousels[carouselId].data._lastSensorRisingTs = Date.now();
+                }
+
+                // FALLING EDGE DETECTION (True -> False) → trigger weight capture + insert
+                if (oldValue && !newValue) {
+                    logger.info('SCADA', `Sensor Falling Edge for CR${carouselId}`);
 
                     if (carousels[carouselId].state === 'RUN') {
                         const now = Date.now();
                         const lastEdge = carousels[carouselId].data._lastSensorEdgeTs || 0;
 
-                        // 1) Gap between consecutive rising edges — detect bounce
+                        // 1) Gap between consecutive falling edges — detect bounce
                         if (now - lastEdge < SENSOR_MIN_GAP_MS) {
                             logger.warn('SCADA', `CR${carouselId} sensor bounce ignored (${now - lastEdge}ms < ${SENSOR_MIN_GAP_MS}ms)`);
                             return;
                         }
 
-                        // 2) Pending capture — previous trigger still being processed
+                        // 2) Minimum pulse (ON) duration — reject false triggers (noise, mechanical vibration)
+                        const risingTs = carousels[carouselId].data._lastSensorRisingTs;
+                        if (risingTs) {
+                            const pulseDuration = now - risingTs;
+                            if (pulseDuration < SENSOR_MIN_PULSE_MS) {
+                                logger.warn('SCADA', `CR${carouselId} sensor pulse too short (${pulseDuration}ms < ${SENSOR_MIN_PULSE_MS}ms) — false trigger ignored.`);
+                                return;
+                            }
+                        } else {
+                            // No rising edge recorded (e.g. sensor already TRUE at app start).
+                            // Allow the trigger but warn about the missing reference.
+                            logger.warn('SCADA', `CR${carouselId} no rising edge timestamp found — allowing pulse without duration check.`);
+                        }
+
+                        // 3) Pending capture — previous trigger still being processed
                         if (captureTimers.has(carouselId)) {
                             logger.warn('SCADA', `CR${carouselId} sensor bounce ignored (Previous capture still in progress)`);
                             return;
