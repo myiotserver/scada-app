@@ -171,11 +171,9 @@ const sqlStatusListeners = new Map();
 const alertListeners = new Map();
 const lastSqlInsertAlertTs = new Map();
 const SQL_ALERT_DEBOUNCE_MS = 8000;
-const SENSOR_WEIGHT_CAPTURE_DELAY_MS = Number(process.env.SENSOR_WEIGHT_CAPTURE_DELAY_MS) || 50;
+const SENSOR_WEIGHT_CAPTURE_DELAY_MS = Number(process.env.SENSOR_WEIGHT_CAPTURE_DELAY_MS) || 550;
 /** Ignore sensor rising edges closer than this (bounce / double trigger). */
 const SENSOR_MIN_GAP_MS = Number(process.env.SENSOR_MIN_GAP_MS) || 1500;
-/** Reject sensor pulses shorter than this (noise / false trigger). */
-const SENSOR_MIN_PULSE_MS = Number(process.env.SENSOR_MIN_PULSE_MS) || 500;
 /** Reject inserts below this gross (empty scale / noise). */
 const MIN_VALID_GROSS_KG = Number(process.env.MIN_VALID_GROSS_KG) || 1;
 const pendingWeightInserts = new Set();
@@ -778,41 +776,21 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
                     scheduleCarouselBroadcast();
                 }
 
-                // RISING EDGE DETECTION (False -> True)
+                // RISING EDGE DETECTION (False -> True) → trigger weight capture + insert
                 if (!oldValue && newValue) {
-                    // Record when sensor turned ON so we can measure pulse duration at falling edge
-                    carousels[carouselId].data._lastSensorRisingTs = Date.now();
-                }
-
-                // FALLING EDGE DETECTION (True -> False)
-                if (oldValue && !newValue) {
-                    logger.info('SCADA', `Sensor Falling Edge for CR${carouselId}`);
+                    logger.info('SCADA', `Sensor Rising Edge for CR${carouselId}`);
 
                     if (carousels[carouselId].state === 'RUN') {
                         const now = Date.now();
                         const lastEdge = carousels[carouselId].data._lastSensorEdgeTs || 0;
 
-                        // 1) Gap between consecutive falling edges — detect bounce
+                        // 1) Gap between consecutive rising edges — detect bounce
                         if (now - lastEdge < SENSOR_MIN_GAP_MS) {
                             logger.warn('SCADA', `CR${carouselId} sensor bounce ignored (${now - lastEdge}ms < ${SENSOR_MIN_GAP_MS}ms)`);
                             return;
                         }
 
-                        // 2) Minimum pulse (ON) duration — reject false triggers (noise, mechanical vibration)
-                        const risingTs = carousels[carouselId].data._lastSensorRisingTs;
-                        if (risingTs) {
-                            const pulseDuration = now - risingTs;
-                            if (pulseDuration < SENSOR_MIN_PULSE_MS) {
-                                logger.warn('SCADA', `CR${carouselId} sensor pulse too short (${pulseDuration}ms < ${SENSOR_MIN_PULSE_MS}ms) — false trigger ignored.`);
-                                return;
-                            }
-                        } else {
-                            // No rising edge recorded (e.g. sensor already TRUE at app start).
-                            // Allow the trigger but warn about the missing reference.
-                            logger.warn('SCADA', `CR${carouselId} no rising edge timestamp found — allowing pulse without duration check.`);
-                        }
-
-                        // 3) Pending capture — previous trigger still being processed
+                        // 2) Pending capture — previous trigger still being processed
                         if (captureTimers.has(carouselId)) {
                             logger.warn('SCADA', `CR${carouselId} sensor bounce ignored (Previous capture still in progress)`);
                             return;
