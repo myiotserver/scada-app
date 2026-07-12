@@ -181,6 +181,51 @@
             "signalType": "MD_SWITCH",
             "scale": 1,
             "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=MACHINE_RUN.CR01",
+            "name": "MACHINE_RUN_CR1",
+            "description": "Machine run status CR1",
+            "machineId": 1,
+            "signalType": "MACHINE_RUN",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=MACHINE_RUN.CR02",
+            "name": "MACHINE_RUN_CR2",
+            "description": "Machine run status CR2",
+            "machineId": 2,
+            "signalType": "MACHINE_RUN",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel OPC.Siemens Carousel3.MACHINE_RUN",
+            "name": "MACHINE_RUN_CR3",
+            "description": "Machine run status CR3",
+            "machineId": 3,
+            "signalType": "MACHINE_RUN",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=MACHINE_RUN.CR04",
+            "name": "MACHINE_RUN_CR4",
+            "description": "Machine run status CR4",
+            "machineId": 4,
+            "signalType": "MACHINE_RUN",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=MACHINE_RUN.CR05",
+            "name": "MACHINE_RUN_CR5",
+            "description": "Machine run status CR5",
+            "machineId": 5,
+            "signalType": "MACHINE_RUN",
+            "scale": 1,
+            "enabled": true
         }
     ]
 }

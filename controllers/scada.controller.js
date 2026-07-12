@@ -57,7 +57,8 @@ let carousels = {
             counter: 0,
             lastGross: 0,
             lastNett: 0,
-            average: 0
+            average: 0,
+            machineRun: false
         }
     },
     2: {
@@ -76,7 +77,8 @@ let carousels = {
             counter: 0,
             lastGross: 0,
             lastNett: 0,
-            average: 0
+            average: 0,
+            machineRun: false
         }
     },
     3: {
@@ -95,7 +97,8 @@ let carousels = {
             counter: 0,
             lastGross: 0,
             lastNett: 0,
-            average: 0
+            average: 0,
+            machineRun: false
         }
     },
     4: {
@@ -114,7 +117,8 @@ let carousels = {
             counter: 0,
             lastGross: 0,
             lastNett: 0,
-            average: 0
+            average: 0,
+            machineRun: false
         }
     },
     5: {
@@ -133,7 +137,8 @@ let carousels = {
             counter: 0,
             lastGross: 0,
             lastNett: 0,
-            average: 0
+            average: 0,
+            machineRun: false
         }
     }
 };
@@ -240,6 +245,32 @@ function canInsertZeroingData(carouselId, data) {
     const state = carousels[carouselId] ? carousels[carouselId].state : 'STOP';
     // MD_SWITCH check removed — zeroing event from PLC is sufficient proof.
     return state === 'RUN';
+}
+
+/**
+ * Compute and apply MACHINE_RUN status for a carousel, then write to OPC.
+ * MACHINE_RUN = true when state is RUN and system is not paused.
+ * MACHINE_RUN = false when counting stops or pauses.
+ */
+function updateMachineRunStatus(carouselId) {
+    const carousel = carousels[carouselId];
+    if (!carousel) return;
+
+    const isRunning = carousel.state === 'RUN';
+    const isPaused = isTruthySignal(carousel.data.systemPaused);
+    const newMachineRun = isRunning && !isPaused;
+
+    const oldMachineRun = carousel.data.machineRun;
+    carousel.data.machineRun = newMachineRun;
+
+    if (oldMachineRun !== newMachineRun) {
+        logger.info('SCADA', `CR${carouselId} MACHINE_RUN=${newMachineRun} (state=${carousel.state}, systemPaused=${isPaused})`);
+        scheduleCarouselBroadcast();
+
+        // Write to OPC nodes with signalType MACHINE_RUN for this carousel
+        opcUaManager.writeToNodesBySignalType('MACHINE_RUN', carouselId, newMachineRun ? 1 : 0)
+            .catch(err => logger.error('OPC', `CR${carouselId} MACHINE_RUN OPC write failed: ${err.message}`));
+    }
 }
 
 function emitSqlStatus() {
@@ -703,6 +734,11 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
                 if (oldValue !== newValue) {
                     logger.info('SCADA', `CR${carouselId} ${signalType}=${newValue}`);
                     scheduleCarouselBroadcast();
+
+                    // When systemPaused changes, recompute MACHINE_RUN status
+                    if (signalType === 'SYSTEM_PAUSED') {
+                        updateMachineRunStatus(carouselId);
+                    }
                 }
             }
         }
@@ -718,6 +754,22 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
                 if (!oldValue && newValue) {
                     logger.info('SCADA', `Zeroing Rising Edge for CR${carouselId}; capture scheduled in ${ZEROING_CAPTURE_DELAY_MS}ms`);
                     scheduleZeroingCapture(carouselId);
+                }
+            }
+        }
+
+        // MACHINE_RUN signal from PLC — update in-memory status
+        if (node && signalType === 'MACHINE_RUN' && node.machineId) {
+            const carouselId = node.machineId;
+            if (carousels[carouselId]) {
+                const newValue = isTruthySignal(data.value);
+                const oldValue = isTruthySignal(carousels[carouselId].data.machineRun);
+
+                carousels[carouselId].data.machineRun = newValue;
+
+                if (oldValue !== newValue) {
+                    logger.info('SCADA', `CR${carouselId} MACHINE_RUN from PLC: ${newValue}`);
+                    scheduleCarouselBroadcast();
                 }
             }
         }
@@ -901,6 +953,7 @@ async function fetchCarouselConfig(showLoading = false) {
                     else if (st === 'STOP' || st === 'STOPPED' || st === '0' || st === '3') s = 'STOP';
 
                     carousels[carouselId].state = s;
+                    updateMachineRunStatus(carouselId);
 
                     if (s === 'STOP') {
                         const cData = carousels[carouselId].data;
@@ -1226,7 +1279,10 @@ exports.controlCarousel = async (req, res) => {
             // Update local state immediately for responsiveness
             // Map directly since now state matches command
             const stateMap = { 'RUN': 'RUN', 'PAUSE': 'PAUSE', 'STOP': 'STOP', 'RESET': 'RESET' };
-            if (carousels[carouselId]) carousels[carouselId].state = stateMap[val];
+            if (carousels[carouselId]) {
+                carousels[carouselId].state = stateMap[val];
+                updateMachineRunStatus(carouselId);
+            }
 
             res.json({ success: true, message: `Sent ${command} to DB` });
         } else {
