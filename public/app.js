@@ -492,6 +492,12 @@ function renderSettings() {
         sqlAutoReconnect.disabled = !isAdmin;
     }
 
+    // Hide Save button for non-admin
+    const saveBtn = document.querySelector('#view-config .btn-save');
+    if (saveBtn) {
+        saveBtn.style.display = isAdmin ? '' : 'none';
+    }
+
     // Interlocks
     const container = document.getElementById('interlock-settings');
     container.innerHTML = '';
