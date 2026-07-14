@@ -479,10 +479,8 @@ function renderSettings() {
         if (el) {
             if (isAdmin) {
                 el.removeAttribute('readonly');
-                el.style.opacity = '1';
             } else {
                 el.setAttribute('readonly', 'readonly');
-                el.style.opacity = '0.6';
             }
         }
     });
@@ -492,12 +490,6 @@ function renderSettings() {
     if (sqlAutoReconnect) {
         sqlAutoReconnect.checked = !!appSettings.sql_auto_reconnect;
         sqlAutoReconnect.disabled = !isAdmin;
-    }
-
-    // Hide Save button for non-admin
-    const saveBtn = document.querySelector('#view-config .btn-save');
-    if (saveBtn) {
-        saveBtn.style.display = isAdmin ? '' : 'none';
     }
 
     // Interlocks
@@ -528,7 +520,7 @@ function renderSettings() {
                 <span style="font-size:0.7rem; color:#888;">Kg</span>
                 <span style="font-size:0.8rem;">Normal</span>
                 <label class="switch">
-                    <input type="checkbox" onchange="toggleInterlock('${key}', this.checked)" ${isInterlocked ? 'checked' : ''} ${isAdmin ? '' : 'disabled'}>
+                    <input type="checkbox" onchange="toggleInterlock('${key}', this.checked)" ${isInterlocked ? 'checked' : ''}>
                     <span class="slider round"></span>
                 </label>
                 <span style="font-size:0.8rem;">Interlock</span>
@@ -539,7 +531,6 @@ function renderSettings() {
 }
 
 async function toggleInterlock(key, checked) {
-    if (!currentUser || !currentUser.roles || !currentUser.roles.includes('ROLE_ADMIN')) return;
     if (!appSettings.interlocks) appSettings.interlocks = {};
     appSettings.interlocks[key] = checked;
     // Auto save on toggle? Or wait for save button?
