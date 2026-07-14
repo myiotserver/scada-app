@@ -346,9 +346,9 @@ function navigate(view) {
     if (view === 'home') {
         document.getElementById('view-home').style.display = isMobile ? 'flex' : 'grid';
     } else if (view === 'config') {
-        // Admin only
-        if (!currentUser || !currentUser.roles || !currentUser.roles.includes('ROLE_ADMIN')) {
-            alert("Access Denied: Admin privileges required.");
+        // Admin: full access | User: read-only view
+        if (!currentUser || !currentUser.roles || (!currentUser.roles.includes('ROLE_ADMIN') && !currentUser.roles.includes('ROLE_USER'))) {
+            alert("Access Denied.");
             navigate('home');
             return;
         }
@@ -420,7 +420,7 @@ function navigate(view) {
 
         // Apply display logic to nav buttons
         if (idx === 1) { // Config
-            btn.style.display = (isAdmin) ? 'flex' : 'none';
+            btn.style.display = (isAdmin || isUser) ? 'flex' : 'none';
         }
         if (idx === 2) { // Users
             btn.style.display = (isAdmin) ? 'flex' : 'none';
@@ -460,6 +460,8 @@ async function loadSettings() {
 }
 
 function renderSettings() {
+    const isAdmin = currentUser && currentUser.roles && currentUser.roles.includes('ROLE_ADMIN');
+
     // SQL Inputs
     document.getElementById('cfg-server').value = appSettings.sql_server || '';
     document.getElementById('cfg-port').value = appSettings.sql_port || '';
@@ -470,10 +472,32 @@ function renderSettings() {
     document.getElementById('cfg-table-weight').value = appSettings.table_weight || '';
     document.getElementById('cfg-table-main').value = appSettings.table_main || '';
 
+    // Set readonly on SQL inputs for non-admin
+    const sqlInputs = ['cfg-server','cfg-port','cfg-uid','cfg-pass','cfg-db','cfg-table-zero','cfg-table-weight','cfg-table-main'];
+    sqlInputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            if (isAdmin) {
+                el.removeAttribute('readonly');
+                el.style.opacity = '1';
+            } else {
+                el.setAttribute('readonly', 'readonly');
+                el.style.opacity = '0.6';
+            }
+        }
+    });
+
     // SQL Auto-Reconnect checkbox
     const sqlAutoReconnect = document.getElementById('cfg-sql-auto-reconnect');
     if (sqlAutoReconnect) {
         sqlAutoReconnect.checked = !!appSettings.sql_auto_reconnect;
+        sqlAutoReconnect.disabled = !isAdmin;
+    }
+
+    // Hide Save button for non-admin
+    const saveBtn = document.querySelector('#view-config .btn-save');
+    if (saveBtn) {
+        saveBtn.style.display = isAdmin ? '' : 'none';
     }
 
     // Interlocks
@@ -499,11 +523,12 @@ function renderSettings() {
                        step="0.01"
                        min="0"
                        style="width:72px; padding:3px 6px; font-size:0.8rem; border:1px solid #444; border-radius:4px; background:#1e1e2d; color:#e0e0e0;"
-                       onchange="updateDeviationThreshold('${key}', this.value)">
+                       onchange="updateDeviationThreshold('${key}', this.value)"
+                       ${isAdmin ? '' : 'readonly'}>
                 <span style="font-size:0.7rem; color:#888;">Kg</span>
                 <span style="font-size:0.8rem;">Normal</span>
                 <label class="switch">
-                    <input type="checkbox" onchange="toggleInterlock('${key}', this.checked)" ${isInterlocked ? 'checked' : ''}>
+                    <input type="checkbox" onchange="toggleInterlock('${key}', this.checked)" ${isInterlocked ? 'checked' : ''} ${isAdmin ? '' : 'disabled'}>
                     <span class="slider round"></span>
                 </label>
                 <span style="font-size:0.8rem;">Interlock</span>
@@ -514,6 +539,7 @@ function renderSettings() {
 }
 
 async function toggleInterlock(key, checked) {
+    if (!currentUser || !currentUser.roles || !currentUser.roles.includes('ROLE_ADMIN')) return;
     if (!appSettings.interlocks) appSettings.interlocks = {};
     appSettings.interlocks[key] = checked;
     // Auto save on toggle? Or wait for save button?
@@ -522,6 +548,7 @@ async function toggleInterlock(key, checked) {
 }
 
 async function updateDeviationThreshold(key, value) {
+    if (!currentUser || !currentUser.roles || !currentUser.roles.includes('ROLE_ADMIN')) return;
     if (!appSettings.deviationThresholds) appSettings.deviationThresholds = {};
     const numVal = parseFloat(value);
     if (!Number.isFinite(numVal) || numVal < 0) {
