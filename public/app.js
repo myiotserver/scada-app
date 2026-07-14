@@ -346,9 +346,9 @@ function navigate(view) {
     if (view === 'home') {
         document.getElementById('view-home').style.display = isMobile ? 'flex' : 'grid';
     } else if (view === 'config') {
-        // Allow Admin AND User
-        if (!currentUser || !currentUser.roles || (!currentUser.roles.includes('ROLE_ADMIN') && !currentUser.roles.includes('ROLE_USER'))) {
-            alert("Access Denied.");
+        // Admin only
+        if (!currentUser || !currentUser.roles || !currentUser.roles.includes('ROLE_ADMIN')) {
+            alert("Access Denied: Admin privileges required.");
             navigate('home');
             return;
         }
@@ -420,7 +420,7 @@ function navigate(view) {
 
         // Apply display logic to nav buttons
         if (idx === 1) { // Config
-            btn.style.display = (isAdmin || isUser) ? 'flex' : 'none';
+            btn.style.display = (isAdmin) ? 'flex' : 'none';
         }
         if (idx === 2) { // Users
             btn.style.display = (isAdmin) ? 'flex' : 'none';
