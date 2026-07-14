@@ -18,7 +18,7 @@ module.exports = function (app) {
 
     app.post(
         "/api/settings",
-        [authJwt.verifyToken, authJwt.isAdmin],
+        [authJwt.verifyToken, authJwt.isUserOrAdmin],
         controller.updateSettings
     );
 };
