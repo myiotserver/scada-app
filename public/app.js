@@ -479,8 +479,14 @@ function renderSettings() {
         if (el) {
             if (isAdmin) {
                 el.removeAttribute('readonly');
+                el.style.background = '';
+                el.style.color = '';
+                el.style.cursor = '';
             } else {
                 el.setAttribute('readonly', 'readonly');
+                el.style.background = '#2a2a35';
+                el.style.color = '#777';
+                el.style.cursor = 'not-allowed';
             }
         }
     });
@@ -509,6 +515,10 @@ function renderSettings() {
             ? appSettings.deviationThresholds[key]
             : 1.0;
 
+        const thresholdStyle = isAdmin
+            ? 'width:72px; padding:3px 6px; font-size:0.8rem; border:1px solid #444; border-radius:4px; background:#1e1e2d; color:#e0e0e0;'
+            : 'width:72px; padding:3px 6px; font-size:0.8rem; border:1px solid #444; border-radius:4px; background:#2a2a35; color:#777; cursor:not-allowed;';
+
         const row = document.createElement('div');
         row.className = 'interlock-row';
         row.innerHTML = `
@@ -520,7 +530,7 @@ function renderSettings() {
                        value="${devThreshold}"
                        step="0.01"
                        min="0"
-                       style="width:72px; padding:3px 6px; font-size:0.8rem; border:1px solid #444; border-radius:4px; background:#1e1e2d; color:#e0e0e0;"
+                       style="${thresholdStyle}"
                        onchange="updateDeviationThreshold('${key}', this.value)"
                        ${isAdmin ? '' : 'readonly'}>
                 <span style="font-size:0.7rem; color:#888;">Kg</span>
