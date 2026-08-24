@@ -793,13 +793,13 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
             }
         }
 
-        // Map CR1..CR5 to Carousel 1..5
-        const match = data.name.match(/^CR(\d+)$/);
-        if (match) {
-            const carouselId = parseInt(match[1]);
+        // Map GROSS_WEIGHT nodes to their carousel (signalType + machineId)
+        if (node && signalType === 'GROSS_WEIGHT' && node.machineId) {
+            const carouselId = parseInt(node.machineId, 10);
             if (carousels[carouselId]) {
-                const scale = getOpcNodeScale(data.name);
-                const val = parseFloat(data.value) * scale;
+                const scale = parseFloat(node.scale);
+                const effectiveScale = Number.isFinite(scale) ? scale : 0.01;
+                const val = parseFloat(data.value) * effectiveScale;
                 if (!isNaN(val)) {
                     const gross = parseFloat(val.toFixed(2));
                     const packWeight = carousels[carouselId].data.packWeight || 0;
@@ -813,10 +813,9 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
             }
         }
 
-        // Map S1..S5 (Sensors)
-        const matchSensor = data.name.match(/^S(\d+)$/);
-        if (matchSensor) {
-            const carouselId = parseInt(matchSensor[1]);
+        // Map PRODUCT_SENSOR nodes to their carousel (signalType + machineId)
+        if (node && signalType === 'PRODUCT_SENSOR' && node.machineId) {
+            const carouselId = parseInt(node.machineId, 10);
             if (carousels[carouselId]) {
                 const newValue = !!data.value;
                 const oldValue = carousels[carouselId].data.sensorStatus;

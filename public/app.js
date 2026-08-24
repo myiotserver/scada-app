@@ -239,7 +239,7 @@ function updateFooterSensors(carousels) {
             continue;
         }
 
-        const liveVal = opcuaLiveValues[`S${i}`];
+        const liveVal = findOpcUaLiveBySignal('PRODUCT_SENSOR', i);
         if (liveVal) {
             if (!liveVal.statusCode || !liveVal.statusCode.toString().startsWith('Good')) {
                 led.classList.add('status-neutral'); // Gray: bad sensor health
@@ -1115,6 +1115,21 @@ function formatOpcUaValue(value) {
     return String(value);
 }
 
+// Find the live value for a node by its signalType and machineId.
+// Robust against node name changes (e.g. "Sensor CR1" vs "S1").
+function findOpcUaLiveBySignal(signalType, machineId) {
+    if (!opcuaConfig || !Array.isArray(opcuaConfig.nodes)) return null;
+    const wantedType = (signalType || '').toString().trim().toUpperCase();
+    const wantedMachine = parseInt(machineId, 10);
+    const node = opcuaConfig.nodes.find(n => {
+        const t = getOpcUaNodeSignalType(n);
+        const m = parseInt(getOpcUaNodeMachineId(n), 10);
+        return t === wantedType && m === wantedMachine;
+    });
+    if (!node) return null;
+    return opcuaLiveValues[node.name] || null;
+}
+
 function getOpcUaNodeMachineId(node) {
     if (!node) return '';
     if (node.machineId !== undefined && node.machineId !== null && node.machineId !== '') {
@@ -1399,7 +1414,10 @@ function updateOpcUaLiveValue(data) {
     console.log('[OPC-UA] Live Value:', data.name, data.value); // Debug log
 
     // If it's a sensor update, refresh the footer sensor indicators
-    if (/^S[1-5]$/.test(data.name)) {
+    const nodeForValue = opcuaConfig && opcuaConfig.nodes
+        ? opcuaConfig.nodes.find(n => (n.name || '').toString().trim() === data.name)
+        : null;
+    if (nodeForValue && getOpcUaNodeSignalType(nodeForValue) === 'PRODUCT_SENSOR') {
         updateFooterSensors();
     }
 

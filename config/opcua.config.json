@@ -1,5 +1,5 @@
 {
-    "endpointUrl": "opc.tcp://100.109.198.98:49320",
+    "endpointUrl": "opc.tcp://10.1.2.50:49320",
     "securityMode": "Sign",
     "securityPolicy": "Basic256",
     "username": "administrator",
@@ -9,8 +9,53 @@
     "autoConnect": true,
     "nodes": [
         {
-            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.GR_CR01",
-            "name": "CR1",
+            "nodeId": "ns=2;s=Carousel1 OPC.Siemens Carousel1.PRODUCT_SENSOR",
+            "name": "Sensor CR1",
+            "description": "Sensor CR1",
+            "machineId": 1,
+            "signalType": "PRODUCT_SENSOR",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel2 OPC.Siemens Carousel2.PRODUCT_SENSOR",
+            "name": "Sensor CR2",
+            "description": "Sensor CR2",
+            "machineId": 2,
+            "signalType": "PRODUCT_SENSOR",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel3 OPC.Siemens Carousel3.PRODUCT_SENSOR",
+            "name": "Sensor CR3",
+            "description": "Sensor CR3",
+            "machineId": 3,
+            "signalType": "PRODUCT_SENSOR",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel4 OPC.Siemens Carousel4.PRODUCT_SENSOR",
+            "name": "Sensor CR4",
+            "description": "Sensor CR4",
+            "machineId": 4,
+            "signalType": "PRODUCT_SENSOR",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel5 OPC.Siemens Carousel5.PRODUCT_SENSOR",
+            "name": "Sensor CR5",
+            "description": "Sensor CR5",
+            "machineId": 5,
+            "signalType": "PRODUCT_SENSOR",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel1 OPC.Siemens Carousel1.PRODUCT_WEIGHT",
+            "name": "Gross weight CR1",
             "description": "Gross weight CR1",
             "machineId": 1,
             "signalType": "GROSS_WEIGHT",
@@ -18,8 +63,8 @@
             "enabled": true
         },
         {
-            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.GR_CR02",
-            "name": "CR2",
+            "nodeId": "ns=2;s=Carousel2 OPC.Siemens Carousel2.PRODUCT_WEIGHT",
+            "name": "Gross weight CR2",
             "description": "Gross weight CR2",
             "machineId": 2,
             "signalType": "GROSS_WEIGHT",
@@ -27,17 +72,17 @@
             "enabled": true
         },
         {
-            "nodeId": "ns=2;s=Carousel OPC.Siemens Carousel3.PRODUCT_WEIGHT",
-            "name": "CR3",
+            "nodeId": "ns=2;s=Carousel3 OPC.Siemens Carousel3.PRODUCT_WEIGHT",
+            "name": "Gross weight CR3",
             "description": "Gross weight CR3",
             "machineId": 3,
             "signalType": "GROSS_WEIGHT",
-            "scale": 1,
+            "scale": 0.01,
             "enabled": true
         },
         {
-            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.GR_CR04",
-            "name": "CR4",
+            "nodeId": "ns=2;s=Carousel4 OPC.Siemens Carousel4.PRODUCT_WEIGHT",
+            "name": "Gross weight CR4",
             "description": "Gross weight CR4",
             "machineId": 4,
             "signalType": "GROSS_WEIGHT",
@@ -45,8 +90,8 @@
             "enabled": true
         },
         {
-            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.GR_CR05",
-            "name": "CR5",
+            "nodeId": "ns=2;s=Carousel5 OPC.Siemens Carousel5.PRODUCT_WEIGHT",
+            "name": "Gross weight CR5",
             "description": "Gross weight CR5",
             "machineId": 5,
             "signalType": "GROSS_WEIGHT",
@@ -54,186 +99,48 @@
             "enabled": true
         },
         {
-            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.SENSOR01",
-            "name": "S1",
-            "description": "Product sensor CR1",
+            "nodeId": "ns=2;s=Carousel1 OPC.Siemens Carousel1.PRODUCT_COUNTER",
+            "name": "Counter CR1",
+            "description": "Counter CR1",
             "machineId": 1,
-            "signalType": "PRODUCT_SENSOR",
-            "scale": 0.01,
+            "signalType": "COUNTER",
+            "scale": 1,
             "enabled": true
         },
         {
-            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.SENSOR02",
-            "name": "S2",
-            "description": "Product sensor CR2",
+            "nodeId": "ns=2;s=Carousel2 OPC.Siemens Carousel2.PRODUCT_COUNTER",
+            "name": "Counter CR2",
+            "description": "Counter CR2",
             "machineId": 2,
-            "signalType": "PRODUCT_SENSOR",
-            "scale": 0.01,
+            "signalType": "COUNTER",
+            "scale": 1,
             "enabled": true
         },
         {
-            "nodeId": "ns=2;s=Carousel OPC.Siemens Carousel3.PRODUCT_SENSOR",
-            "name": "S3",
-            "description": "Product sensor CR3",
-            "machineId": 3,
-            "signalType": "PRODUCT_SENSOR",
-            "scale": 0.01,
-            "enabled": true
-        },
-        {
-            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.SENSOR04",
-            "name": "S4",
-            "description": "Product sensor CR4",
-            "machineId": 4,
-            "signalType": "PRODUCT_SENSOR",
-            "scale": 0.01,
-            "enabled": true
-        },
-        {
-            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.SENSOR05",
-            "name": "S5",
-            "description": "Product sensor CR5",
-            "machineId": 5,
-            "signalType": "PRODUCT_SENSOR",
-            "scale": 0.01,
-            "enabled": true
-        },
-        {
-            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.RESET",
-            "name": "RST",
-            "description": "Reset",
-            "signalType": "RESET",
-            "scale": 0.01,
-            "enabled": true
-        },
-        {
-            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.GR_NORMAL_CR01",
-            "name": "GR01_NORMAL",
-            "description": "Gross weight CR1 Normal",
-            "machineId": 1,
-            "scale": 0.01,
-            "enabled": true
-        },
-        {
-            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.GR_NORMAL_CR02",
-            "name": "GR02_NORMAL",
-            "description": "Gross weight CR2 Normal",
-            "machineId": 2,
-            "scale": 0.01,
-            "enabled": true
-        },
-        {
-            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.GR_NORMAL_CR03",
-            "name": "GR03_NORMAL",
-            "description": "Gross weight CR3 Normal",
-            "machineId": 3,
-            "scale": 0.01,
-            "enabled": true
-        },
-        {
-            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.GR_NORMAL_CR04",
-            "name": "GR04_NORMAL",
-            "description": "Gross weight CR4 Normal",
-            "machineId": 4,
-            "scale": 0.01,
-            "enabled": true
-        },
-        {
-            "nodeId": "ns=2;s=MODBUS_SIM.MB_SLAVE01.GR_NORMAL_CR05",
-            "name": "GR05_NORMAL",
-            "description": "Gross weight CR5 Normal",
-            "machineId": 5,
-            "scale": 0.01,
-            "enabled": true
-        },
-        {
-            "nodeId": "ns=2;s=Carousel OPC.Siemens Carousel3.PRODUCT_COUNTER",
-            "name": "COUNTER CR3",
-            "description": "Product counter",
+            "nodeId": "ns=2;s=Carousel3 OPC.Siemens Carousel3.PRODUCT_COUNTER",
+            "name": "Counter CR3",
+            "description": "Counter CR3",
             "machineId": 3,
             "signalType": "COUNTER",
             "scale": 1,
             "enabled": true
         },
         {
-            "nodeId": "ns=2;s=Carousel OPC.Siemens Carousel3.ZEROING_BUTTON",
-            "name": "ZEROING CR3",
-            "description": "Zeroing signal from CR3",
-            "machineId": 3,
-            "signalType": "ZEROING",
-            "scale": 1,
-            "enabled": true
-        },
-        {
-            "nodeId": "ns=2;s=Carousel OPC.Siemens Carousel3.SYSTEM_PAUSED",
-            "name": "PAUSE CR3",
-            "description": "Pause counting system CR3",
-            "machineId": 3,
-            "signalType": "SYSTEM_PAUSED",
-            "scale": 1,
-            "enabled": true
-        },
-        {
-            "nodeId": "ns=2;s=Carousel OPC.Siemens Carousel3.MD_SWITCH",
-            "name": "MD SWITCH",
-            "description": "Switch to deactivate metal detector",
-            "machineId": 3,
-            "signalType": "MD_SWITCH",
-            "scale": 1,
-            "enabled": true
-        },
-        {
-            "nodeId": "ns=2;s=MACHINE_RUN.CR01",
-            "name": "MACHINE_RUN_CR1",
-            "description": "Machine run status CR1",
-            "machineId": 1,
-            "signalType": "MACHINE_RUN",
-            "scale": 1,
-            "enabled": true
-        },
-        {
-            "nodeId": "ns=2;s=MACHINE_RUN.CR02",
-            "name": "MACHINE_RUN_CR2",
-            "description": "Machine run status CR2",
-            "machineId": 2,
-            "signalType": "MACHINE_RUN",
-            "scale": 1,
-            "enabled": true
-        },
-        {
-            "nodeId": "ns=2;s=Carousel OPC.Siemens Carousel3.MACHINE_RUN",
-            "name": "MACHINE_RUN_CR3",
-            "description": "Machine run status CR3",
-            "machineId": 3,
-            "signalType": "MACHINE_RUN",
-            "scale": 1,
-            "enabled": true
-        },
-        {
-            "nodeId": "ns=2;s=MACHINE_RUN.CR04",
-            "name": "MACHINE_RUN_CR4",
-            "description": "Machine run status CR4",
+            "nodeId": "ns=2;s=Carousel4 OPC.Siemens Carousel4.PRODUCT_COUNTER",
+            "name": "Counter CR4",
+            "description": "Counter CR4",
             "machineId": 4,
-            "signalType": "MACHINE_RUN",
+            "signalType": "COUNTER",
             "scale": 1,
             "enabled": true
         },
         {
-            "nodeId": "ns=2;s=MACHINE_RUN.CR05",
-            "name": "MACHINE_RUN_CR5",
-            "description": "Machine run status CR5",
+            "nodeId": "ns=2;s=Carousel5 OPC.Siemens Carousel5.PRODUCT_COUNTER",
+            "name": "Counter CR5",
+            "description": "Counter CR5",
             "machineId": 5,
-            "signalType": "MACHINE_RUN",
+            "signalType": "COUNTER",
             "scale": 1,
-            "enabled": true
-        },
-        {
-            "nodeId": "ns=2;s=Carousel1 OPC.Siemens Carousel1.TOLERANCE_MIN",
-            "name": "TOLERANCE MIN",
-            "description": "Weight tolerance min",
-            "machineId": 1,
-            "signalType": "TOLERANCE_MIN",
-            "scale": 0.01,
             "enabled": true
         }
     ]
