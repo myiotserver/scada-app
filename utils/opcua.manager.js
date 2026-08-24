@@ -679,13 +679,58 @@ class OpcUaManager {
 
     // --- Write ---
 
+    async _getNodeValueDataType(nodeId) {
+        const { DataType } = require("node-opcua");
+        const dataValue = await this.session.read({
+            nodeId,
+            attributeId: AttributeIds.Value
+        });
+
+        if (!dataValue || !dataValue.statusCode || dataValue.statusCode.name !== 'Good') {
+            throw new Error(`Read before write returned ${dataValue?.statusCode?.name || 'an invalid status'}`);
+        }
+
+        const dataType = dataValue.value && dataValue.value.dataType;
+        if (typeof dataType !== 'number' || dataType === DataType.Null) {
+            throw new Error('Node value does not expose a scalar OPC UA data type');
+        }
+
+        return dataType;
+    }
+
+    _coerceValueForDataType(value, dataType) {
+        const { DataType } = require("node-opcua");
+        if (dataType === DataType.Boolean) return Boolean(value);
+
+        const numericValue = Number(value);
+        if (!Number.isFinite(numericValue)) {
+            throw new Error(`Value ${value} is not a finite number`);
+        }
+
+        const integerTypes = new Set([
+            DataType.SByte, DataType.Byte, DataType.Int16, DataType.UInt16,
+            DataType.Int32, DataType.UInt32
+        ]);
+        if (integerTypes.has(dataType) && !Number.isInteger(numericValue)) {
+            throw new Error(`Value ${numericValue} is not valid for integer OPC UA type ${DataType[dataType]}`);
+        }
+
+        return numericValue;
+    }
+
     async writeNode(nodeId, value, dataType) {
         if (!this.session) return { error: 'Not connected' };
         try {
             const { DataType } = require("node-opcua");
+            const resolvedDataType = dataType === undefined || dataType === null
+                ? await this._getNodeValueDataType(nodeId)
+                : (typeof dataType === 'number' ? dataType : DataType[dataType]);
+            if (typeof resolvedDataType !== 'number') {
+                throw new Error(`Unsupported OPC UA data type: ${dataType}`);
+            }
             const variantValue = {
-                dataType: DataType[dataType] || DataType.Int16,
-                value: value
+                dataType: resolvedDataType,
+                value: this._coerceValueForDataType(value, resolvedDataType)
             };
 
             const statusCode = await this.session.write({
@@ -735,21 +780,27 @@ class OpcUaManager {
 
         const results = [];
         for (const node of nodes) {
-            // MACHINE_RUN is a discrete PLC status. Use Int16 so a requested
-            // high/low value is written as exactly 1/0 rather than a floating
-            // point value that some OPC servers reject for the node datatype.
             const isMachineRun = String(signalType).toUpperCase() === 'MACHINE_RUN';
-            const dataType = isMachineRun ? 'Int16' : 'Double';
-            let result = await this.writeNode(node.nodeId, value, dataType);
-            // Some PLC servers expose MACHINE_RUN as Boolean rather than an
-            // integer. Keep the requested high/low semantics and retry with
-            // the native Boolean type when an integer write is rejected.
+            const isTolerance = ['TOLERANCE_MIN', 'TOLERANCE_MAX', 'DEVIATION_TOLERANCE_MIN']
+                .includes(String(signalType).toUpperCase());
+            const scale = Number(node.scale);
+            const rawValue = isTolerance && Number.isFinite(scale) && scale > 0
+                ? Number((Number(value) / scale).toFixed(10))
+                : value;
+
+            // Use the same Variant type currently exposed by the PLC node.
+            // In particular, Siemens tags are frequently Int16/UInt16 rather
+            // than Double, which otherwise yields BadTypeMismatch.
+            let result = await this.writeNode(node.nodeId, isMachineRun ? value === 1 : rawValue);
             if (isMachineRun && !result.success) {
-                result = await this.writeNode(node.nodeId, value === 1, 'Boolean');
+                // Preserve the numeric fallback for servers that do not expose
+                // a readable current value before accepting a write.
+                result = await this.writeNode(node.nodeId, value, 'Int16');
             }
             results.push({ nodeId: node.nodeId, name: node.name, ...result });
             if (result.success) {
-                logger.info('OPC', `Wrote ${signalType}=${value} to ${node.name} (${node.nodeId})`);
+                const valueInfo = rawValue === value ? String(value) : `${value} (raw ${rawValue})`;
+                logger.info('OPC', `Wrote ${signalType}=${valueInfo} to ${node.name} (${node.nodeId})`);
             } else {
                 logger.error('OPC', `Failed writing ${signalType}=${value} to ${node.name}: ${result.error}`);
             }

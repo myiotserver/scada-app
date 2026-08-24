@@ -226,6 +226,15 @@
             "signalType": "MACHINE_RUN",
             "scale": 1,
             "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel1 OPC.Siemens Carousel1.TOLERANCE_MIN",
+            "name": "TOLERANCE MIN",
+            "description": "Weight tolerance min",
+            "machineId": 1,
+            "signalType": "TOLERANCE_MIN",
+            "scale": 0.01,
+            "enabled": true
         }
     ]
 }
