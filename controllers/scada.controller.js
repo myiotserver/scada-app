@@ -284,6 +284,22 @@ function syncToleranceStatuses() {
     });
 }
 
+/**
+ * Write the interlock (metal detector) toggle state to the OPC CAROUSEL_INTERLOCK
+ * node for a given carousel. SCADA is the source of truth (dashboard toggle),
+ * value 1 = interlock enabled, 0 = disabled.
+ */
+function updateInterlockStatus(carouselId) {
+    const interlocks = appSettings.interlocks || {};
+    const enabled = !!interlocks[`carousel${carouselId}`];
+    opcUaManager.writeToNodesBySignalType('CAROUSEL_INTERLOCK', carouselId, enabled ? 1 : 0)
+        .catch(err => logger.error('OPC', `CR${carouselId} CAROUSEL_INTERLOCK OPC write failed: ${err.message}`));
+}
+
+function syncInterlockStatuses() {
+    Object.keys(carousels).forEach(carouselId => updateInterlockStatus(Number(carouselId)));
+}
+
 function emitSqlStatus() {
     const connected = weighingPool && weighingPool.connected;
     const config = getMssqlConfig();
@@ -731,6 +747,7 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
     if (event === 'opcua-status' && data && data.connected) {
         syncMachineRunStatuses();
         syncToleranceStatuses();
+        syncInterlockStatuses();
         return;
     }
 
@@ -789,6 +806,21 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
                 if (newValue !== expectedValue) {
                     logger.warn('SCADA', `CR${carouselId} MACHINE_RUN mismatch from PLC (${newValue}); expected ${expectedValue}. Reapplying state.`);
                     updateMachineRunStatus(carouselId);
+                }
+            }
+        }
+
+        // CAROUSEL_INTERLOCK: SCADA is the source of truth (dashboard toggle).
+        // If the PLC reports a different value, reconcile it back to the expected state.
+        if (node && signalType === 'CAROUSEL_INTERLOCK' && node.machineId) {
+            const carouselId = node.machineId;
+            if (carousels[carouselId]) {
+                const interlocks = appSettings.interlocks || {};
+                const expectedValue = !!interlocks[`carousel${carouselId}`];
+                const newValue = isTruthySignal(data.value);
+                if (newValue !== expectedValue) {
+                    logger.warn('SCADA', `CR${carouselId} CAROUSEL_INTERLOCK mismatch from PLC (${newValue}); expected ${expectedValue}. Reapplying.`);
+                    updateInterlockStatus(carouselId);
                 }
             }
         }
@@ -901,6 +933,9 @@ exports.reloadSettings = () => {
         if (fs.existsSync(settingsPath)) {
             appSettings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
             connectToWeighingDB(); // Reconnect with new settings
+            // Push updated interlock + tolerance settings to OPC immediately.
+            syncInterlockStatuses();
+            syncToleranceStatuses();
         }
     } catch (e) {
         logger.error('SYSTEM', `Error reloading settings: ${e.message}`);
