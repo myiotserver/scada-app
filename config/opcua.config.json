@@ -59,7 +59,7 @@
             "description": "Gross weight CR1",
             "machineId": 1,
             "signalType": "GROSS_WEIGHT",
-            "scale": 0.01,
+            "scale": 1,
             "enabled": true
         },
         {
@@ -68,7 +68,7 @@
             "description": "Gross weight CR2",
             "machineId": 2,
             "signalType": "GROSS_WEIGHT",
-            "scale": 0.01,
+            "scale": 1,
             "enabled": true
         },
         {
@@ -77,7 +77,7 @@
             "description": "Gross weight CR3",
             "machineId": 3,
             "signalType": "GROSS_WEIGHT",
-            "scale": 0.01,
+            "scale": 1,
             "enabled": true
         },
         {
@@ -86,7 +86,7 @@
             "description": "Gross weight CR4",
             "machineId": 4,
             "signalType": "GROSS_WEIGHT",
-            "scale": 0.01,
+            "scale": 1,
             "enabled": true
         },
         {
@@ -95,7 +95,7 @@
             "description": "Gross weight CR5",
             "machineId": 5,
             "signalType": "GROSS_WEIGHT",
-            "scale": 0.01,
+            "scale": 1,
             "enabled": true
         },
         {
