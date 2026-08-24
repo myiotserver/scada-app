@@ -27,15 +27,6 @@
             "enabled": true
         },
         {
-            "nodeId": "ns=2;s=Carousel3 OPC.Siemens Carousel3.PRODUCT_SENSOR",
-            "name": "Sensor CR3",
-            "description": "Sensor CR3",
-            "machineId": 3,
-            "signalType": "PRODUCT_SENSOR",
-            "scale": 1,
-            "enabled": true
-        },
-        {
             "nodeId": "ns=2;s=Carousel4 OPC.Siemens Carousel4.PRODUCT_SENSOR",
             "name": "Sensor CR4",
             "description": "Sensor CR4",
@@ -140,6 +131,186 @@
             "description": "Counter CR5",
             "machineId": 5,
             "signalType": "COUNTER",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel1 OPC.Siemens Carousel1.MACHINE_RUN",
+            "name": "Running state CR1",
+            "description": "Running status CR1",
+            "machineId": 1,
+            "signalType": "MACHINE_RUN",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel2 OPC.Siemens Carousel2.MACHINE_RUN",
+            "name": "Running state CR2",
+            "description": "Running status CR2",
+            "machineId": 2,
+            "signalType": "MACHINE_RUN",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "MB;s=Carousel3 OPC.Siemens Carousel3.MACHINE_RUN",
+            "name": "Running state CR3",
+            "description": "Running status CR3",
+            "machineId": 3,
+            "signalType": "MACHINE_RUN",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel4 OPC.Siemens Carousel4.MACHINE_RUN",
+            "name": "Running state CR4",
+            "description": "Running status CR4",
+            "machineId": 4,
+            "signalType": "MACHINE_RUN",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel5 OPC.Siemens Carousel5.MACHINE_RUN",
+            "name": "Running state CR5",
+            "description": "Running status CR5",
+            "machineId": 5,
+            "signalType": "MACHINE_RUN",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel1 OPC.Siemens Carousel1.TOLERANCE_MIN",
+            "name": "Tol min CR1",
+            "description": "Tolerance min CR1",
+            "machineId": 1,
+            "signalType": "TOLERANCE_MIN",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel2 OPC.Siemens Carousel2.TOLERANCE_MIN",
+            "name": "Tol min CR2",
+            "description": "Tolerance min CR2",
+            "machineId": 2,
+            "signalType": "TOLERANCE_MIN",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "MB=2;s=Carousel3 OPC.Siemens Carousel3.TOLERANCE_MIN",
+            "name": "Tol min CR3",
+            "description": "Tolerance min CR3",
+            "machineId": 3,
+            "signalType": "TOLERANCE_MIN",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel4 OPC.Siemens Carousel4.TOLERANCE_MIN",
+            "name": "Tol min CR4",
+            "description": "Tolerance min CR4",
+            "machineId": 4,
+            "signalType": "TOLERANCE_MIN",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel5 OPC.Siemens Carousel5.TOLERANCE_MIN",
+            "name": "Tol min CR5",
+            "description": "Tolerance min CR5",
+            "machineId": 5,
+            "signalType": "TOLERANCE_MIN",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel1 OPC.Siemens Carousel1.TOLERANCE_MAX",
+            "name": "Tol max CR1",
+            "description": "Tolerance max CR1",
+            "machineId": 1,
+            "signalType": "TOLERANCE_MAX",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel2 OPC.Siemens Carousel2.TOLERANCE_MAX",
+            "name": "Tol max CR2",
+            "description": "Tolerance max CR2",
+            "machineId": 2,
+            "signalType": "TOLERANCE_MAX",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "MB=2;s=Carousel3 OPC.Siemens Carousel3.TOLERANCE_MAX",
+            "name": "Tol max CR3",
+            "description": "Tolerance max CR3",
+            "machineId": 3,
+            "signalType": "TOLERANCE_MAX",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel4 OPC.Siemens Carousel4.TOLERANCE_MAX",
+            "name": "Tol max CR4",
+            "description": "Tolerance max CR4",
+            "machineId": 4,
+            "signalType": "TOLERANCE_MAX",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel5 OPC.Siemens Carousel5.TOLERANCE_MAX",
+            "name": "Tol max CR5",
+            "description": "Tolerance max CR5",
+            "machineId": 5,
+            "signalType": "TOLERANCE_MAX",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel1 OPC.Siemens Carousel1.ZEROING_BUTTON",
+            "name": "Zeroing CR1",
+            "description": "Zeroing CR1",
+            "machineId": 1,
+            "signalType": "ZEROING",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel2 OPC.Siemens Carousel2.ZEROING_BUTTON",
+            "name": "Zeroing CR2",
+            "description": "Zeroing CR2",
+            "machineId": 2,
+            "signalType": "ZEROING",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "MB=2;s=Carousel3 OPC.Siemens Carousel3.ZEROING_BUTTON",
+            "name": "Zeroing CR3",
+            "description": "Zeroing CR3",
+            "machineId": 3,
+            "signalType": "ZEROING",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel4 OPC.Siemens Carousel4.ZEROING_BUTTON",
+            "name": "Zeroing CR4",
+            "description": "Zeroing CR4",
+            "machineId": 4,
+            "signalType": "ZEROING",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel5 OPC.Siemens Carousel5.ZEROING_BUTTON",
+            "name": "Zeroing CR5",
+            "description": "Zeroing CR5",
+            "machineId": 5,
+            "signalType": "ZEROING",
             "scale": 1,
             "enabled": true
         }
