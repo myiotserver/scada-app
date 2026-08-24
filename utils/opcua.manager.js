@@ -735,7 +735,18 @@ class OpcUaManager {
 
         const results = [];
         for (const node of nodes) {
-            const result = await this.writeNode(node.nodeId, value, 'Double');
+            // MACHINE_RUN is a discrete PLC status. Use Int16 so a requested
+            // high/low value is written as exactly 1/0 rather than a floating
+            // point value that some OPC servers reject for the node datatype.
+            const isMachineRun = String(signalType).toUpperCase() === 'MACHINE_RUN';
+            const dataType = isMachineRun ? 'Int16' : 'Double';
+            let result = await this.writeNode(node.nodeId, value, dataType);
+            // Some PLC servers expose MACHINE_RUN as Boolean rather than an
+            // integer. Keep the requested high/low semantics and retry with
+            // the native Boolean type when an integer write is rejected.
+            if (isMachineRun && !result.success) {
+                result = await this.writeNode(node.nodeId, value === 1, 'Boolean');
+            }
             results.push({ nodeId: node.nodeId, name: node.name, ...result });
             if (result.success) {
                 logger.info('OPC', `Wrote ${signalType}=${value} to ${node.name} (${node.nodeId})`);

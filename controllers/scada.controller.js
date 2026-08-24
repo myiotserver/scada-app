@@ -266,11 +266,16 @@ function updateMachineRunStatus(carouselId) {
     if (oldMachineRun !== newMachineRun) {
         logger.info('SCADA', `CR${carouselId} MACHINE_RUN=${newMachineRun} (state=${carousel.state}, systemPaused=${isPaused})`);
         scheduleCarouselBroadcast();
-
-        // Write to OPC nodes with signalType MACHINE_RUN for this carousel
-        opcUaManager.writeToNodesBySignalType('MACHINE_RUN', carouselId, newMachineRun ? 1 : 0)
-            .catch(err => logger.error('OPC', `CR${carouselId} MACHINE_RUN OPC write failed: ${err.message}`));
     }
+
+    // Always reconcile the PLC node. This also restores the value after an OPC
+    // reconnect or when the PLC value was changed externally.
+    opcUaManager.writeToNodesBySignalType('MACHINE_RUN', carouselId, newMachineRun ? 1 : 0)
+        .catch(err => logger.error('OPC', `CR${carouselId} MACHINE_RUN OPC write failed: ${err.message}`));
+}
+
+function syncMachineRunStatuses() {
+    Object.keys(carousels).forEach(carouselId => updateMachineRunStatus(Number(carouselId)));
 }
 
 function emitSqlStatus() {
@@ -715,6 +720,13 @@ function getOpcNodeScale(tagName) {
 // --- OPC-UA Integration ---
 // Subscribe to OPC Manager updates
 opcUaManager.subscribe('scada-controller', (event, data) => {
+    // A successful OPC connection/reconnection is the point at which all
+    // current carousel states must be pushed back to the PLC.
+    if (event === 'opcua-status' && data && data.connected) {
+        syncMachineRunStatuses();
+        return;
+    }
+
     if (event === 'opcua-value' && data && data.name) {
         const opcConfig = opcUaManager.getConfig();
         const nodes = Array.isArray(opcConfig.nodes) ? opcConfig.nodes : [];
@@ -758,18 +770,18 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
             }
         }
 
-        // MACHINE_RUN signal from PLC — update in-memory status
+        // MACHINE_RUN is commanded by SCADA from the carousel state. If the
+        // PLC reports a different value, immediately reconcile it to the
+        // expected state instead of allowing feedback to change local state.
         if (node && signalType === 'MACHINE_RUN' && node.machineId) {
             const carouselId = node.machineId;
             if (carousels[carouselId]) {
                 const newValue = isTruthySignal(data.value);
-                const oldValue = isTruthySignal(carousels[carouselId].data.machineRun);
-
-                carousels[carouselId].data.machineRun = newValue;
-
-                if (oldValue !== newValue) {
-                    logger.info('SCADA', `CR${carouselId} MACHINE_RUN from PLC: ${newValue}`);
-                    scheduleCarouselBroadcast();
+                const expectedValue = carousels[carouselId].state === 'RUN'
+                    && !isTruthySignal(carousels[carouselId].data.systemPaused);
+                if (newValue !== expectedValue) {
+                    logger.warn('SCADA', `CR${carouselId} MACHINE_RUN mismatch from PLC (${newValue}); expected ${expectedValue}. Reapplying state.`);
+                    updateMachineRunStatus(carouselId);
                 }
             }
         }
