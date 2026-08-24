@@ -278,6 +278,12 @@ function syncMachineRunStatuses() {
     Object.keys(carousels).forEach(carouselId => updateMachineRunStatus(Number(carouselId)));
 }
 
+function syncToleranceStatuses() {
+    Object.keys(carousels).forEach(carouselId => {
+        writeTolerancesToOpc(Number(carouselId), carousels[carouselId].data);
+    });
+}
+
 function emitSqlStatus() {
     const connected = weighingPool && weighingPool.connected;
     const config = getMssqlConfig();
@@ -604,16 +610,16 @@ async function writeTolerancesToOpc(carouselId, data) {
         const prev = lastWrittenTolerances[cacheKey] || {};
 
         if (prev.tolMin !== tolMin) {
-            await opcUaManager.writeToNodesBySignalType('TOLERANCE_MIN', carouselId, tolMin);
-            prev.tolMin = tolMin;
+            const result = await opcUaManager.writeToNodesBySignalType('TOLERANCE_MIN', carouselId, tolMin);
+            if (result.some(item => item.success)) prev.tolMin = tolMin;
         }
         if (prev.tolMax !== tolMax) {
-            await opcUaManager.writeToNodesBySignalType('TOLERANCE_MAX', carouselId, tolMax);
-            prev.tolMax = tolMax;
+            const result = await opcUaManager.writeToNodesBySignalType('TOLERANCE_MAX', carouselId, tolMax);
+            if (result.some(item => item.success)) prev.tolMax = tolMax;
         }
         if (prev.deviationMin !== deviationToleranceMin) {
-            await opcUaManager.writeToNodesBySignalType('DEVIATION_TOLERANCE_MIN', carouselId, deviationToleranceMin);
-            prev.deviationMin = deviationToleranceMin;
+            const result = await opcUaManager.writeToNodesBySignalType('DEVIATION_TOLERANCE_MIN', carouselId, deviationToleranceMin);
+            if (result.some(item => item.success)) prev.deviationMin = deviationToleranceMin;
         }
 
         lastWrittenTolerances[cacheKey] = prev;
@@ -724,6 +730,7 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
     // current carousel states must be pushed back to the PLC.
     if (event === 'opcua-status' && data && data.connected) {
         syncMachineRunStatuses();
+        syncToleranceStatuses();
         return;
     }
 
