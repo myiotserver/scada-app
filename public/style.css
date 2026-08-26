@@ -2800,8 +2800,14 @@ html[data-theme="light"] .history-table thead th {
 /* ============================================================
    SYSTEM LOG VIEW
    ============================================================ */
+#view-logs {
+    height: 100%;
+    overflow: hidden;
+}
+
 .log-container {
     flex: 1;
+    min-height: 0;
     background: #0a0f1a;
     border: 1px solid var(--border-card);
     border-radius: var(--radius-md);
@@ -2810,8 +2816,6 @@ html[data-theme="light"] .history-table thead th {
     font-family: var(--font-digital);
     font-size: 0.8rem;
     line-height: 1.7;
-    min-height: 300px;
-    max-height: calc(100vh - 200px);
 }
 
 .log-entry {
@@ -2910,4 +2914,90 @@ html[data-theme="light"] .history-table thead th {
 
 [data-theme="light"] .log-level-error {
     background: rgba(239, 68, 68, 0.06);
+}
+
+/* Alarm running text ticker */
+.alarm-ticker {
+    display: flex;
+    align-items: stretch;
+    height: 38px;
+    flex-shrink: 0;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-subtle);
+    overflow: hidden;
+}
+
+.alarm-ticker-label {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px;
+    background: var(--accent-danger);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    z-index: 2;
+}
+
+.alarm-ticker-label i {
+    font-size: 1rem;
+}
+
+.alarm-ticker-viewport {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding-left: 24px;
+}
+
+.alarm-ticker-track {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    will-change: transform;
+    animation: alarm-marquee 120s linear infinite;
+}
+
+.alarm-ticker-track.no-scroll {
+    animation: none;
+}
+
+@keyframes alarm-marquee {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+.alarm-item {
+    font-size: 0.85rem;
+    font-weight: 500;
+    white-space: nowrap;
+    margin-right: 48px;
+}
+
+.alarm-item .alarm-src {
+    font-weight: 700;
+    margin-right: 6px;
+}
+
+.alarm-item .alarm-time {
+    color: var(--text-muted);
+    margin-right: 8px;
+}
+
+.alarm-item.alarm-warn {
+    color: var(--accent-warning);
+}
+
+.alarm-item.alarm-error {
+    color: var(--accent-danger);
 }

@@ -195,10 +195,12 @@ function initApp() {
     // System log real-time
     socket.on('system-log', (entry) => {
         appendLogEntry(entry);
+        addAlarmEntry(entry);
     });
 
     // Load initial settings
     loadSettings();
+    loadAlarmTicker();
 
     // Initial SQL status load - wait a bit for socket to be ready
     setTimeout(() => pollSqlStatus(), 500);
@@ -1788,6 +1790,59 @@ function loadHistory() {
 // ==========================================================
 
 let allLogEntries = [];
+const MAX_ALARM_ENTRIES = 30;
+let alarmEntries = [];
+
+function addAlarmEntry(entry) {
+    if (!entry) return;
+    if (entry.level !== 'WARN' && entry.level !== 'ERROR') return;
+    alarmEntries.push(entry);
+    if (alarmEntries.length > MAX_ALARM_ENTRIES) alarmEntries.shift();
+    renderAlarmTicker();
+}
+
+function renderAlarmTicker() {
+    const ticker = document.getElementById('alarm-ticker');
+    const track = document.getElementById('alarm-ticker-track');
+    if (!ticker || !track) return;
+    if (alarmEntries.length === 0) {
+        ticker.style.display = 'none';
+        return;
+    }
+    ticker.style.display = 'flex';
+
+    const itemHtml = alarmEntries.map(e => {
+        const cls = e.level === 'ERROR' ? 'alarm-error' : 'alarm-warn';
+        const ts = new Date(e.timestamp).toLocaleTimeString('en-GB', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        return '<span class="alarm-item ' + cls + '">' +
+            '<span class="alarm-src">[' + escapeHtml(e.source || 'SYSTEM') + ']</span>' +
+            '<span class="alarm-time">' + ts + '</span>' +
+            escapeHtml(e.message || '') +
+            '</span>';
+    }).join('');
+
+    // Duplikasi konten agar loop translateX(-50%) seamless
+    track.innerHTML = itemHtml + itemHtml;
+
+    // Durasi proporsional jumlah item supaya kecepatan scroll konsisten
+    const duration = Math.max(80, alarmEntries.length * 20);
+    track.style.animationDuration = duration + 's';
+}
+
+async function loadAlarmTicker() {
+    try {
+        const token = localStorage.getItem('scada_token') || (currentUser && currentUser.accessToken);
+        const res = await fetch('/api/logs', { headers: { 'x-access-token': token } });
+        const data = await res.json();
+        if (!Array.isArray(data)) return;
+        alarmEntries = data
+            .filter(e => e.level === 'WARN' || e.level === 'ERROR')
+            .slice(-MAX_ALARM_ENTRIES);
+        renderAlarmTicker();
+    } catch (e) {
+        console.error('Failed to load alarm ticker', e);
+    }
+}
 
 async function loadLogs() {
     const container = document.getElementById('log-container');
