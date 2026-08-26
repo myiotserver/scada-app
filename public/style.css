@@ -2923,7 +2923,7 @@ html[data-theme="light"] .history-table thead th {
     height: 38px;
     flex-shrink: 0;
     background: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-subtle);
+    border-top: 1px solid var(--border-subtle);
     overflow: hidden;
 }
 
@@ -2960,7 +2960,7 @@ html[data-theme="light"] .history-table thead th {
     align-items: center;
     white-space: nowrap;
     will-change: transform;
-    animation: alarm-marquee 120s linear infinite;
+    animation: alarm-marquee 480s linear infinite;
 }
 
 .alarm-ticker-track.no-scroll {
