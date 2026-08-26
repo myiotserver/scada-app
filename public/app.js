@@ -1825,7 +1825,8 @@ function renderAlarmTicker() {
     track.innerHTML = itemHtml + itemHtml;
 
     // Durasi proporsional jumlah item supaya kecepatan scroll konsisten
-    const duration = Math.max(80, alarmEntries.length * 20);
+    // (diperlambat 4x dari nilai awal 80s / 20s-per-item)
+    const duration = Math.max(320, alarmEntries.length * 80);
     track.style.animationDuration = duration + 's';
 }
 
