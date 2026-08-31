@@ -612,6 +612,12 @@ function scheduleZeroingCapture(carouselId) {
  * Writes TOLERANCE_MIN, TOLERANCE_MAX, and DEVIATION_TOLERANCE_MIN for a given carousel.
  * Skips the write if values haven't changed since the last successful write.
  *
+ * Each write is followed by a read-back verification inside
+ * opcUaManager.writeToNodesBySignalType() — if the PLC tag does not actually
+ * reflect the written value, the result is reported as failed (success=false)
+ * so the local cache is NOT updated. This guarantees the next periodic sync
+ * (every 5s) or reconnect will retry the write until it is confirmed on the PLC.
+ *
  * DEVIATION_TOLERANCE_MIN uses the manual threshold from appSettings.deviationThresholds
  * if configured, otherwise falls back to (toleranceMax - toleranceMin) / 2.
  */
@@ -638,21 +644,65 @@ async function writeTolerancesToOpc(carouselId, data, force = false) {
 
         if (force || prev.tolMin !== tolMin) {
             const result = await opcUaManager.writeToNodesBySignalType('TOLERANCE_MIN', carouselId, tolMin);
-            if (result.some(item => item.success)) prev.tolMin = tolMin;
+            if (result.length > 0 && result.every(item => item.success)) {
+                prev.tolMin = tolMin;
+            } else if (result.length > 0) {
+                logger.warn('OPC', `CR${carouselId} TOLERANCE_MIN write NOT confirmed on PLC — will retry next cycle.`);
+                notifyToleranceWriteFailure(carouselId, 'TOLERANCE_MIN', result);
+            }
         }
         if (force || prev.tolMax !== tolMax) {
             const result = await opcUaManager.writeToNodesBySignalType('TOLERANCE_MAX', carouselId, tolMax);
-            if (result.some(item => item.success)) prev.tolMax = tolMax;
+            if (result.length > 0 && result.every(item => item.success)) {
+                prev.tolMax = tolMax;
+            } else if (result.length > 0) {
+                logger.warn('OPC', `CR${carouselId} TOLERANCE_MAX write NOT confirmed on PLC — will retry next cycle.`);
+                notifyToleranceWriteFailure(carouselId, 'TOLERANCE_MAX', result);
+            }
         }
         if (force || prev.deviationMin !== deviationToleranceMin) {
             const result = await opcUaManager.writeToNodesBySignalType('DEVIATION_TOLERANCE_MIN', carouselId, deviationToleranceMin);
-            if (result.some(item => item.success)) prev.deviationMin = deviationToleranceMin;
+            if (result.length > 0 && result.every(item => item.success)) {
+                prev.deviationMin = deviationToleranceMin;
+            } else if (result.length > 0) {
+                logger.warn('OPC', `CR${carouselId} DEVIATION_TOLERANCE_MIN write NOT confirmed on PLC — will retry next cycle.`);
+                notifyToleranceWriteFailure(carouselId, 'DEVIATION_TOLERANCE_MIN', result);
+            }
         }
 
         lastWrittenTolerances[cacheKey] = prev;
     } catch (err) {
         logger.error('OPC', `Error writing tolerances to OPC for CR${carouselId}: ${err.message}`);
     }
+}
+
+/** Debounce map to avoid spamming alerts for repeated verification failures. */
+const lastToleranceWriteAlertTs = new Map();
+const TOLERANCE_WRITE_ALERT_DEBOUNCE_MS = 30000;
+
+function notifyToleranceWriteFailure(carouselId, signalType, results) {
+    const key = `CR${carouselId}|${signalType}`;
+    const now = Date.now();
+    const lastTs = lastToleranceWriteAlertTs.get(key) || 0;
+    if (now - lastTs < TOLERANCE_WRITE_ALERT_DEBOUNCE_MS) return;
+    lastToleranceWriteAlertTs.set(key, now);
+
+    const reasons = results.map(r => r.error).filter(Boolean).join('; ');
+    alertListeners.forEach(cb => {
+        try {
+            cb({
+                type: 'opc_write_verification_failed',
+                level: 'warning',
+                message: `Penulisan ${signalType} ke PLC untuk CR${carouselId} tidak terverifikasi (nilai di PLC tidak sesuai). Sistem akan mencoba lagi otomatis.`,
+                carousel: `CR${carouselId}`,
+                signalType,
+                reason: reasons,
+                ts: new Date().toISOString()
+            });
+        } catch (err) {
+            console.error('[Alert] Failed to deliver OPC write verification alert:', err.message);
+        }
+    });
 }
 
 // Connect to WEIGHING DB (Configuration Data)

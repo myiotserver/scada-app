@@ -742,12 +742,69 @@ class OpcUaManager {
             });
 
             if (statusCode.name === 'Good') {
-                return { success: true };
+                return { success: true, writtenValue: variantValue.value, dataType: resolvedDataType };
             } else {
                 return { error: statusCode.name };
             }
         } catch (err) {
             return { error: `Write failed: ${err.message}` };
+        }
+    }
+
+    /**
+     * Read a node's current value back from the PLC and compare it against
+     * the value we believe we just wrote. This closes the gap where the
+     * OPC UA write() call returns StatusCode 'Good' (meaning the server
+     * *accepted* the request) but the underlying PLC tag never actually
+     * updated (e.g. write-protected tag, wrong node mapping, PLC busy,
+     * scan-cycle timing, etc.).
+     *
+     * @param {string} nodeId
+     * @param {number|boolean} expectedValue - the raw value expected on the wire (post-scale for tolerances)
+     * @param {boolean} isBoolean
+     * @returns {Promise<{verified: boolean, actualValue?: any, reason?: string}>}
+     */
+    async _verifyWrite(nodeId, expectedValue, isBoolean = false) {
+        if (!this.session) return { verified: false, reason: 'Not connected' };
+        try {
+            const dataValue = await this.session.read({
+                nodeId,
+                attributeId: AttributeIds.Value
+            });
+
+            if (!dataValue || !dataValue.statusCode || dataValue.statusCode.name !== 'Good') {
+                return { verified: false, reason: `Read-back status: ${dataValue?.statusCode?.name || 'unknown'}` };
+            }
+
+            const actual = dataValue.value ? dataValue.value.value : undefined;
+
+            if (isBoolean) {
+                const actualBool = Boolean(actual);
+                const expectedBool = Boolean(expectedValue);
+                if (actualBool !== expectedBool) {
+                    return { verified: false, actualValue: actualBool, reason: `Expected ${expectedBool}, read back ${actualBool}` };
+                }
+                return { verified: true, actualValue: actualBool };
+            }
+
+            const actualNum = Number(actual);
+            const expectedNum = Number(expectedValue);
+            if (!Number.isFinite(actualNum) || !Number.isFinite(expectedNum)) {
+                return { verified: false, actualValue: actual, reason: `Non-numeric comparison: actual=${actual} expected=${expectedValue}` };
+            }
+
+            // Allow small tolerance for float rounding on the wire (e.g. Real/Float32 tags)
+            const tolerance = Math.max(Math.abs(expectedNum) * 0.001, 0.01);
+            if (Math.abs(actualNum - expectedNum) > tolerance) {
+                return {
+                    verified: false,
+                    actualValue: actualNum,
+                    reason: `Expected ${expectedNum}, read back ${actualNum} (diff ${Math.abs(actualNum - expectedNum).toFixed(4)})`
+                };
+            }
+            return { verified: true, actualValue: actualNum };
+        } catch (err) {
+            return { verified: false, reason: `Read-back error: ${err.message}` };
         }
     }
 
@@ -797,10 +854,28 @@ class OpcUaManager {
                 // a readable current value before accepting a write.
                 result = await this.writeNode(node.nodeId, value, 'Int16');
             }
+
+            // --- Read-back verification ---
+            // A 'Good' write status only confirms the OPC server accepted the
+            // request; it does NOT guarantee the PLC tag actually changed.
+            // Re-read the node and compare against what we intended to write.
+            if (result.success) {
+                const expectedOnWire = isMachineRun ? (value === 1) : rawValue;
+                const verification = await this._verifyWrite(node.nodeId, expectedOnWire, isMachineRun);
+                result.verified = verification.verified;
+                result.actualValue = verification.actualValue;
+                if (!verification.verified) {
+                    // Downgrade to failure so callers (and their caches) do not
+                    // treat this as a confirmed write.
+                    result.success = false;
+                    result.error = `Write accepted but read-back mismatch: ${verification.reason}`;
+                }
+            }
+
             results.push({ nodeId: node.nodeId, name: node.name, ...result });
             if (result.success) {
                 const valueInfo = rawValue === value ? String(value) : `${value} (raw ${rawValue})`;
-                logger.info('OPC', `Wrote ${signalType}=${valueInfo} to ${node.name} (${node.nodeId})`);
+                logger.info('OPC', `Wrote ${signalType}=${valueInfo} to ${node.name} (${node.nodeId}) — verified OK`);
             } else {
                 logger.error('OPC', `Failed writing ${signalType}=${value} to ${node.name}: ${result.error}`);
             }
