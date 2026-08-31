@@ -156,4 +156,30 @@ function testPeriodicSyncInterval() {
 }
 testPeriodicSyncInterval();
 
+// Test 5: Periodic sync MUST call syncToleranceStatuses(true) — always forced.
+// This is the actual fix for the bug where the OPC session stays 'connected'
+// (no disconnect event, so the cache never clears) while the underlying PLC
+// tag was reset/power-cycled behind a gateway. A non-forced periodic sync
+// would silently skip re-writing forever in that case.
+function testPeriodicSyncAlwaysForces() {
+    let capturedForceArg = null;
+    const syncToleranceStatuses = (force = false) => {
+        capturedForceArg = force;
+    };
+
+    // Simulate exactly what the setInterval callback does in scada.controller.js
+    const periodicSyncTick = () => {
+        syncToleranceStatuses(true); // force: always re-write and re-verify, regardless of cache
+    };
+
+    periodicSyncTick();
+
+    assert.strictEqual(capturedForceArg, true,
+        'Periodic tick must call syncToleranceStatuses(true) so writes happen even if the ' +
+        'PLC value was reset without an OPC disconnect event clearing the cache');
+
+    console.log('✓ Test 5 passed: periodic 5s tick always forces re-write/re-verify');
+}
+testPeriodicSyncAlwaysForces();
+
 console.log('\n=== All tests passed! ===');

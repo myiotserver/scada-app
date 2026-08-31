@@ -285,13 +285,24 @@ function syncToleranceStatuses(force = false) {
 }
 
 // --- Periodic Tolerance Sync ---
-// Write tolerance values to PLC every 5 seconds to guard against manual
-// changes in the PLC or config updates that occur while OPC is already connected.
-// The cache optimization in writeTolerancesToOpc() ensures this is cheap
-// when nothing has changed (no actual OPC write happens unless values differ).
+// Write tolerance values to PLC every 5 seconds, ALWAYS forced.
+//
+// Why force=true and not force=false:
+// The cache (lastWrittenTolerances) only reflects what SCADA believes it
+// last wrote successfully. It says NOTHING about whether the PLC tag still
+// holds that value right now. In the field, the PLC panel can be power-
+// cycled (or the tag reset by another program) WITHOUT the OPC-UA session
+// ever dropping — e.g. when the write happens through a gateway/soft-PLC
+// that stays connected even while the physical device behind it resets.
+// In that scenario there is no 'disconnect' event to clear the cache, so a
+// non-forced periodic sync silently skips the write forever because the
+// cache still matches the SCADA-side config value. Forcing every 5s
+// guarantees the PLC value is re-asserted regardless of cache state, and
+// each write is independently read-back verified inside
+// writeToNodesBySignalType() — so this is the real self-healing guarantee.
 const TOLERANCE_SYNC_INTERVAL_MS = 5000;
 const toleranceSyncInterval = setInterval(() => {
-    syncToleranceStatuses(false); // non-force: only writes if values changed
+    syncToleranceStatuses(true); // force: always re-write and re-verify, regardless of cache
 }, TOLERANCE_SYNC_INTERVAL_MS);
 
 /**
