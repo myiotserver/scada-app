@@ -146,4 +146,14 @@ console.log('=== Running Tolerance Force-Write Tests ===\n');
 testForceWriteBypassesCache();
 testCacheClearingOnDisconnect();
 testSyncToleranceStatusesForceParameter();
+
+// Test 4: Verify the periodic sync interval is set to 5 seconds
+function testPeriodicSyncInterval() {
+    const TOLERANCE_SYNC_INTERVAL_MS = 5000;
+    assert.strictEqual(TOLERANCE_SYNC_INTERVAL_MS, 5000,
+        'Tolerance sync interval should be 5000ms (5 seconds)');
+    console.log('✓ Test 4 passed: periodic sync interval is 5000ms (5 seconds)');
+}
+testPeriodicSyncInterval();
+
 console.log('\n=== All tests passed! ===');

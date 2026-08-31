@@ -284,6 +284,16 @@ function syncToleranceStatuses(force = false) {
     });
 }
 
+// --- Periodic Tolerance Sync ---
+// Write tolerance values to PLC every 5 seconds to guard against manual
+// changes in the PLC or config updates that occur while OPC is already connected.
+// The cache optimization in writeTolerancesToOpc() ensures this is cheap
+// when nothing has changed (no actual OPC write happens unless values differ).
+const TOLERANCE_SYNC_INTERVAL_MS = 5000;
+const toleranceSyncInterval = setInterval(() => {
+    syncToleranceStatuses(false); // non-force: only writes if values changed
+}, TOLERANCE_SYNC_INTERVAL_MS);
+
 /**
  * Write the interlock (metal detector) toggle state to the OPC CAROUSEL_INTERLOCK
  * node for a given carousel. SCADA is the source of truth (dashboard toggle),
