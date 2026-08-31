@@ -278,9 +278,9 @@ function syncMachineRunStatuses() {
     Object.keys(carousels).forEach(carouselId => updateMachineRunStatus(Number(carouselId)));
 }
 
-function syncToleranceStatuses() {
+function syncToleranceStatuses(force = false) {
     Object.keys(carousels).forEach(carouselId => {
-        writeTolerancesToOpc(Number(carouselId), carousels[carouselId].data);
+        writeTolerancesToOpc(Number(carouselId), carousels[carouselId].data, force);
     });
 }
 
@@ -605,7 +605,7 @@ function scheduleZeroingCapture(carouselId) {
  * DEVIATION_TOLERANCE_MIN uses the manual threshold from appSettings.deviationThresholds
  * if configured, otherwise falls back to (toleranceMax - toleranceMin) / 2.
  */
-async function writeTolerancesToOpc(carouselId, data) {
+async function writeTolerancesToOpc(carouselId, data, force = false) {
     try {
         const opcStatus = opcUaManager.getStatus();
         if (!opcStatus.connected) return;
@@ -622,18 +622,19 @@ async function writeTolerancesToOpc(carouselId, data) {
             : parseFloat(((tolMax - tolMin) / 2).toFixed(4));
 
         // Cache key per carousel — only write if values actually changed
+        // UNLESS force=true (e.g., after OPC reconnect, PLC values are unknown/reset)
         const cacheKey = String(carouselId);
         const prev = lastWrittenTolerances[cacheKey] || {};
 
-        if (prev.tolMin !== tolMin) {
+        if (force || prev.tolMin !== tolMin) {
             const result = await opcUaManager.writeToNodesBySignalType('TOLERANCE_MIN', carouselId, tolMin);
             if (result.some(item => item.success)) prev.tolMin = tolMin;
         }
-        if (prev.tolMax !== tolMax) {
+        if (force || prev.tolMax !== tolMax) {
             const result = await opcUaManager.writeToNodesBySignalType('TOLERANCE_MAX', carouselId, tolMax);
             if (result.some(item => item.success)) prev.tolMax = tolMax;
         }
-        if (prev.deviationMin !== deviationToleranceMin) {
+        if (force || prev.deviationMin !== deviationToleranceMin) {
             const result = await opcUaManager.writeToNodesBySignalType('DEVIATION_TOLERANCE_MIN', carouselId, deviationToleranceMin);
             if (result.some(item => item.success)) prev.deviationMin = deviationToleranceMin;
         }
@@ -744,9 +745,17 @@ function getOpcNodeScale(tagName) {
 opcUaManager.subscribe('scada-controller', (event, data) => {
     // A successful OPC connection/reconnection is the point at which all
     // current carousel states must be pushed back to the PLC.
+    if (event === 'opcua-status' && data && !data.connected) {
+        // PLC may have been powered off — clear tolerance cache so that on
+        // next reconnect we force-write fresh tolerance values.
+        Object.keys(lastWrittenTolerances).forEach(key => {
+            delete lastWrittenTolerances[key];
+        });
+    }
+
     if (event === 'opcua-status' && data && data.connected) {
         syncMachineRunStatuses();
-        syncToleranceStatuses();
+        syncToleranceStatuses(true);  // Force write on (re)connect — PLC may have reset values
         syncInterlockStatuses();
         return;
     }
