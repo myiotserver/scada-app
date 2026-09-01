@@ -191,6 +191,12 @@ app.get('/api/logs', [authJwt.verifyToken], (req, res) => {
     res.json(logger.getHistory(filters));
 });
 
+// Clear alarm entries (WARN/ERROR) from the log buffer manually
+app.post('/api/logs/clear-alarms', [authJwt.verifyToken], (req, res) => {
+    const removed = logger.clearAlarms();
+    res.json({ success: true, removed });
+});
+
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
     logger.info('SYSTEM', `Server listening on port ${PORT}`);

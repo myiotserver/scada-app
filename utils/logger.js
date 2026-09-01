@@ -60,6 +60,14 @@ class Logger {
         return logs;
     }
 
+    // Remove all WARN/ERROR entries from the buffer (manual alarm reset).
+    // Returns the number of entries removed. INFO entries are untouched.
+    clearAlarms() {
+        const before = this.buffer.length;
+        this.buffer = this.buffer.filter(l => l.level !== 'WARN' && l.level !== 'ERROR');
+        return before - this.buffer.length;
+    }
+
     subscribe(id, callback) {
         this.subscribers[id] = callback;
     }

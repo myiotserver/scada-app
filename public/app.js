@@ -1850,6 +1850,23 @@ async function loadAlarmTicker() {
     }
 }
 
+// Manual alarm reset: clear local alarm buffer AND server log buffer.
+async function resetAlarms() {
+    // Clear local buffer immediately so the ticker hides without waiting on network
+    alarmEntries = [];
+    renderAlarmTicker();
+
+    try {
+        const token = localStorage.getItem('scada_token') || (currentUser && currentUser.accessToken);
+        await fetch('/api/logs/clear-alarms', {
+            method: 'POST',
+            headers: { 'x-access-token': token }
+        });
+    } catch (e) {
+        console.error('Failed to clear alarm buffer on server', e);
+    }
+}
+
 async function loadLogs() {
     const container = document.getElementById('log-container');
     if (!container) return;
