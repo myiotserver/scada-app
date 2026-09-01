@@ -143,6 +143,9 @@ function initApp() {
     document.getElementById('login-view').style.display = 'none';
     document.querySelector('.app-wrapper').style.display = 'flex';
 
+    // Apply role-based nav menu visibility immediately on login (and on reload via checkAuth)
+    updateNavVisibility();
+
     if (currentUser && currentUser.username) {
         document.getElementById('current-user-display').innerText = currentUser.username;
     }
@@ -405,41 +408,43 @@ function navigate(view) {
         loadLogs();
     }
 
-    // Update Nav Active State
-    document.querySelectorAll('.nav-btn').forEach((btn, idx) => {
-        btn.classList.remove('active');
-        const views = ['home', 'config', 'users', 'opcua', 'history', 'logs'];
+    // Apply role-based visibility to nav buttons (also called on login via initApp)
+        updateNavVisibility();
 
+        // Update Nav Active State
+        document.querySelectorAll('.nav-btn').forEach((btn, idx) => {
+            btn.classList.remove('active');
+            const views = ['home', 'config', 'users', 'opcua', 'history', 'logs'];
+            if (views[idx] === view) btn.classList.add('active');
+        });
+    }
 
-        // Hide buttons for restricted roles logic:
-        // Guest: Hide all except Home
-        // User: Hide Users & OPCUA
-        // Admin: Show all
-
+    // Hide/show nav buttons based on the logged-in user's roles.
+    // Extracted from navigate() so it also runs once on login (fixes icons all showing
+    // for guest/operator until the user clicks a nav item).
+    function updateNavVisibility() {
         const isGuest = currentUser && currentUser.roles && currentUser.roles.includes('ROLE_GUEST');
         const isUser = currentUser && currentUser.roles && currentUser.roles.includes('ROLE_USER');
         const isAdmin = currentUser && currentUser.roles && currentUser.roles.includes('ROLE_ADMIN');
 
-        // Apply display logic to nav buttons
-        if (idx === 1) { // Config
-            btn.style.display = (isAdmin || isUser) ? 'flex' : 'none';
-        }
-        if (idx === 2) { // Users
-            btn.style.display = (isAdmin) ? 'flex' : 'none';
-        }
-        if (idx === 3) { // OPCUA
-            btn.style.display = (isAdmin) ? 'flex' : 'none';
-        }
-        if (idx === 4) { // History
-            btn.style.display = (isAdmin || isUser || isGuest) ? 'flex' : 'none';
-        }
-        if (idx === 5) { // Logs
-            btn.style.display = (isAdmin || isUser) ? 'flex' : 'none';
-        }
-
-        if (views[idx] === view) btn.classList.add('active');
-    });
-}
+        document.querySelectorAll('.nav-btn').forEach((btn, idx) => {
+            if (idx === 1) { // Config
+                btn.style.display = (isAdmin || isUser) ? 'flex' : 'none';
+            }
+            if (idx === 2) { // Users
+                btn.style.display = (isAdmin) ? 'flex' : 'none';
+            }
+            if (idx === 3) { // OPCUA
+                btn.style.display = (isAdmin) ? 'flex' : 'none';
+            }
+            if (idx === 4) { // History
+                btn.style.display = (isAdmin || isUser || isGuest) ? 'flex' : 'none';
+            }
+            if (idx === 5) { // Logs
+                btn.style.display = (isAdmin || isUser) ? 'flex' : 'none';
+            }
+        });
+    }
 
 
 // --- Settings Logic ---
