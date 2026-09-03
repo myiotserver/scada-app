@@ -457,9 +457,10 @@ async function loadSettings() {
         if (res.ok) {
             appSettings = await res.json();
             renderSettings();
-        } else {
-            // Handle 403 or other errors
-            if (res.status === 403) alert("Access Denied to Settings");
+        } else if (res.status === 403) {
+            // Non-admin users: silently skip. The settings view itself is
+            // already hidden for them, so no alert needed.
+            console.warn('[SCADA] Settings access denied (non-admin user)');
         }
     } catch (e) {
         console.error("Failed to load settings", e);
