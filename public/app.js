@@ -2,15 +2,560 @@
  * SCADA Unified - Carousel Logic
  */
 
+// ==========================================================================
+// BILINGUAL TRANSLATION SYSTEM (ID / EN)
+// ==========================================================================
+const translations = {
+    id: {
+        // General & Header
+        sriboga_tagline: "PIONEER IN FLOUR INNOVATION",
+        header_title: "DASHBOARD PENIMBANGAN",
+        theme_toggle_title: "Ganti tema tampilan",
+        nav_home: "Beranda",
+        nav_config: "Konfigurasi",
+        nav_users: "Pengguna",
+        nav_opcua: "OPC",
+        nav_history: "Riwayat",
+        nav_logs: "Log Sistem",
+        nav_audit: "Audit Trail",
+        nav_logout: "Keluar",
+        login_as: "Login sebagai {user}",
+        btn_signin: "Masuk",
+
+        // Home View / Carousel Cards
+        updating_data: "Memperbarui Data...",
+        carousel_n: "Carousel {n}",
+        card_product_id: "ID Produk",
+        card_packing_order: "Order Kemasan",
+        card_package: "Kemasan",
+        card_tolerance: "Toleransi",
+        card_pack_weight: "Berat Kemasan",
+        card_gross_weight: "Berat Bruto",
+        card_counter_pcs: "Hitungan: {n} Pcs",
+        card_target_pcs: "Target: {n} Pcs",
+        card_stats_tooltip: "Statistik berdasarkan 1 jam produksi terakhir",
+        card_min_1h: "Min (1j)",
+        card_nett: "Netto",
+        card_avg_1h: "Rata-rata (1j)",
+        card_btn_update: "Perbarui Data",
+        card_waiting_order: "Menunggu Order Kemasan",
+
+        // Config View
+        interlock_panel_title: "Underweight Interlock Metal Detector",
+        sql_panel_title: "Pengaturan SQL Server",
+        checking: "MEMERIKSA...",
+        lbl_server: "Server :",
+        lbl_port: "Port :",
+        lbl_uid: "UID :",
+        lbl_pass: "PASS :",
+        lbl_db: "Database :",
+        lbl_table_zero: "Tabel Zeroing :",
+        lbl_table_weight: "Tabel Bobot :",
+        lbl_table_preset: "Tabel Preset Data :",
+        lbl_auto_reconnect: "Auto-Reconnect :",
+        btn_save_settings: "SIMPAN PENGATURAN",
+        dev_min_label: "Dev.Min :",
+        normal_label: "Normal",
+        interlock_label: "Interlock",
+        admin_only_interlock: "Hanya admin yang dapat mengubah konfigurasi interlock.",
+        admin_only_deviation: "Hanya admin yang dapat mengubah batas deviasi.",
+        admin_only_sql: "Hanya admin yang dapat mengubah pengaturan SQL Server.",
+        confirm_interlock_title: "Konfirmasi Interlock Carousel {n}",
+        confirm_interlock_desc: "Apakah Anda yakin ingin mengubah status Underweight Interlock untuk <strong>Carousel {n}</strong> menjadi {status}?",
+        confirm_deviation_title: "Konfirmasi Deviasi Minimum",
+        confirm_deviation_desc: "Apakah Anda yakin ingin mengubah batas deviasi minimum untuk <strong>Carousel {n}</strong> dari <strong>{oldVal} Kg</strong> menjadi <strong style=\"color:#2563eb;\">{newVal} Kg</strong>?",
+        confirm_sql_title: "Konfirmasi Pengaturan SQL Server",
+        confirm_sql_desc: "Apakah Anda yakin ingin menyimpan konfigurasi database <strong>SQL Server</strong>?",
+        confirm_sql_diff_title: "Apakah Anda yakin ingin menyimpan perubahan konfigurasi <strong>SQL Server</strong> berikut?",
+        status_on: "AKTIF (ON)",
+        status_off: "NONAKTIF (OFF)",
+
+        // Users View
+        users_title: "Manajemen Pengguna",
+        btn_add_user: "Tambah Pengguna",
+        th_user_id: "ID",
+        th_user_name: "Username",
+        th_user_roles: "Peran (Roles)",
+        th_user_actions: "Tindakan",
+        btn_edit: "Ubah",
+        btn_delete: "Hapus",
+        confirm_delete_user: "Apakah Anda yakin ingin menghapus pengguna ini?",
+        user_updated_success: "User berhasil diperbarui",
+        user_created_success: "User berhasil dibuat",
+
+        // OPC-UA View
+        opcua_conn_title: "Koneksi OPC-UA",
+        lbl_endpoint: "URL Endpoint :",
+        lbl_security: "Keamanan :",
+        lbl_policy: "Kebijakan :",
+        lbl_publish: "Publish (ms) :",
+        lbl_sampling: "Sample (ms) :",
+        lbl_opcua_user: "Username :",
+        lbl_opcua_pass: "Password :",
+        lbl_opcua_autoconnect: "Auto-Connect :",
+        btn_opcua_save: "SIMPAN",
+        btn_opcua_connect: "HUBUNGKAN",
+        btn_opcua_disconnect: "PUTUSKAN",
+        opcua_tags_title: "Daftar Tag Dipantau",
+        placeholder_tag_name: "Nama Tag",
+        placeholder_scale: "Skala",
+        placeholder_desc: "Deskripsi",
+        btn_add_node: "Tambah Node",
+        th_opc_no: "#",
+        th_opc_nodeid: "Node ID",
+        th_opc_name: "Nama",
+        th_opc_machine: "Mesin",
+        th_opc_signal: "Tipe Sinyal",
+        th_opc_scale: "Skala",
+        th_opc_desc: "Deskripsi",
+        th_opc_live: "Nilai Live",
+        th_opc_actions: "Tindakan",
+        opt_global: "Global",
+        no_nodes_configured: "Tidak ada node yang dikonfigurasi",
+
+        // History View
+        history_title: "Riwayat Penimbangan",
+        history_subtitle: "Memuat…",
+        lbl_carousel: "Carousel",
+        opt_all: "Semua",
+        lbl_refresh_rate: "Kecepatan Refresh",
+        opt_off: "Mati",
+        btn_refresh: "Segarkan",
+        th_time: "Waktu",
+        th_carousel: "Carousel",
+        th_product: "Produk",
+        th_target: "Target",
+        th_counter: "Hitungan",
+        th_gross: "Bruto",
+        th_nett: "Netto",
+        th_status: "Status",
+        loading: "Memuat...",
+        lbl_rows: "Baris",
+        btn_first_page: "Halaman pertama",
+        btn_prev: "Sebelumnya",
+        btn_next: "Selanjutnya",
+        btn_last_page: "Halaman terakhir",
+        no_records_found: "Data tidak ditemukan",
+        no_records: "Tidak ada data",
+        history_subtitle_text: "{count} data · {size} per halaman · {pages} halaman",
+        history_rows_range: "Baris {start}–{end} dari {total}",
+
+        // System Log View
+        syslog_title: "Log Sistem",
+        syslog_subtitle: "Peristiwa & diagnostik sistem real-time",
+        lbl_level: "Tingkat",
+        lbl_source: "Sumber",
+        btn_clear: "Bersihkan",
+        log_waiting: "Menunggu entri log...",
+
+        // Activity Tracking & Audit Trail View
+        audit_title: "Pelacakan Aktivitas & Audit Trail",
+        audit_subtitle: "Log lengkap aktivitas pengguna, kontrol carousel, interlock, dan perubahan konfigurasi sistem.",
+        btn_export_csv: "Ekspor CSV",
+        audit_stat_total: "Total Aktivitas Hari Ini",
+        audit_stat_auth: "Login & Otentikasi",
+        audit_stat_control: "Kontrol Carousel / Reset",
+        audit_stat_settings: "Perubahan Pengaturan",
+        lbl_category: "Kategori",
+        opt_all_categories: "Semua Kategori",
+        opt_cat_auth: "Otentikasi (Login/Logout)",
+        opt_cat_carousel: "Kontrol Carousel & Reset",
+        opt_cat_settings: "Pengaturan & Interlock",
+        opt_cat_usermgmt: "Manajemen Pengguna",
+        opt_cat_opcua: "Tag OPC-UA & Koneksi",
+        lbl_target_carousel: "Target Carousel",
+        opt_all_targets: "Semua Target",
+        lbl_start_date: "Dari Tanggal",
+        lbl_end_date: "Sampai Tanggal",
+        lbl_search: "Pencarian",
+        placeholder_audit_search: "Cari user, action, detail...",
+        btn_reset: "Atur Ulang",
+        th_audit_time: "Waktu (WIB)",
+        th_audit_user: "Pengguna",
+        th_audit_category: "Kategori",
+        th_audit_action: "Aktivitas",
+        th_audit_target: "Target",
+        th_audit_details: "Rincian / Perubahan Nilai",
+        th_audit_ip: "Alamat IP",
+        loading_audit: "Memuat data audit trail...",
+        no_audit_activities: "Tidak ada aktivitas yang sesuai dengan filter",
+        audit_load_failed: "Koneksi gagal saat memuat log",
+        page_x_of_y: "Halaman {curr} dari {total}",
+        showing_rows_range: "Menampilkan {start}–{end} dari {total} total log",
+
+        // Alarm Ticker & Footer
+        title_alarm_ack: "Akui alarm (bersihkan buffer PERINGATAN/ERROR)",
+        footer_sensors: "SENSOR",
+        btn_footer_reset: "RESET",
+
+        // Modals
+        modal_control_title: "Kontrol Carousel",
+        modal_current_status: "Status Saat Ini:",
+        btn_run: "JALANKAN",
+        btn_pause: "JEDA",
+        btn_stop: "BERHENTI",
+        modal_add_user_title: "Tambah Pengguna Baru",
+        lbl_username: "Username",
+        lbl_password: "Password",
+        lbl_role: "Peran (Role)",
+        btn_create_user: "Buat Pengguna",
+        modal_edit_user_title: "Ubah Pengguna",
+        lbl_new_password: "Password Baru (kosongkan jika tidak diubah)",
+        btn_save_changes: "Simpan Perubahan",
+        opcua_modal_title: "Ubah Tag OPC-UA",
+        opcua_modal_subtitle: "Perbarui pemetaan node dan metadata tag.",
+        lbl_node_index: "Indeks Node",
+        lbl_node_name: "Nama Tag",
+        lbl_node_id: "Node ID",
+        lbl_node_machine: "Mesin",
+        lbl_node_signal: "Tipe Sinyal",
+        lbl_scale_factor: "Faktor Skala",
+        lbl_description: "Deskripsi",
+        opcua_edit_tip: "Tip: tekan <kbd>Esc</kbd> untuk menutup jendela ini.",
+        btn_cancel: "Batal",
+        cfg_confirm_title: "Konfirmasi Perubahan",
+        cfg_confirm_subtitle: "Verifikasi password untuk otorisasi",
+        cfg_confirm_default_desc: "Apakah Anda yakin ingin menyimpan perubahan ini?",
+        lbl_user_password: "Password Pengguna",
+        lbl_user_prefix: "User:",
+        placeholder_password: "Masukkan password Anda...",
+        msg_wrong_password: "Password salah!",
+        btn_confirm_save: "Konfirmasi & Simpan",
+        verifying: "Memverifikasi...",
+        enter_password_prompt: "Silakan masukkan password untuk konfirmasi!"
+    },
+    en: {
+        // General & Header
+        sriboga_tagline: "PIONEER IN FLOUR INNOVATION",
+        header_title: "WEIGHING DASHBOARD",
+        theme_toggle_title: "Switch theme",
+        nav_home: "Home",
+        nav_config: "Config",
+        nav_users: "Users",
+        nav_opcua: "OPC",
+        nav_history: "History",
+        nav_logs: "Logs",
+        nav_audit: "Audit Trail",
+        nav_logout: "Logout",
+        login_as: "Login as {user}",
+        btn_signin: "Sign In",
+
+        // Home View / Carousel Cards
+        updating_data: "Updating Data...",
+        carousel_n: "Carousel {n}",
+        card_product_id: "Product ID",
+        card_packing_order: "Packing Order",
+        card_package: "Package",
+        card_tolerance: "Tolerance",
+        card_pack_weight: "Pack Weight",
+        card_gross_weight: "Gross Weight",
+        card_counter_pcs: "Counter: {n} Pcs",
+        card_target_pcs: "Target: {n} Pcs",
+        card_stats_tooltip: "Statistics based on the last 1 hour of production",
+        card_min_1h: "Min (1h)",
+        card_nett: "Nett",
+        card_avg_1h: "Avg (1h)",
+        card_btn_update: "Update Data",
+        card_waiting_order: "Waiting for Packing Order",
+
+        // Config View
+        interlock_panel_title: "Underweight Interlock Metal Detector",
+        sql_panel_title: "SQL Server Setting",
+        checking: "CHECKING...",
+        lbl_server: "Server :",
+        lbl_port: "Port :",
+        lbl_uid: "UID :",
+        lbl_pass: "PASS :",
+        lbl_db: "Database :",
+        lbl_table_zero: "Table Zeroing :",
+        lbl_table_weight: "Table Weight :",
+        lbl_table_preset: "Table Preset Data :",
+        lbl_auto_reconnect: "Auto-Reconnect :",
+        btn_save_settings: "SAVE SETTINGS",
+        dev_min_label: "Dev.Min :",
+        normal_label: "Normal",
+        interlock_label: "Interlock",
+        admin_only_interlock: "Only admins can change interlock configuration.",
+        admin_only_deviation: "Only admins can change deviation limit.",
+        admin_only_sql: "Only admins can change SQL Server settings.",
+        confirm_interlock_title: "Confirm Carousel {n} Interlock",
+        confirm_interlock_desc: "Are you sure you want to change Underweight Interlock status for <strong>Carousel {n}</strong> to {status}?",
+        confirm_deviation_title: "Confirm Minimum Deviation",
+        confirm_deviation_desc: "Are you sure you want to change minimum deviation limit for <strong>Carousel {n}</strong> from <strong>{oldVal} Kg</strong> to <strong style=\"color:#2563eb;\">{newVal} Kg</strong>?",
+        confirm_sql_title: "Confirm SQL Server Settings",
+        confirm_sql_desc: "Are you sure you want to save <strong>SQL Server</strong> database configuration?",
+        confirm_sql_diff_title: "Are you sure you want to save the following <strong>SQL Server</strong> configuration changes?",
+        status_on: "ACTIVE (ON)",
+        status_off: "INACTIVE (OFF)",
+
+        // Users View
+        users_title: "User Management",
+        btn_add_user: "Add User",
+        th_user_id: "ID",
+        th_user_name: "Username",
+        th_user_roles: "Roles",
+        th_user_actions: "Actions",
+        btn_edit: "Edit",
+        btn_delete: "Delete",
+        confirm_delete_user: "Are you sure you want to delete this user?",
+        user_updated_success: "User updated successfully",
+        user_created_success: "User created successfully",
+
+        // OPC-UA View
+        opcua_conn_title: "OPC-UA Connection",
+        lbl_endpoint: "Endpoint URL :",
+        lbl_security: "Security :",
+        lbl_policy: "Policy :",
+        lbl_publish: "Publish (ms) :",
+        lbl_sampling: "Sample (ms) :",
+        lbl_opcua_user: "Username :",
+        lbl_opcua_pass: "Password :",
+        lbl_opcua_autoconnect: "Auto-Connect :",
+        btn_opcua_save: "SAVE",
+        btn_opcua_connect: "CONNECT",
+        btn_opcua_disconnect: "DISCONNECT",
+        opcua_tags_title: "Monitored Nodes",
+        placeholder_tag_name: "Tag Name",
+        placeholder_scale: "Scale",
+        placeholder_desc: "Description",
+        btn_add_node: "Add Node",
+        th_opc_no: "#",
+        th_opc_nodeid: "Node ID",
+        th_opc_name: "Name",
+        th_opc_machine: "Machine",
+        th_opc_signal: "Signal Type",
+        th_opc_scale: "Scale",
+        th_opc_desc: "Description",
+        th_opc_live: "Live Value",
+        th_opc_actions: "Actions",
+        opt_global: "Global",
+        no_nodes_configured: "No nodes configured",
+
+        // History View
+        history_title: "Weight History",
+        history_subtitle: "Loading…",
+        lbl_carousel: "Carousel",
+        opt_all: "All",
+        lbl_refresh_rate: "Refresh Rate",
+        opt_off: "Off",
+        btn_refresh: "Refresh",
+        th_time: "Time",
+        th_carousel: "Carousel",
+        th_product: "Product",
+        th_target: "Target",
+        th_counter: "Counter",
+        th_gross: "Gross",
+        th_nett: "Nett",
+        th_status: "Status",
+        loading: "Loading...",
+        lbl_rows: "Rows",
+        btn_first_page: "First page",
+        btn_prev: "Prev",
+        btn_next: "Next",
+        btn_last_page: "Last page",
+        no_records_found: "No records found",
+        no_records: "No records",
+        history_subtitle_text: "{count} record(s) · {size} per page · {pages} page(s)",
+        history_rows_range: "Rows {start}–{end} of {total}",
+
+        // System Log View
+        syslog_title: "System Log",
+        syslog_subtitle: "Real-time system events & diagnostics",
+        lbl_level: "Level",
+        lbl_source: "Source",
+        btn_clear: "Clear",
+        log_waiting: "Waiting for log entries...",
+
+        // Activity Tracking & Audit Trail View
+        audit_title: "Activity Tracking & Audit Trail",
+        audit_subtitle: "Comprehensive log of user activities, carousel controls, interlocks, and system configuration changes.",
+        btn_export_csv: "Export CSV",
+        audit_stat_total: "Total Activities Today",
+        audit_stat_auth: "Login & Authentication",
+        audit_stat_control: "Carousel Control / Reset",
+        audit_stat_settings: "Settings Changes",
+        lbl_category: "Category",
+        opt_all_categories: "All Categories",
+        opt_cat_auth: "Authentication (Login/Logout)",
+        opt_cat_carousel: "Carousel Control & Reset",
+        opt_cat_settings: "Settings & Interlock",
+        opt_cat_usermgmt: "User Management",
+        opt_cat_opcua: "OPC-UA Tag & Connection",
+        lbl_target_carousel: "Target Carousel",
+        opt_all_targets: "All Targets",
+        lbl_start_date: "From Date",
+        lbl_end_date: "To Date",
+        lbl_search: "Search",
+        placeholder_audit_search: "Search user, action, details...",
+        btn_reset: "Reset",
+        th_audit_time: "Time (WIB)",
+        th_audit_user: "User",
+        th_audit_category: "Category",
+        th_audit_action: "Action",
+        th_audit_target: "Target",
+        th_audit_details: "Details / Value Changes",
+        th_audit_ip: "IP Address",
+        loading_audit: "Loading audit trail data...",
+        no_audit_activities: "No activities match the filter",
+        audit_load_failed: "Connection failed while loading logs",
+        page_x_of_y: "Page {curr} of {total}",
+        showing_rows_range: "Showing {start}–{end} of {total} total logs",
+
+        // Alarm Ticker & Footer
+        title_alarm_ack: "Acknowledge alarm (clear WARN/ERROR buffer)",
+        footer_sensors: "SENSORS",
+        btn_footer_reset: "RESET",
+
+        // Modals
+        modal_control_title: "Carousel Control",
+        modal_current_status: "Current Status:",
+        btn_run: "RUN",
+        btn_pause: "PAUSE",
+        btn_stop: "STOP",
+        modal_add_user_title: "Add New User",
+        lbl_username: "Username",
+        lbl_password: "Password",
+        lbl_role: "Role",
+        btn_create_user: "Create User",
+        modal_edit_user_title: "Edit User",
+        lbl_new_password: "New Password (leave blank to keep current)",
+        btn_save_changes: "Save Changes",
+        opcua_modal_title: "Edit OPC-UA Tag",
+        opcua_modal_subtitle: "Update node mapping and tag metadata.",
+        lbl_node_index: "Node Index",
+        lbl_node_name: "Tag Name",
+        lbl_node_id: "Node ID",
+        lbl_node_machine: "Machine",
+        lbl_node_signal: "Signal Type",
+        lbl_scale_factor: "Scale Factor",
+        lbl_description: "Description",
+        opcua_edit_tip: "Tip: press <kbd>Esc</kbd> to close this window.",
+        btn_cancel: "Cancel",
+        cfg_confirm_title: "Confirm Changes",
+        cfg_confirm_subtitle: "Password verification for authorization",
+        cfg_confirm_default_desc: "Are you sure you want to save these changes?",
+        lbl_user_password: "User Password",
+        lbl_user_prefix: "User:",
+        placeholder_password: "Enter your password...",
+        msg_wrong_password: "Incorrect password!",
+        btn_confirm_save: "Confirm & Save",
+        verifying: "Verifying...",
+        enter_password_prompt: "Please enter your password to confirm!"
+    }
+};
+
+let currentLang = localStorage.getItem('scada_lang') || 'id';
+
+function t(key, params = {}) {
+    const langDict = translations[currentLang] || translations.id;
+    let text = (langDict && langDict[key] !== undefined)
+        ? langDict[key]
+        : ((translations.id && translations.id[key] !== undefined) ? translations.id[key] : key);
+    for (const [k, v] of Object.entries(params)) {
+        text = text.replace(new RegExp(`\{${k}\}`, 'g'), v);
+    }
+    return text;
+}
+
+function setLanguage(lang) {
+    if (lang !== 'id' && lang !== 'en') return;
+    currentLang = lang;
+    localStorage.setItem('scada_lang', lang);
+    applyTranslations();
+}
+window.setLanguage = setLanguage;
+window.t = t;
+
+function initLanguage() {
+    currentLang = localStorage.getItem('scada_lang') || 'id';
+    applyTranslations();
+}
+
+function applyTranslations() {
+    // 1. Update Lang Switcher Buttons active state
+    const btnId = document.getElementById('lang-btn-id');
+    const btnEn = document.getElementById('lang-btn-en');
+    if (btnId) btnId.classList.toggle('active', currentLang === 'id');
+    if (btnEn) btnEn.classList.toggle('active', currentLang === 'en');
+
+    // 2. Update document lang
+    document.documentElement.lang = currentLang;
+
+    // 3. Translate data-i18n elements
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (key && (translations[currentLang]?.[key] !== undefined || translations.id?.[key] !== undefined)) {
+            el.innerHTML = t(key);
+        }
+    });
+
+    // 4. Translate data-i18n-placeholder elements
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (key && (translations[currentLang]?.[key] !== undefined || translations.id?.[key] !== undefined)) {
+            el.placeholder = t(key);
+        }
+    });
+
+    // 5. Translate data-i18n-title elements
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        const key = el.getAttribute('data-i18n-title');
+        if (key && (translations[currentLang]?.[key] !== undefined || translations.id?.[key] !== undefined)) {
+            el.title = t(key);
+        }
+    });
+
+    // 6. Update user info label in sidebar
+    if (currentUser && currentUser.username) {
+        const userDisplay = document.getElementById('current-user-display');
+        if (userDisplay) {
+            userDisplay.innerText = t('login_as', { user: currentUser.username });
+        }
+    }
+
+    // 7. Re-render carousel cards if data is available
+    if (window.lastCarouselsData) {
+        renderCarousels(window.lastCarouselsData);
+    }
+
+    // 8. Re-render settings if on config view
+    if (currentView === 'config' && window.appSettings) {
+        renderSettings();
+    }
+
+    // 9. Re-render users if on users view
+    if (currentView === 'users' && window.lastUsersData) {
+        renderUsers(window.lastUsersData);
+    }
+
+    // 10. Re-render OPC nodes if on opcua view
+    if (currentView === 'opcua' && window.opcuaConfig) {
+        renderOpcUaNodes();
+    }
+
+    // 11. Re-render history pagination if on history view
+    if (currentView === 'history') {
+        updateHistorySubtitle();
+        updateHistoryPaginationUi();
+    }
+
+    // 12. Re-render audit pagination if on audit view
+    if (currentView === 'audit') {
+        updateAuditPaginationUI();
+    }
+}
+
 let socket = null;
 let currentUser = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+    initLanguage();
     checkAuth();
     startClock();
     loadTheme();
     setupLoginEnterKey();
 });
+
 
 // --- Theme Toggle ---
 function loadTheme() {
@@ -61,12 +606,17 @@ function activateMobileCard() {
 }
 
 function startClock() {
-    setInterval(() => {
+    const updateTime = () => {
         const now = new Date();
-        document.getElementById('clock-time').innerText = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+        const timeEl = document.getElementById('clock-time');
+        const dateEl = document.getElementById('clock-date');
+        if (timeEl) timeEl.innerText = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
         const options = { day: 'numeric', month: 'long', year: 'numeric' };
-        document.getElementById('clock-date').innerText = now.toLocaleDateString('en-GB', options);
-    }, 1000);
+        const locale = currentLang === 'id' ? 'id-ID' : 'en-GB';
+        if (dateEl) dateEl.innerText = now.toLocaleDateString(locale, options);
+    };
+    updateTime();
+    setInterval(updateTime, 1000);
 }
 
 function checkAuth() {
@@ -134,7 +684,21 @@ async function handleLogin() {
     }
 }
 
-function handleLogout() {
+async function handleLogout() {
+    try {
+        if (currentUser && currentUser.accessToken) {
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-access-token': currentUser.accessToken
+                },
+                body: JSON.stringify({ username: currentUser.username })
+            });
+        }
+    } catch (e) {
+        console.error("Logout notification error:", e);
+    }
     localStorage.removeItem('scada_user');
     location.reload();
 }
@@ -147,7 +711,7 @@ function initApp() {
     updateNavVisibility();
 
     if (currentUser && currentUser.username) {
-        document.getElementById('current-user-display').innerText = currentUser.username;
+        document.getElementById('current-user-display').innerText = t('login_as', { user: currentUser.username });
     }
 
     // Default to offline state before data is received
@@ -199,6 +763,11 @@ function initApp() {
     socket.on('system-log', (entry) => {
         appendLogEntry(entry);
         addAlarmEntry(entry);
+    });
+
+    // Real-time audit log listener
+    socket.on('new-audit-log', (entry) => {
+        handleRealtimeAuditLog(entry);
     });
 
     // Load initial settings
@@ -406,6 +975,16 @@ function navigate(view) {
         }
         document.getElementById('view-logs').style.display = 'flex';
         loadLogs();
+    } else if (view === 'audit') {
+        // Allow Admin and User
+        if (!currentUser || !currentUser.roles || (!currentUser.roles.includes('ROLE_ADMIN') && !currentUser.roles.includes('ROLE_USER'))) {
+            alert("Access Denied.");
+            navigate('home');
+            return;
+        }
+        document.getElementById('view-audit').style.display = 'flex';
+        loadAuditLogs(1);
+        loadAuditStats();
     }
 
     // Apply role-based visibility to nav buttons (also called on login via initApp)
@@ -414,7 +993,7 @@ function navigate(view) {
         // Update Nav Active State
         document.querySelectorAll('.nav-btn').forEach((btn, idx) => {
             btn.classList.remove('active');
-            const views = ['home', 'config', 'users', 'opcua', 'history', 'logs'];
+            const views = ['home', 'config', 'users', 'opcua', 'history', 'logs', 'audit'];
             if (views[idx] === view) btn.classList.add('active');
         });
     }
@@ -441,6 +1020,9 @@ function navigate(view) {
                 btn.style.display = (isAdmin || isUser || isGuest) ? 'flex' : 'none';
             }
             if (idx === 5) { // Logs
+                btn.style.display = (isAdmin || isUser) ? 'flex' : 'none';
+            }
+            if (idx === 6) { // Audit Trail
                 btn.style.display = (isAdmin || isUser) ? 'flex' : 'none';
             }
         });
@@ -524,75 +1106,276 @@ function renderSettings() {
             : 1.0;
 
         const thresholdStyle = isAdmin
-            ? 'width:72px; padding:3px 6px; font-size:0.8rem; border:1px solid #444; border-radius:4px; background:#1e1e2d; color:#e0e0e0;'
-            : 'width:72px; padding:3px 6px; font-size:0.8rem; border:1px solid #444; border-radius:4px; background:#2a2a35; color:#777; cursor:not-allowed;';
+            ? 'width:72px; padding:3px 6px; font-size:0.8rem; border:1px solid var(--border-subtle); border-radius:4px; background:var(--bg-input); color:var(--text-primary);'
+            : 'width:72px; padding:3px 6px; font-size:0.8rem; border:1px solid var(--border-subtle); border-radius:4px; background:var(--bg-input); color:var(--text-muted); cursor:not-allowed; opacity:0.7;';
 
         const row = document.createElement('div');
         row.className = 'interlock-row';
         row.innerHTML = `
-            <span style="font-weight:bold;">Carousel ${i}</span>
+            <span style="font-weight:bold;">${t('carousel_n', { n: i })}</span>
             <div style="display:flex; align-items:center; gap:10px;">
-                <label style="font-size:0.75rem; white-space:nowrap;">Dev.Min :</label>
+                <label style="font-size:0.75rem; white-space:nowrap;">${t('dev_min_label')}</label>
                 <input type="number"
                        id="dev-threshold-${key}"
                        value="${devThreshold}"
                        step="0.01"
                        min="0"
                        style="${thresholdStyle}"
-                       onchange="updateDeviationThreshold('${key}', this.value)"
+                       onchange="promptUpdateDeviation('${key}', this)"
                        ${isAdmin ? '' : 'readonly'}>
                 <span style="font-size:0.7rem; color:#888;">Kg</span>
-                <span style="font-size:0.8rem;">Normal</span>
+                <span style="font-size:0.8rem;">${t('normal_label')}</span>
                 <label class="switch">
-                    <input type="checkbox" onchange="toggleInterlock('${key}', this.checked)" ${isInterlocked ? 'checked' : ''}>
+                    <input type="checkbox" id="interlock-switch-${key}" onchange="promptToggleInterlock('${key}', this)" ${isInterlocked ? 'checked' : ''} ${isAdmin ? '' : 'disabled'}>
                     <span class="slider round"></span>
                 </label>
-                <span style="font-size:0.8rem;">Interlock</span>
+                <span style="font-size:0.8rem;">${t('interlock_label')}</span>
             </div>
         `;
         container.appendChild(row);
     }
 }
 
-async function toggleInterlock(key, checked) {
-    if (!appSettings.interlocks) appSettings.interlocks = {};
-    appSettings.interlocks[key] = checked;
-    // Auto save on toggle? Or wait for save button?
-    // Usually toggles are instant, let's save.
-    await saveSettings(true);
+// ==========================================================================
+// CONFIG CHANGE CONFIRMATION WITH PASSWORD
+// ==========================================================================
+let pendingConfigAction = null;
+
+function openConfigConfirmModal(title, desc, revertFn, applyFn) {
+    pendingConfigAction = {
+        title,
+        desc,
+        revert: revertFn,
+        apply: applyFn
+    };
+
+    const modal = document.getElementById('config-confirm-modal');
+    const titleEl = document.getElementById('config-confirm-title');
+    const descEl = document.getElementById('config-confirm-desc');
+    const userEl = document.getElementById('config-confirm-user');
+    const pwdInput = document.getElementById('config-confirm-password');
+    const errorEl = document.getElementById('config-confirm-error');
+    const submitBtn = document.getElementById('btn-config-confirm-submit');
+
+    if (titleEl) titleEl.innerText = title;
+    if (descEl) descEl.innerHTML = desc;
+    if (userEl) userEl.innerText = (currentUser && currentUser.username) ? currentUser.username : 'admin';
+    if (pwdInput) pwdInput.value = '';
+    if (errorEl) errorEl.style.display = 'none';
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<i class='bx bx-check-shield'></i> ${t('btn_confirm_save')}`;
+    }
+
+    if (modal) modal.style.display = 'flex';
+    setTimeout(() => {
+        if (pwdInput) pwdInput.focus();
+    }, 100);
 }
 
-async function updateDeviationThreshold(key, value) {
-    if (!currentUser || !currentUser.roles || !currentUser.roles.includes('ROLE_ADMIN')) return;
-    if (!appSettings.deviationThresholds) appSettings.deviationThresholds = {};
-    const numVal = parseFloat(value);
-    if (!Number.isFinite(numVal) || numVal < 0) {
-        // Reset to previously saved value
-        const prev = appSettings.deviationThresholds[key] || 1.0;
-        document.getElementById(`dev-threshold-${key}`).value = prev;
+function closeConfigConfirmModal() {
+    const modal = document.getElementById('config-confirm-modal');
+    if (modal) modal.style.display = 'none';
+
+    if (pendingConfigAction && typeof pendingConfigAction.revert === 'function') {
+        try {
+            pendingConfigAction.revert();
+        } catch (e) {
+            console.error("Revert config error:", e);
+        }
+    }
+    pendingConfigAction = null;
+}
+
+async function submitConfigConfirm() {
+    if (!pendingConfigAction) return;
+
+    const pwdInput = document.getElementById('config-confirm-password');
+    const errorEl = document.getElementById('config-confirm-error');
+    const errorMsg = document.getElementById('config-confirm-error-msg');
+    const submitBtn = document.getElementById('btn-config-confirm-submit');
+
+    const password = pwdInput ? pwdInput.value : '';
+    if (!password) {
+        if (errorEl && errorMsg) {
+            errorMsg.innerText = t("enter_password_prompt");
+            errorEl.style.display = 'block';
+        }
+        if (pwdInput) pwdInput.focus();
         return;
     }
-    appSettings.deviationThresholds[key] = parseFloat(numVal.toFixed(4));
-    await saveSettings(true);
+
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<i class='bx bx-loader-alt bx-spin'></i> ${t('verifying')}`;
+    }
+    if (errorEl) errorEl.style.display = 'none';
+
+    try {
+        const action = pendingConfigAction;
+        const success = await action.apply(password);
+        if (success) {
+            pendingConfigAction = null;
+            const modal = document.getElementById('config-confirm-modal');
+            if (modal) modal.style.display = 'none';
+        } else {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<i class='bx bx-check-shield'></i> ${t('btn_confirm_save')}`;
+            }
+        }
+    } catch (err) {
+        console.error("submitConfigConfirm error:", err);
+        if (errorEl && errorMsg) {
+            errorMsg.innerText = err.message || "Terjadi kesalahan saat menyimpan.";
+            errorEl.style.display = 'block';
+        }
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `<i class='bx bx-check-shield'></i> ${t('btn_confirm_save')}`;
+        }
+    }
 }
 
-async function saveSettings(silent = false) {
-    // Update local object from inputs
-    appSettings.sql_server = document.getElementById('cfg-server').value;
-    appSettings.sql_port = parseInt(document.getElementById('cfg-port').value) || 1433;
-    appSettings.sql_uid = document.getElementById('cfg-uid').value;
-    appSettings.sql_pass = document.getElementById('cfg-pass').value;
-    appSettings.sql_db = document.getElementById('cfg-db').value;
-    appSettings.table_zeroing = document.getElementById('cfg-table-zero').value;
-    appSettings.table_weight = document.getElementById('cfg-table-weight').value;
-    appSettings.table_main = document.getElementById('cfg-table-main').value;
-
-    // SQL Auto-Reconnect checkbox
-    const sqlAutoReconnect = document.getElementById('cfg-sql-auto-reconnect');
-    if (sqlAutoReconnect) {
-        appSettings.sql_auto_reconnect = sqlAutoReconnect.checked;
+function promptToggleInterlock(key, checkboxEl) {
+    if (!currentUser || !currentUser.roles || !currentUser.roles.includes('ROLE_ADMIN')) {
+        alert(t("admin_only_interlock"));
+        checkboxEl.checked = !checkboxEl.checked;
+        return;
     }
 
+    const carouselNum = key.replace('carousel', '');
+    const oldVal = appSettings.interlocks ? !!appSettings.interlocks[key] : false;
+    const newVal = checkboxEl.checked;
+
+    if (oldVal === newVal) return;
+
+    const title = t("confirm_interlock_title", { n: carouselNum });
+    const targetStatus = newVal ? `<strong style="color:#059669;">${t('status_on')}</strong>` : `<strong style="color:#dc2626;">${t('status_off')}</strong>`;
+    const desc = t("confirm_interlock_desc", { n: carouselNum, status: targetStatus });
+
+    openConfigConfirmModal(
+        title,
+        desc,
+        () => {
+            checkboxEl.checked = oldVal;
+        },
+        async (password) => {
+            const clone = JSON.parse(JSON.stringify(appSettings));
+            if (!clone.interlocks) clone.interlocks = {};
+            clone.interlocks[key] = newVal;
+            return await doExecuteSaveSettings(clone, password);
+        }
+    );
+}
+
+function promptUpdateDeviation(key, inputEl) {
+    if (!currentUser || !currentUser.roles || !currentUser.roles.includes('ROLE_ADMIN')) {
+        alert(t("admin_only_deviation"));
+        const prev = (appSettings.deviationThresholds && appSettings.deviationThresholds[key] !== undefined)
+            ? appSettings.deviationThresholds[key] : 1.0;
+        inputEl.value = prev;
+        return;
+    }
+
+    const carouselNum = key.replace('carousel', '');
+    const oldVal = (appSettings.deviationThresholds && appSettings.deviationThresholds[key] !== undefined)
+        ? parseFloat(appSettings.deviationThresholds[key])
+        : 1.0;
+    const newVal = parseFloat(inputEl.value);
+
+    if (!Number.isFinite(newVal) || newVal < 0) {
+        inputEl.value = oldVal;
+        return;
+    }
+
+    if (oldVal === newVal) return;
+
+    const title = t("confirm_deviation_title");
+    const desc = t("confirm_deviation_desc", { n: carouselNum, oldVal, newVal });
+
+    openConfigConfirmModal(
+        title,
+        desc,
+        () => {
+            inputEl.value = oldVal;
+        },
+        async (password) => {
+            const clone = JSON.parse(JSON.stringify(appSettings));
+            if (!clone.deviationThresholds) clone.deviationThresholds = {};
+            clone.deviationThresholds[key] = parseFloat(newVal.toFixed(4));
+            return await doExecuteSaveSettings(clone, password);
+        }
+    );
+}
+
+function promptSaveSqlSettings() {
+    if (!currentUser || !currentUser.roles || !currentUser.roles.includes('ROLE_ADMIN')) {
+        alert(t("admin_only_sql"));
+        return;
+    }
+
+    const clone = JSON.parse(JSON.stringify(appSettings));
+    const newServer = document.getElementById('cfg-server').value.trim();
+    const newPort = parseInt(document.getElementById('cfg-port').value) || 1433;
+    const newUid = document.getElementById('cfg-uid').value.trim();
+    const newPass = document.getElementById('cfg-pass').value;
+    const newDb = document.getElementById('cfg-db').value.trim();
+    const newZero = document.getElementById('cfg-table-zero').value.trim();
+    const newWeight = document.getElementById('cfg-table-weight').value.trim();
+    const newMain = document.getElementById('cfg-table-main').value.trim();
+    const sqlAutoReconnect = document.getElementById('cfg-sql-auto-reconnect');
+    const newAuto = sqlAutoReconnect ? sqlAutoReconnect.checked : false;
+
+    clone.sql_server = newServer;
+    clone.sql_port = newPort;
+    clone.sql_uid = newUid;
+    clone.sql_pass = newPass;
+    clone.sql_db = newDb;
+    clone.table_zeroing = newZero;
+    clone.table_weight = newWeight;
+    clone.table_main = newMain;
+    clone.sql_auto_reconnect = newAuto;
+
+    const diffs = [];
+    if (appSettings.sql_server !== newServer) diffs.push(`Server: ${appSettings.sql_server || '-'} ➔ ${newServer}`);
+    if ((appSettings.sql_port || 1433) !== newPort) diffs.push(`Port: ${appSettings.sql_port || 1433} ➔ ${newPort}`);
+    if (appSettings.sql_uid !== newUid) diffs.push(`UID: ${appSettings.sql_uid || '-'} ➔ ${newUid}`);
+    if (appSettings.sql_pass !== newPass) diffs.push(`Password database diperbarui`);
+    if (appSettings.sql_db !== newDb) diffs.push(`Database: ${appSettings.sql_db || '-'} ➔ ${newDb}`);
+    if (appSettings.table_zeroing !== newZero) diffs.push(`Table Zeroing: ${appSettings.table_zeroing || '-'} ➔ ${newZero}`);
+    if (appSettings.table_weight !== newWeight) diffs.push(`Table Weight: ${appSettings.table_weight || '-'} ➔ ${newWeight}`);
+    if (appSettings.table_main !== newMain) diffs.push(`Table Preset Data: ${appSettings.table_main || '-'} ➔ ${newMain}`);
+    if (!!appSettings.sql_auto_reconnect !== newAuto) diffs.push(`Auto-Reconnect: ${appSettings.sql_auto_reconnect ? 'ON' : 'OFF'} ➔ ${newAuto ? 'ON' : 'OFF'}`);
+
+    const title = t("confirm_sql_title");
+    let descHtml = '';
+    if (diffs.length === 0) {
+        descHtml = t('confirm_sql_desc');
+    } else {
+        descHtml = `<div>${t('confirm_sql_diff_title')}</div>` +
+                   '<ul style="margin: 8px 0 4px 18px; padding: 0; color: #2563eb; font-size: 0.88rem; line-height: 1.5;">' +
+                   diffs.map(d => `<li>${escapeHtml(d)}</li>`).join('') + '</ul>';
+    }
+
+    openConfigConfirmModal(
+        title,
+        descHtml,
+        () => {
+            renderSettings();
+        },
+        async (password) => {
+            return await doExecuteSaveSettings(clone, password);
+        }
+    );
+}
+
+// Keep saveSettings alias for compatibility
+async function saveSettings(silent = false) {
+    promptSaveSqlSettings();
+}
+
+async function doExecuteSaveSettings(settingsPayload, password) {
     try {
         const token = currentUser.accessToken;
         const res = await fetch('/api/settings', {
@@ -601,19 +1384,61 @@ async function saveSettings(silent = false) {
                 'Content-Type': 'application/json',
                 'x-access-token': token
             },
-            body: JSON.stringify(appSettings)
+            body: JSON.stringify({
+                ...settingsPayload,
+                confirmationPassword: password
+            })
         });
 
+        const data = await res.json();
         if (res.ok) {
-            if (!silent) alert('Settings Saved Successfully');
-            // Reload SQL status after settings change
-            setTimeout(() => pollSqlStatus(), 1500); // Wait 1.5s for backend to reconnect
+            appSettings = settingsPayload;
+            renderSettings();
+            setTimeout(() => pollSqlStatus(), 1500);
+            showToastSuccess(data.message || 'Pengaturan berhasil diperbarui!');
+            return true;
         } else {
-            alert('Failed to save settings: ' + res.statusText);
+            const errorEl = document.getElementById('config-confirm-error');
+            const errorMsg = document.getElementById('config-confirm-error-msg');
+            if (errorEl && errorMsg) {
+                errorMsg.innerText = data.message || "Gagal menyimpan pengaturan.";
+                errorEl.style.display = 'block';
+            }
+            const pwdInput = document.getElementById('config-confirm-password');
+            if (pwdInput) {
+                pwdInput.select();
+                pwdInput.focus();
+            }
+            return false;
         }
     } catch (e) {
-        console.error("Save error", e);
+        console.error("Save error:", e);
+        const errorEl = document.getElementById('config-confirm-error');
+        const errorMsg = document.getElementById('config-confirm-error-msg');
+        if (errorEl && errorMsg) {
+            errorMsg.innerText = e.message || "Koneksi ke server gagal.";
+            errorEl.style.display = 'block';
+        }
+        return false;
     }
+}
+
+function showToastSuccess(msg) {
+    let toast = document.getElementById('scada-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'scada-toast';
+        toast.style.cssText = 'position:fixed; bottom:25px; right:25px; background:#059669; color:#fff; padding:12px 20px; border-radius:8px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.5); z-index:9999; display:flex; align-items:center; gap:8px; font-weight:600; font-size:0.9rem; transition:opacity 0.3s ease;';
+        document.body.appendChild(toast);
+    }
+    toast.innerHTML = `<i class='bx bx-check-circle' style="font-size:1.3rem;"></i> ${escapeHtml(msg)}`;
+    toast.style.opacity = '1';
+    toast.style.display = 'flex';
+    clearTimeout(window.__toastTimer);
+    window.__toastTimer = setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.style.display = 'none', 300);
+    }, 3000);
 }
 
 // --- User Management Logic ---
@@ -652,6 +1477,7 @@ async function loadUsers() {
 }
 
 function renderUsers(users) {
+    window.lastUsersData = users;
     const tbody = document.getElementById('user-list-body');
     tbody.innerHTML = '';
 
@@ -665,10 +1491,10 @@ function renderUsers(users) {
             <td style="white-space: nowrap; width: 180px;">
                 <div style="display: flex; flex-direction: row; gap: 8px; align-items: center; justify-content: flex-start;">
                     <button class="user-action-btn edit" onclick="showEditUserModal(${u.id}, '${u.username}', '${roles}')">
-                        <i class='bx bx-edit-alt'></i> Edit
+                        <i class='bx bx-edit-alt'></i> ${t('btn_edit')}
                     </button>
                     <button class="user-action-btn delete" onclick="deleteUser(${u.id})">
-                        <i class='bx bx-trash'></i> Delete
+                        <i class='bx bx-trash'></i> ${t('btn_delete')}
                     </button>
                 </div>
             </td>
@@ -726,7 +1552,7 @@ async function createUser(userData) {
 }
 
 async function deleteUser(id) {
-    if (!confirm('Are you sure you want to delete this user?')) return;
+    if (!confirm(t('confirm_delete_user'))) return;
 
     try {
         const token = currentUser.accessToken;
@@ -797,6 +1623,7 @@ async function submitUserEdit() {
 }
 
 function renderCarousels(carousels) {
+    window.lastCarouselsData = carousels;
     const container = document.getElementById('view-home');
     container.innerHTML = '';
 
@@ -857,69 +1684,71 @@ function renderCarousels(carousels) {
                 <div class="carousel-card">
                     <div class="card-loading-overlay">
                         <div class="spinner"></div>
-                        <div class="loading-text">Updating Data...</div>
+                        <div class="loading-text">${t('updating_data')}</div>
                     </div>
 
                     <div class="card-header">
-                        <div class="carousel-number">Carousel ${i}</div>
+                        <div class="carousel-number">${t('carousel_n', { n: i })}</div>
                         <div class="carousel-name">${d.productName || carousel.name}</div>
                     </div>
                     
                     <div class="card-body">
                         <div class="info-row">
-                            <span class="info-label">Product ID</span>
+                            <span class="info-label">${t('card_product_id')}</span>
                             <span class="info-value">${d.productId}</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">Packing Order</span>
+                            <span class="info-label">${t('card_packing_order')}</span>
                             <span class="info-value">${d.packingOrder}</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">Package</span>
+                            <span class="info-label">${t('card_package')}</span>
                             <span class="info-value" title="${d.packagingMaterial || '-'}">${d.packagingMaterial || '-'}</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">Tolerance</span>
+                            <span class="info-label">${t('card_tolerance')}</span>
                             <span class="info-value">${d.toleranceMin} — ${d.toleranceMax} Kg</span>
                         </div>
                         <div class="info-row">
-                            <span class="info-label">Pack Weight</span>
+                            <span class="info-label">${t('card_pack_weight')}</span>
                             <span class="info-value">${(parseFloat(d.packWeight) || 0).toFixed(2)} Kg</span>
                         </div>
                     </div>
 
                     <div class="weight-section">
-                        <div class="weight-label">Gross Weight</div>
+                        <div class="weight-label">${t('card_gross_weight')}</div>
                         <div class="weight-display ${weightClass}">${(d.lastGross || 0).toFixed(2)} Kg</div>
                     </div>
 
                     <div class="progress-section">
                         <div class="progress-info">
-                            <span>Counter: ${displayedCounter} Pcs</span>
-                            <span>Target: ${target} Pcs</span>
+                            <span>${t('card_counter_pcs', { n: displayedCounter })}</span>
+                            <span>${t('card_target_pcs', { n: target })}</span>
                         </div>
                         <div class="progress-bar-track">
                             <div class="progress-bar-fill" style="width: ${progress.toFixed(1)}%"></div>
                         </div>
                     </div>
 
-                    <div class="stats-grid" title="Statistics based on the last 1 hour of production">
+                    <div class="stats-grid" title="${t('card_stats_tooltip')}">
                         <div class="stat-box">
-                            <div class="stat-label">Min (1h)</div>
+                            <div class="stat-label">${t('card_min_1h')}</div>
                             <div class="stat-value">${(d.minVal || 0).toFixed(2)}</div>
                         </div>
                         <div class="stat-box">
-                            <div class="stat-label">Nett</div>
+                            <div class="stat-label">${t('card_nett')}</div>
                             <div class="stat-value">${(d.lastNett || 0).toFixed(2)}</div>
                         </div>
                         <div class="stat-box">
-                            <div class="stat-label">Avg (1h)</div>
+                            <div class="stat-label">${t('card_avg_1h')}</div>
                             <div class="stat-value">${(d.average || 0).toFixed(2)}</div>
                         </div>
                     </div>
 
                     <div class="card-footer">
-                        <button class="update-btn" onclick="triggerManualUpdate(${i}, event)">⟳ Update Data</button>
+                        <button class="update-btn" onclick="triggerManualUpdate(${i}, event)">
+                            <i class='bx bx-refresh'></i> ${t('card_btn_update')}
+                        </button>
                     </div>
                 </div>
             `;
@@ -928,13 +1757,13 @@ function renderCarousels(carousels) {
                 <div class="empty-state">
                     <div class="card-loading-overlay">
                         <div class="spinner"></div>
-                        <div class="loading-text">Updating Data...</div>
+                        <div class="loading-text">${t('updating_data')}</div>
                     </div>
-                    <span class="icon" style="color:var(--accent-warning); opacity:0.8;">⌛</span>
-                    <span style="font-size:1rem; font-weight:600; color:var(--text-secondary);">Carousel ${i}</span>
-                    <span style="font-weight:700; color:var(--accent-warning); letter-spacing:1px; margin-top:5px; margin-bottom:15px;">Waiting for Packing Order</span>
+                    <i class='bx bx-time-five' style="font-size: 2.2rem; color: var(--accent-warning); opacity: 0.85; margin-bottom: 8px;"></i>
+                    <span style="font-size:1rem; font-weight:600; color:var(--text-secondary);">${t('carousel_n', { n: i })}</span>
+                    <span style="font-weight:700; color:var(--accent-warning); letter-spacing:1px; margin-top:5px; margin-bottom:15px;">${t('card_waiting_order')}</span>
                     <div class="weight-section" style="width: 100%; padding: 0 14px;">
-                        <div class="weight-label">Gross Weight</div>
+                        <div class="weight-label">${t('card_gross_weight')}</div>
                         <div class="weight-display bg-warning">0.00 Kg</div>
                     </div>
                 </div>
@@ -1003,11 +1832,15 @@ function closeControlModal() {
 window.onclick = function (event) {
     const controlModal = document.getElementById('control-modal');
     const opcEditModal = document.getElementById('opcua-edit-modal');
+    const configConfirmModal = document.getElementById('config-confirm-modal');
     if (event.target === controlModal) {
         closeControlModal();
     }
     if (event.target === opcEditModal) {
         closeOpcUaEditModal();
+    }
+    if (event.target === configConfirmModal) {
+        closeConfigConfirmModal();
     }
 }
 
@@ -1016,6 +1849,10 @@ document.addEventListener('keydown', (event) => {
     const opcEditModal = document.getElementById('opcua-edit-modal');
     if (opcEditModal && opcEditModal.style.display === 'flex') {
         closeOpcUaEditModal();
+    }
+    const configConfirmModal = document.getElementById('config-confirm-modal');
+    if (configConfirmModal && configConfirmModal.style.display === 'flex') {
+        closeConfigConfirmModal();
     }
 });
 
@@ -1062,7 +1899,7 @@ async function triggerResetError() {
     try {
         if (btn) {
             btn.disabled = true;
-            btn.innerHTML = '<span class="icon">⏳</span> RESETTING...';
+            btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> RESETTING...";
         }
 
         const token = currentUser && currentUser.accessToken;
@@ -1228,7 +2065,7 @@ async function saveOpcUaConfig() {
         const data = await res.json();
         if (data.success) {
             opcuaConfig = data.config;
-            showOpcUaToast('Config saved ✓', 'success');
+            showOpcUaToast('Config saved', 'success');
         } else {
             showOpcUaToast(data.error || 'Save failed', 'error');
         }
@@ -1240,7 +2077,7 @@ async function saveOpcUaConfig() {
 async function opcuaConnect() {
     const btn = document.getElementById('btn-opcua-connect');
     btn.disabled = true;
-    btn.innerText = '⏳ CONNECTING...';
+    btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> CONNECTING...";
 
     try {
         const token = currentUser.accessToken;
@@ -1258,7 +2095,7 @@ async function opcuaConnect() {
         showOpcUaToast('Connect error', 'error');
     }
     btn.disabled = false;
-    btn.innerText = '🔌 CONNECT';
+    btn.innerHTML = "<i class='bx bx-plug'></i> CONNECT";
 }
 
 async function opcuaDisconnect() {
@@ -1341,7 +2178,7 @@ function renderOpcUaNodes() {
     document.getElementById('opcua-node-count').innerText = `${opcuaConfig.nodes.length} node${opcuaConfig.nodes.length !== 1 ? 's' : ''}`;
 
     if (opcuaConfig.nodes.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#999; padding:20px;">No nodes configured</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#999; padding:20px;">${t("no_nodes_configured")}</td></tr>`;
         return;
     }
 
@@ -1364,10 +2201,10 @@ function renderOpcUaNodes() {
             <td>
                 <div class="opc-node-actions">
                     <button class="opc-action-btn edit" title="Edit monitored node" onclick="editOpcUaNode(${idx})">
-                        <i class='bx bx-edit-alt'></i> Edit
+                        <i class='bx bx-edit-alt'></i> ${t('btn_edit')}
                     </button>
                     <button class="opc-action-btn delete" title="Delete monitored node" onclick="removeOpcUaNode(${idx})">
-                        <i class='bx bx-trash'></i> Delete
+                        <i class='bx bx-trash'></i> ${t('btn_delete')}
                     </button>
                 </div>
             </td>
@@ -1606,7 +2443,7 @@ function updateHistorySubtitle() {
     const subtitle = document.getElementById('history-subtitle');
     if (!subtitle) return;
     const pages = getHistoryTotalPages();
-    subtitle.textContent = `${historyTotalCount.toLocaleString()} record(s) · ${historyPageSize} per page · ${pages} page(s)`;
+    subtitle.textContent = t("history_subtitle_text", { count: historyTotalCount.toLocaleString(), size: historyPageSize, pages: pages });
 }
 
 function updateHistoryPaginationUi() {
@@ -1618,15 +2455,15 @@ function updateHistoryPaginationUi() {
     const firstBtn = document.getElementById('history-first-btn');
     const lastBtn = document.getElementById('history-last-btn');
 
-    if (pageInfo) pageInfo.textContent = `Page ${historyCurrentPage} of ${totalPages}`;
+    if (pageInfo) pageInfo.textContent = t('page_x_of_y', { curr: historyCurrentPage, total: totalPages });
 
     if (rangeInfo) {
         if (!historyTotalCount) {
-            rangeInfo.textContent = 'No records';
+            rangeInfo.textContent = t('no_records');
         } else {
             const start = (historyCurrentPage - 1) * historyPageSize + 1;
             const end = Math.min(historyCurrentPage * historyPageSize, historyTotalCount);
-            rangeInfo.textContent = `Rows ${start}–${end} of ${historyTotalCount.toLocaleString()}`;
+            rangeInfo.textContent = t('history_rows_range', { start, end, total: historyTotalCount.toLocaleString() });
         }
     }
 
@@ -1687,7 +2524,7 @@ function renderHistoryRows(rows) {
     tbody.innerHTML = '';
 
     if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No records found</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">${t('no_records_found')}</td></tr>`;
         updateHistoryPaginationUi();
         return;
     }
@@ -1972,4 +2809,312 @@ function clearLogView() {
         container.innerHTML = '<div class="log-entry log-level-info"><span class="log-msg">Log view cleared</span></div>';
     }
     allLogEntries = [];
+}
+
+// ==========================================================================
+// USER ACTIVITY & AUDIT TRAIL LOGIC
+// ==========================================================================
+let auditPagination = {
+    currentPage: 1,
+    pageSize: 50,
+    totalPages: 1,
+    totalRecords: 0
+};
+
+async function loadAuditStats() {
+    try {
+        if (!currentUser || !currentUser.accessToken) return;
+        const res = await fetch('/api/audit-logs/stats', {
+            headers: { 'x-access-token': currentUser.accessToken }
+        });
+        if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.stats) {
+                const elTotal = document.getElementById('audit-stat-total');
+                const elAuth = document.getElementById('audit-stat-auth');
+                const elCtrl = document.getElementById('audit-stat-control');
+                const elSet = document.getElementById('audit-stat-settings');
+                if (elTotal) elTotal.innerText = data.stats.todayTotal || 0;
+                if (elAuth) elAuth.innerText = data.stats.todayAuth || 0;
+                if (elCtrl) elCtrl.innerText = data.stats.todayControl || 0;
+                if (elSet) elSet.innerText = data.stats.todaySettings || 0;
+            }
+        }
+    } catch (e) {
+        console.error("Failed to load audit stats:", e);
+    }
+}
+
+function getAuditFilterParams(page = 1) {
+    const category = document.getElementById('audit-filter-category')?.value || '';
+    const target = document.getElementById('audit-filter-target')?.value || '';
+    const startDate = document.getElementById('audit-filter-start-date')?.value || '';
+    const endDate = document.getElementById('audit-filter-end-date')?.value || '';
+    const search = document.getElementById('audit-filter-search')?.value || '';
+    const limit = auditPagination.pageSize || 50;
+
+    const params = new URLSearchParams({
+        page: page,
+        limit: limit
+    });
+
+    if (category) params.append('category', category);
+    if (target) params.append('target', target);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    if (search.trim()) params.append('search', search.trim());
+
+    return params;
+}
+
+async function loadAuditLogs(page = 1) {
+    try {
+        if (!currentUser || !currentUser.accessToken) return;
+        const tbody = document.getElementById('audit-list-body');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 25px; color: #94a3b8;"><i class='bx bx-loader-alt bx-spin' style="font-size:1.5rem; margin-bottom:6px; display:block;"></i>Memuat data audit trail...</td></tr>`;
+        }
+
+        const params = getAuditFilterParams(page);
+        const res = await fetch(`/api/audit-logs?${params.toString()}`, {
+            headers: { 'x-access-token': currentUser.accessToken }
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            auditPagination.currentPage = data.currentPage;
+            auditPagination.totalPages = data.totalPages;
+            auditPagination.totalRecords = data.total;
+
+            renderAuditTable(data.logs || []);
+            updateAuditPaginationUI();
+        } else {
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: #ef4444; padding: 20px;">Gagal memuat log: ${res.statusText}</td></tr>`;
+            }
+        }
+    } catch (e) {
+        console.error("Error loading audit logs:", e);
+        const tbody = document.getElementById('audit-list-body');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: #ef4444; padding: 20px;">${t('audit_load_failed')}</td></tr>`;
+        }
+    }
+}
+
+function renderAuditTable(logs) {
+    const tbody = document.getElementById('audit-list-body');
+    if (!tbody) return;
+
+    if (!logs || logs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 30px; color: #94a3b8;"><i class='bx bx-info-circle' style="font-size:1.8rem; margin-bottom:6px; display:block;"></i>${t('no_audit_activities')}</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = '';
+    logs.forEach(log => {
+        const tr = document.createElement('tr');
+        tr.id = `audit-row-${log.id}`;
+
+        const dt = new Date(log.createdAt);
+        const dateFormatted = dt.toLocaleString('id-ID', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        }).replace(/\./g, ':');
+
+        let catClass = 'badge-cat-auth';
+        if (log.category === 'CAROUSEL') catClass = 'badge-cat-carousel';
+        else if (log.category === 'SETTINGS') catClass = 'badge-cat-settings';
+        else if (log.category === 'USER_MGMT') catClass = 'badge-cat-user';
+        else if (log.category === 'OPCUA') catClass = 'badge-cat-opcua';
+
+        let actionClass = 'badge-action-update';
+        if (log.action === 'LOGIN') actionClass = 'badge-action-login';
+        else if (log.action === 'LOGOUT') actionClass = 'badge-action-logout';
+        else if (log.action.includes('FAILED')) actionClass = 'badge-action-failed';
+        else if (log.action.includes('RESET')) actionClass = 'badge-action-reset';
+
+        let targetHtml = log.target ? `<span class="audit-target-badge">${escapeHtml(log.target)}</span>` : '<span style="color:#94a3b8;">-</span>';
+
+        let detailsHtml = escapeHtml(log.details || '-');
+        if (log.details && (log.details.startsWith('{') || log.details.startsWith('['))) {
+            try {
+                const parsed = JSON.parse(log.details);
+                detailsHtml = `<pre class="audit-details-code">${escapeHtml(JSON.stringify(parsed, null, 2))}</pre>`;
+            } catch(e) {}
+        }
+
+        tr.innerHTML = `
+            <td class="audit-cell-time">${dateFormatted}</td>
+            <td>
+                <span class="audit-cell-user">${escapeHtml(log.username)}</span>
+                ${log.role ? `<span class="audit-user-role">${escapeHtml(log.role)}</span>` : ''}
+            </td>
+            <td><span class="audit-badge ${catClass}">${escapeHtml(log.category)}</span></td>
+            <td><span class="audit-badge ${actionClass}">${escapeHtml(log.action)}</span></td>
+            <td>${targetHtml}</td>
+            <td class="audit-cell-details">${detailsHtml}</td>
+            <td class="audit-cell-ip">${escapeHtml(log.ipAddress || '-')}</td>
+        `;
+
+        tbody.appendChild(tr);
+    });
+}
+
+function updateAuditPaginationUI() {
+    const pageInfo = document.getElementById('audit-page-info');
+    const rangeInfo = document.getElementById('audit-range-info');
+    const prevBtn = document.getElementById('audit-prev-btn');
+    const nextBtn = document.getElementById('audit-next-btn');
+    const firstBtn = document.getElementById('audit-first-btn');
+    const lastBtn = document.getElementById('audit-last-btn');
+
+    const curr = auditPagination.currentPage;
+    const total = auditPagination.totalPages;
+    const count = auditPagination.totalRecords;
+    const size = auditPagination.pageSize;
+
+    if (pageInfo) pageInfo.innerText = t('page_x_of_y', { curr, total: total || 1 });
+
+    if (rangeInfo) {
+        if (count === 0) {
+            rangeInfo.innerText = t('no_records');
+        } else {
+            const start = (curr - 1) * size + 1;
+            const end = Math.min(curr * size, count);
+            rangeInfo.innerText = t('showing_rows_range', { start, end, total: count });
+        }
+    }
+
+    if (prevBtn) prevBtn.disabled = curr <= 1;
+    if (firstBtn) firstBtn.disabled = curr <= 1;
+    if (nextBtn) nextBtn.disabled = curr >= total;
+    if (lastBtn) lastBtn.disabled = curr >= total;
+}
+
+function auditChangePage(delta) {
+    const targetPage = auditPagination.currentPage + delta;
+    if (targetPage >= 1 && targetPage <= auditPagination.totalPages) {
+        loadAuditLogs(targetPage);
+    }
+}
+
+function auditGoToPage(target) {
+    if (target === 'last') {
+        loadAuditLogs(auditPagination.totalPages);
+    } else {
+        const page = parseInt(target);
+        if (!isNaN(page) && page >= 1 && page <= auditPagination.totalPages) {
+            loadAuditLogs(page);
+        }
+    }
+}
+
+function onAuditPageSizeChange() {
+    const sel = document.getElementById('audit-page-size');
+    if (sel) {
+        auditPagination.pageSize = parseInt(sel.value) || 50;
+        loadAuditLogs(1);
+    }
+}
+
+function resetAuditFilters() {
+    const cat = document.getElementById('audit-filter-category');
+    const tgt = document.getElementById('audit-filter-target');
+    const sDate = document.getElementById('audit-filter-start-date');
+    const eDate = document.getElementById('audit-filter-end-date');
+    const search = document.getElementById('audit-filter-search');
+
+    if (cat) cat.value = '';
+    if (tgt) tgt.value = '';
+    if (sDate) sDate.value = '';
+    if (eDate) eDate.value = '';
+    if (search) search.value = '';
+
+    loadAuditLogs(1);
+}
+
+function exportAuditLogs() {
+    if (!currentUser || !currentUser.accessToken) return;
+    const params = getAuditFilterParams(1);
+    params.delete('page');
+    params.delete('limit');
+    params.append('x-access-token', currentUser.accessToken);
+
+    window.open(`/api/audit-logs/export?${params.toString()}`, '_blank');
+}
+
+function handleRealtimeAuditLog(entry) {
+    const elTotal = document.getElementById('audit-stat-total');
+    if (elTotal) {
+        const current = parseInt(elTotal.innerText) || 0;
+        elTotal.innerText = current + 1;
+    }
+    if (entry.category === 'AUTH') {
+        const elAuth = document.getElementById('audit-stat-auth');
+        if (elAuth) elAuth.innerText = (parseInt(elAuth.innerText) || 0) + 1;
+    } else if (entry.category === 'CAROUSEL') {
+        const elCtrl = document.getElementById('audit-stat-control');
+        if (elCtrl) elCtrl.innerText = (parseInt(elCtrl.innerText) || 0) + 1;
+    } else if (entry.category === 'SETTINGS') {
+        const elSet = document.getElementById('audit-stat-settings');
+        if (elSet) elSet.innerText = (parseInt(elSet.innerText) || 0) + 1;
+    }
+
+    if (currentView === 'audit' && auditPagination.currentPage === 1) {
+        const tbody = document.getElementById('audit-list-body');
+        if (tbody) {
+            const placeholder = tbody.querySelector('tr td[colspan]');
+            if (placeholder) placeholder.parentElement.remove();
+
+            const dt = new Date(entry.createdAt || Date.now());
+            const dateFormatted = dt.toLocaleString('id-ID', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            }).replace(/\./g, ':');
+
+            let catClass = 'badge-cat-auth';
+            if (entry.category === 'CAROUSEL') catClass = 'badge-cat-carousel';
+            else if (entry.category === 'SETTINGS') catClass = 'badge-cat-settings';
+            else if (entry.category === 'USER_MGMT') catClass = 'badge-cat-user';
+            else if (entry.category === 'OPCUA') catClass = 'badge-cat-opcua';
+
+            let actionClass = 'badge-action-update';
+            if (entry.action === 'LOGIN') actionClass = 'badge-action-login';
+            else if (entry.action === 'LOGOUT') actionClass = 'badge-action-logout';
+            else if (entry.action.includes('FAILED')) actionClass = 'badge-action-failed';
+            else if (entry.action.includes('RESET')) actionClass = 'badge-action-reset';
+
+            const tr = document.createElement('tr');
+            tr.style.backgroundColor = 'rgba(99, 102, 241, 0.12)';
+            tr.innerHTML = `
+                <td style="font-family: monospace; font-size: 0.82rem; color: #cbd5e1;">${dateFormatted}</td>
+                <td>
+                    <span style="font-weight:600; color:#f8fafc;">${escapeHtml(entry.username || 'System')}</span>
+                    ${entry.role ? `<span class="audit-user-role">${escapeHtml(entry.role)}</span>` : ''}
+                </td>
+                <td><span class="audit-badge ${catClass}">${escapeHtml(entry.category)}</span></td>
+                <td><span class="audit-badge ${actionClass}">${escapeHtml(entry.action)}</span></td>
+                <td>${entry.target ? `<span style="font-weight:600; color:#38bdf8;">${escapeHtml(entry.target)}</span>` : '<span style="color:#64748b;">-</span>'}</td>
+                <td style="font-size:0.85rem; color:#e2e8f0;">${escapeHtml(entry.details || '-')}</td>
+                <td style="font-family: monospace; font-size: 0.8rem; color:#94a3b8;">${escapeHtml(entry.ipAddress || '-')}</td>
+            `;
+
+            tbody.insertBefore(tr, tbody.firstChild);
+
+            if (tbody.children.length > auditPagination.pageSize) {
+                tbody.lastChild.remove();
+            }
+        }
+    }
 }

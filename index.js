@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 
 const express = require('express');
 const cors = require('cors');
@@ -7,6 +7,7 @@ const http = require('http');
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
+global.scadaIo = io;
 const logger = require('./utils/logger');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
@@ -98,6 +99,7 @@ require('./routes/user.routes')(app);
 require('./routes/scada.routes')(app);
 require('./routes/settings.routes')(app);
 require('./routes/opcua.routes')(app);
+require('./routes/audit.routes')(app);
 const scadaController = require("./controllers/scada.controller");
 const opcuaManager = require("./utils/opcua.manager");
 const scadaSim = scadaController.scadaSim;

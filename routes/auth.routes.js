@@ -21,7 +21,7 @@ function cleanupExpiredEntries() {
 setInterval(cleanupExpiredEntries, 5 * 60 * 1000);
 
 function signinRateLimiter(req, res, next) {
-    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const ip = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress;
     const now = Date.now();
     const record = loginAttempts.get(ip);
 
@@ -69,7 +69,9 @@ module.exports = function (app) {
     // Signin with rate limiting: max 10 attempts per 15 minutes per IP
     app.post("/api/auth/signin", signinRateLimiter, controller.signin);
 
+    // Logout
+    app.post("/api/auth/logout", controller.logout);
+
     // Change password (requires authentication)
     app.post("/api/auth/change-password", [authJwt.verifyToken], controller.changePassword);
 };
-

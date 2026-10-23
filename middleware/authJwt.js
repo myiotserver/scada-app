@@ -3,7 +3,7 @@ const config = require("../config/auth.config.js");
 const db = require("../models");
 const User = db.user;
 
-verifyToken = (req, res, next) => {
+const verifyToken = (req, res, next) => {
     let token = req.headers["x-access-token"];
 
     if (!token) {
@@ -19,60 +19,74 @@ verifyToken = (req, res, next) => {
             });
         }
         req.userId = decoded.id;
-        next();
+
+        User.findByPk(req.userId, {
+            attributes: ["id", "username", "email"],
+            include: [{ model: db.role, as: "roles", attributes: ["name"] }]
+        }).then(user => {
+            if (user) {
+                req.user = user;
+                req.username = user.username;
+                req.userRoles = user.roles ? user.roles.map(r => r.name) : [];
+                req.userRole = req.userRoles.join(", ");
+            }
+            next();
+        }).catch(() => next());
     });
 };
 
-isAdmin = (req, res, next) => {
+const isAdmin = (req, res, next) => {
+    if (req.userRoles) {
+        if (req.userRoles.includes("admin")) return next();
+        return res.status(403).send({ message: "Require Admin Role!" });
+    }
     User.findByPk(req.userId).then(user => {
+        if (!user) return res.status(404).send({ message: "User not found!" });
         user.getRoles().then(roles => {
             for (let i = 0; i < roles.length; i++) {
                 if (roles[i].name === "admin") {
-                    next();
-                    return;
+                    return next();
                 }
             }
-
-            res.status(403).send({
-                message: "Require Admin Role!"
-            });
-            return;
+            return res.status(403).send({ message: "Require Admin Role!" });
         });
-    });
+    }).catch(err => res.status(500).send({ message: err.message }));
 };
 
-isModerator = (req, res, next) => {
+const isModerator = (req, res, next) => {
+    if (req.userRoles) {
+        if (req.userRoles.includes("moderator")) return next();
+        return res.status(403).send({ message: "Require Moderator Role!" });
+    }
     User.findByPk(req.userId).then(user => {
+        if (!user) return res.status(404).send({ message: "User not found!" });
         user.getRoles().then(roles => {
             for (let i = 0; i < roles.length; i++) {
                 if (roles[i].name === "moderator") {
-                    next();
-                    return;
+                    return next();
                 }
             }
-
-            res.status(403).send({
-                message: "Require Moderator Role!"
-            });
+            return res.status(403).send({ message: "Require Moderator Role!" });
         });
-    });
+    }).catch(err => res.status(500).send({ message: err.message }));
 };
 
-isUserOrAdmin = (req, res, next) => {
+const isUserOrAdmin = (req, res, next) => {
+    if (req.userRoles) {
+        if (req.userRoles.includes("user") || req.userRoles.includes("admin")) return next();
+        return res.status(403).send({ message: "Require User or Admin Role!" });
+    }
     User.findByPk(req.userId).then(user => {
+        if (!user) return res.status(404).send({ message: "User not found!" });
         user.getRoles().then(roles => {
             for (let i = 0; i < roles.length; i++) {
                 if (roles[i].name === "user" || roles[i].name === "admin") {
-                    next();
-                    return;
+                    return next();
                 }
             }
-
-            res.status(403).send({
-                message: "Require User or Admin Role!"
-            });
+            return res.status(403).send({ message: "Require User or Admin Role!" });
         });
-    });
+    }).catch(err => res.status(500).send({ message: err.message }));
 };
 
 const authJwt = {

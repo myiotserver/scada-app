@@ -1,4 +1,5 @@
 const db = require("../models");
+const auditLogger = require("../utils/auditLogger");
 const User = db.user;
 const Role = db.role;
 const bcrypt = require("bcrypt");
@@ -21,18 +22,16 @@ exports.moderatorBoard = (req, res) => {
 
 // CRUD for Users
 exports.findAll = (req, res) => {
-    console.log("findAll users called");
     User.findAll({
         include: [{
             model: Role,
-            as: 'roles',
-            attributes: ['id', 'name'],
+            as: "roles",
+            attributes: ["id", "name"],
             through: {
-                attributes: [],
+                attributes: []
             }
         }]
     }).then(users => {
-        console.log("findAll retrieved:", users.length, "users");
         res.send(users);
     }).catch(err => {
         console.error("findAll error:", err);
@@ -46,6 +45,7 @@ exports.createUser = (req, res) => {
         email: req.body.email || null,
         password: bcrypt.hashSync(req.body.password, 8)
     }).then(user => {
+        const rolesList = req.body.roles || ["user"];
         if (req.body.roles) {
             Role.findAll({
                 where: {
@@ -53,11 +53,25 @@ exports.createUser = (req, res) => {
                 }
             }).then(roles => {
                 user.setRoles(roles).then(() => {
+                    auditLogger.log({
+                        req,
+                        action: "USER_CREATE",
+                        category: "USER_MGMT",
+                        target: `User: ${user.username}`,
+                        details: `Created new user '${user.username}' with role(s): ${rolesList.join(", ")}`
+                    });
                     res.send({ message: "User registered successfully!" });
                 });
             });
         } else {
             user.setRoles([1]).then(() => {
+                auditLogger.log({
+                    req,
+                    action: "USER_CREATE",
+                    category: "USER_MGMT",
+                    target: `User: ${user.username}`,
+                    details: `Created new user '${user.username}' with role: user`
+                });
                 res.send({ message: "User registered successfully!" });
             });
         }
@@ -73,18 +87,15 @@ exports.updateUser = (req, res) => {
     if (updateData.password) {
         updateData.password = bcrypt.hashSync(updateData.password, 8);
     }
-    // Remove roles from direct update since it's an association
     delete updateData.roles;
 
     User.update(updateData, {
         where: { id: id }
     }).then(num => {
         if (num == 1 || (req.body.roles && req.body.roles.length > 0)) {
-            // If roles are provided, update them
             if (req.body.roles) {
                 User.findByPk(id).then(user => {
                     if (!user) {
-                        // Should not happen if update succeeded, but safe check
                         return res.status(404).send({ message: "User not found." });
                     }
                     Role.findAll({
@@ -93,11 +104,27 @@ exports.updateUser = (req, res) => {
                         }
                     }).then(roles => {
                         user.setRoles(roles).then(() => {
+                            auditLogger.log({
+                                req,
+                                action: "USER_UPDATE",
+                                category: "USER_MGMT",
+                                target: `User: ${user.username}`,
+                                details: `Updated roles for '${user.username}': ${req.body.roles.join(", ")}`
+                            });
                             res.send({ message: "User was updated successfully." });
                         });
                     });
                 });
             } else {
+                User.findByPk(id).then(user => {
+                    auditLogger.log({
+                        req,
+                        action: "USER_UPDATE",
+                        category: "USER_MGMT",
+                        target: user ? `User: ${user.username}` : `User ID: ${id}`,
+                        details: `Updated user profile attributes`
+                    });
+                });
                 res.send({ message: "User was updated successfully." });
             }
         } else {
@@ -114,15 +141,27 @@ exports.updateUser = (req, res) => {
 
 exports.deleteUser = (req, res) => {
     const id = req.params.id;
-    User.destroy({
-        where: { id: id }
-    }).then(num => {
-        if (num == 1) {
-            res.send({ message: "User was deleted successfully!" });
-        } else {
-            res.send({ message: `Cannot delete User with id=${id}. Maybe User was not found!` });
-        }
+    User.findByPk(id).then(targetUser => {
+        const targetName = targetUser ? targetUser.username : `ID ${id}`;
+        User.destroy({
+            where: { id: id }
+        }).then(num => {
+            if (num == 1) {
+                auditLogger.log({
+                    req,
+                    action: "USER_DELETE",
+                    category: "USER_MGMT",
+                    target: `User: ${targetName}`,
+                    details: `Deleted user account '${targetName}'`
+                });
+                res.send({ message: "User was deleted successfully!" });
+            } else {
+                res.send({ message: `Cannot delete User with id=${id}. Maybe User was not found!` });
+            }
+        }).catch(err => {
+            res.status(500).send({ message: "Could not delete User with id=" + id });
+        });
     }).catch(err => {
-        res.status(500).send({ message: "Could not delete User with id=" + id });
+        res.status(500).send({ message: "Error locating User with id=" + id });
     });
 };

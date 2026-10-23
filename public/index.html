@@ -21,14 +21,14 @@
                 <img src="sriboga-logo.png" alt="SRIBOGA logo">
             </div>
             <h1>SRIBOGA</h1>
-            <p>PIONEER IN FLOUR INNOVATION</p>
+            <p data-i18n="sriboga_tagline">PIONEER IN FLOUR INNOVATION</p>
             <div class="form-group">
-                <input type="text" id="username" placeholder="Username" autocomplete="off">
+                <input type="text" id="username" placeholder="Username" data-i18n-placeholder="lbl_username" autocomplete="off">
             </div>
             <div class="form-group">
-                <input type="password" id="password" placeholder="Password">
+                <input type="password" id="password" placeholder="Password" data-i18n-placeholder="lbl_password">
             </div>
-            <button class="btn-primary" onclick="handleLogin()">Sign In</button>
+            <button class="btn-primary" onclick="handleLogin()" data-i18n="btn_signin">Sign In</button>
             <p id="login-error"></p>
         </div>
     </div>
@@ -44,14 +44,21 @@
                 </div>
                 <div class="logo-text">
                     <h1>SRIBOGA</h1>
-                    <p>PIONEER IN FLOUR INNOVATION</p>
+                    <p data-i18n="sriboga_tagline">PIONEER IN FLOUR INNOVATION</p>
                 </div>
             </div>
-            <div class="header-title">WEIGHING DASHBOARD</div>
-            <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Switch theme">
-                <!-- <span id="theme-icon">🌙</span> -->
-                <i class='bx bxs-moon' id="theme-icon"></i>
-            </button>
+            <div class="header-title" data-i18n="header_title">WEIGHING DASHBOARD</div>
+            <div class="header-right-actions">
+                <!-- Language Switcher ID / EN -->
+                <div class="lang-switch-group" id="lang-switch-group" role="group" aria-label="Language Selector">
+                    <button type="button" class="lang-switch-btn active" id="lang-btn-id" onclick="setLanguage('id')" title="Bahasa Indonesia">ID</button>
+                    <button type="button" class="lang-switch-btn" id="lang-btn-en" onclick="setLanguage('en')" title="English">EN</button>
+                </div>
+                <!-- Theme Toggle -->
+                <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Switch theme" data-i18n-title="theme_toggle_title">
+                    <i class='bx bxs-moon' id="theme-icon"></i>
+                </button>
+            </div>
         </header>
 
         <div class="main-content">
@@ -59,33 +66,33 @@
             <aside>
                 <nav>
                     <button class="nav-btn active" onclick="navigate('home')">
-                        <!-- <span class="icon">🏠</span> -->
                         <i class='bx bxs-home icon'></i>
-                        <span class="nav-label">Home</span>
+                        <span class="nav-label" data-i18n="nav_home">Home</span>
                     </button>
                     <button class="nav-btn" onclick="navigate('config')">
-                        <!-- <span class="icon">⚙️</span> -->
                         <i class='bx bxs-cog icon'></i>
-                        <span class="nav-label">Config</span>
+                        <span class="nav-label" data-i18n="nav_config">Config</span>
                     </button>
                     <button class="nav-btn" onclick="navigate('users')">
-                        <!-- <span class="icon">👥</span> -->
                         <i class='bx bxs-group icon'></i>
-                        <span class="nav-label">Users</span>
+                        <span class="nav-label" data-i18n="nav_users">Users</span>
                     </button>
                     <button class="nav-btn" onclick="navigate('opcua')">
-                        <!-- <span class="icon">🔌</span> -->
                         <i class='bx bxs-plug icon'></i>
-                        <span class="nav-label">OPC</span>
+                        <span class="nav-label" data-i18n="nav_opcua">OPC</span>
                         <span class="opcua-dot" id="opcua-nav-dot"></span>
                     </button>
                     <button class="nav-btn" onclick="navigate('history')">
                         <i class='bx bxs-report icon'></i>
-                        <span class="nav-label">History</span>
+                        <span class="nav-label" data-i18n="nav_history">History</span>
                     </button>
                     <button class="nav-btn" onclick="navigate('logs')">
                         <i class='bx bx-terminal icon'></i>
-                        <span class="nav-label">Logs</span>
+                        <span class="nav-label" data-i18n="nav_logs">Logs</span>
+                    </button>
+                    <button class="nav-btn" id="nav-btn-audit" onclick="navigate('audit')">
+                        <i class='bx bx-history icon'></i>
+                        <span class="nav-label" data-i18n="nav_audit">Audit Trail</span>
                     </button>
                 </nav>
 
@@ -96,9 +103,8 @@
                         <div id="clock-date">17 February 2026</div>
                     </div>
                     <button class="btn-logout" onclick="handleLogout()">
-                        <!-- <span class="icon">⏏</span> -->
                         <i class='bx bx-log-out icon'></i>
-                        <span class="nav-label">Logout</span>
+                        <span class="nav-label" data-i18n="nav_logout">Logout</span>
                     </button>
                 </div>
             </aside>
@@ -125,7 +131,7 @@
                     style="display: none; padding: 20px; width: 100%; gap: 20px;">
                     <!-- Left: Interlock Settings -->
                     <div class="config-panel" style="flex: 1;">
-                        <div class="panel-header">Underweight Interlock Metal Detector</div>
+                        <div class="panel-header" data-i18n="interlock_panel_title">Underweight Interlock Metal Detector</div>
                         <div class="panel-body" id="interlock-settings">
                             <!-- Injected via JS -->
                         </div>
@@ -135,37 +141,37 @@
                     <div class="config-panel" style="flex: 1.2;">
                         <div class="panel-header"
                             style="display: flex; justify-content: space-between; align-items: center;">
-                            <span>SQL Server Setting</span>
+                            <span data-i18n="sql_panel_title">SQL Server Setting</span>
                             <div id="sql-status-badge" class="status-badge"
-                                style="font-size: 0.7rem; padding: 2px 8px;">CHECKING...</div>
+                                style="font-size: 0.7rem; padding: 2px 8px;" data-i18n="checking">CHECKING...</div>
                         </div>
                         <div class="panel-body">
                             <div class="form-row">
-                                <label>Server :</label> <input type="text" id="cfg-server">
-                                <label>Port :</label> <input type="text" id="cfg-port" style="width:70px" placeholder="1433">
+                                <label data-i18n="lbl_server">Server :</label> <input type="text" id="cfg-server">
+                                <label data-i18n="lbl_port">Port :</label> <input type="text" id="cfg-port" style="width:70px" placeholder="1433">
                             </div>
                             <div class="form-row">
-                                <label>UID :</label> <input type="text" id="cfg-uid">
-                                <label>PASS :</label> <input type="password" id="cfg-pass">
+                                <label data-i18n="lbl_uid">UID :</label> <input type="text" id="cfg-uid">
+                                <label data-i18n="lbl_pass">PASS :</label> <input type="password" id="cfg-pass">
                             </div>
                             <div class="form-row">
-                                <label>Database :</label> <input type="text" id="cfg-db">
+                                <label data-i18n="lbl_db">Database :</label> <input type="text" id="cfg-db">
                             </div>
-                            <div class="form-row"><label>Table Zeroing :</label> <input type="text" id="cfg-table-zero">
+                            <div class="form-row"><label data-i18n="lbl_table_zero">Table Zeroing :</label> <input type="text" id="cfg-table-zero">
                             </div>
-                            <div class="form-row"><label>Table Weight :</label> <input type="text"
+                            <div class="form-row"><label data-i18n="lbl_table_weight">Table Weight :</label> <input type="text"
                                     id="cfg-table-weight"></div>
-                            <div class="form-row"><label>Table Preset Data :</label> <input type="text"
+                            <div class="form-row"><label data-i18n="lbl_table_preset">Table Preset Data :</label> <input type="text"
                                     id="cfg-table-main"></div>
 
                             <div class="form-row" style="align-items: center; margin-top: 10px;">
-                                <label>Auto-Reconnect :</label>
+                                <label data-i18n="lbl_auto_reconnect">Auto-Reconnect :</label>
                                 <input type="checkbox" id="cfg-sql-auto-reconnect"
                                     style="width: auto; margin-right: auto;">
                             </div>
 
                             <div style="text-align: right; margin-top: 20px;">
-                                <button class="btn-save" onclick="saveSettings()">💾 SAVE SETTINGS</button>
+                                <button class="btn-save" onclick="promptSaveSqlSettings()"><i class='bx bx-save'></i> <span data-i18n="btn_save_settings">SAVE SETTINGS</span></button>
                             </div>
                         </div>
                     </div>
@@ -176,17 +182,18 @@
                     style="display: none; padding: 20px; width: 100%; flex-direction: column;">
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h2>User Management</h2>
-                        <button class="btn-primary" style="width: auto;" onclick="showAddUserModal()">+ Add
-                            User</button>
+                        <h2 data-i18n="users_title">User Management</h2>
+                        <button class="btn-primary user-header-btn" onclick="showAddUserModal()">
+                            <i class='bx bx-user-plus'></i> <span data-i18n="btn_add_user">Add User</span>
+                        </button>
                     </div>
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Username</th>
-                                <th>Roles</th>
-                                <th>Actions</th>
+                                <th data-i18n="th_user_id">ID</th>
+                                <th data-i18n="th_user_name">Username</th>
+                                <th data-i18n="th_user_roles">Roles</th>
+                                <th data-i18n="th_user_actions">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="user-list-body">
@@ -200,22 +207,22 @@
 
                     <!-- Left: Connection Settings -->
                     <div class="config-panel opc-connection-panel">
-                        <div class="panel-header">OPC-UA Connection <span class="opcua-badge"
+                        <div class="panel-header"><span data-i18n="opcua_conn_title">OPC-UA Connection</span> <span class="opcua-badge"
                                 id="opcua-status-badge">DISCONNECTED</span></div>
                         <div class="panel-body">
                             <div class="form-row">
-                                <label>Endpoint URL :</label>
+                                <label data-i18n="lbl_endpoint">Endpoint URL :</label>
                                 <input type="text" id="opcua-endpoint" placeholder="opc.tcp://192.168.21.1:4840"
                                     spellcheck="false">
                             </div>
                             <div class="form-row opc-inline-row">
-                                <label>Security :</label>
+                                <label data-i18n="lbl_security">Security :</label>
                                 <select id="opcua-security">
                                     <option value="None">None</option>
                                     <option value="Sign">Sign</option>
                                     <option value="SignAndEncrypt">Sign & Encrypt</option>
                                 </select>
-                                <label>Policy :</label>
+                                <label data-i18n="lbl_policy">Policy :</label>
                                 <select id="opcua-policy">
                                     <option value="Basic128Rsa15">Basic128Rsa15</option>
                                     <option value="Basic256">Basic256</option>
@@ -223,38 +230,35 @@
                                 </select>
                             </div>
                             <div class="form-row opc-inline-row">
-                                <label>Publish (ms) :</label>
+                                <label data-i18n="lbl_publish">Publish (ms) :</label>
                                 <input type="number" id="opcua-publish" value="1000" min="100">
-                                <label>Sample (ms) :</label>
+                                <label data-i18n="lbl_sampling">Sample (ms) :</label>
                                 <input type="number" id="opcua-sampling" value="500" min="100">
                             </div>
                             <div class="form-row">
-                                <label>Username :</label>
+                                <label data-i18n="lbl_opcua_user">Username :</label>
                                 <input type="text" id="opcua-username" placeholder="(anonymous)" spellcheck="false">
                             </div>
                             <div class="form-row">
-                                <label>Password :</label>
+                                <label data-i18n="lbl_opcua_pass">Password :</label>
                                 <input type="password" id="opcua-password" placeholder="••••••">
                             </div>
                             <div class="form-row opc-checkbox-row" style="align-items: center;">
-                                <label>Auto-Connect :</label>
+                                <label data-i18n="lbl_opcua_autoconnect">Auto-Connect :</label>
                                 <input type="checkbox" id="opcua-autoconnect" style="width: auto;">
                             </div>
                             <div class="opc-btn-row" style="display: flex; gap: 10px; margin-top: 10px;">
                                 <button class="btn-save" onclick="saveOpcUaConfig()">
-                                    <span class="icon">💾</span>
-                                    <span class="btn-text">SAVE</span>
+                                    <i class='bx bx-save'></i> <span data-i18n="btn_opcua_save">SAVE</span>
                                 </button>
-                                <button class="btn-primary" id="btn-opcua-connect"
-                                    style="width: auto; background: #22c55e;" onclick="opcuaConnect()">
-                                    <span class="icon">🔌</span>
-                                    <span class="btn-text">CONNECT</span>
+                                <button class="btn-primary opc-conn-btn" id="btn-opcua-connect"
+                                    style="background: #22c55e;" onclick="opcuaConnect()">
+                                    <i class='bx bx-plug'></i> <span data-i18n="btn_opcua_connect">CONNECT</span>
                                 </button>
-                                <button class="btn-primary" id="btn-opcua-disconnect"
-                                    style="width: auto; background: #ef4444; display: none;"
+                                <button class="btn-primary opc-conn-btn" id="btn-opcua-disconnect"
+                                    style="background: #ef4444; display: none;"
                                     onclick="opcuaDisconnect()">
-                                    <span class="icon">⛔</span>
-                                    <span class="btn-text">DISCONNECT</span>
+                                    <i class='bx bx-unlink'></i> <span data-i18n="btn_opcua_disconnect">DISCONNECT</span>
                                 </button>
                             </div>
                         </div>
@@ -262,14 +266,14 @@
 
                     <!-- Right: Node Mapping -->
                     <div class="config-panel opc-tags-panel">
-                        <div class="panel-header">Monitored Nodes <span id="opcua-node-count"
+                        <div class="panel-header"><span data-i18n="opcua_tags_title">Monitored Nodes</span> <span id="opcua-node-count"
                                 style="font-weight:normal; font-size:0.75rem; color:var(--text-muted);">0 nodes</span>
                         </div>
                         <div class="panel-body">
                             <div class="form-row" style="margin-bottom: 10px;">
                                 <input type="text" id="opcua-new-nodeid" placeholder="ns=3;s=GrossWeight_1"
                                     spellcheck="false" style="flex: 2;">
-                                <input type="text" id="opcua-new-name" placeholder="Tag Name" spellcheck="false"
+                                <input type="text" id="opcua-new-name" placeholder="Tag Name" data-i18n-placeholder="placeholder_tag_name" spellcheck="false"
                                     style="flex: 1;">
                                 <select id="opcua-new-machine" style="width: 110px;">
                                     <option value="">Global</option>
@@ -296,27 +300,27 @@
                                     <option value="TOLERANCE_MAX">TOLERANCE_MAX</option>
                                     <option value="DEVIATION_TOLERANCE_MIN">DEVIATION_TOLERANCE_MIN</option>
                                 </select>
-                                <input type="number" id="opcua-new-scale" placeholder="Scale" value="0.01" step="0.001"
+                                <input type="number" id="opcua-new-scale" placeholder="Scale" data-i18n-placeholder="placeholder_scale" value="0.01" step="0.001"
                                     style="width: 90px;">
-                                <input type="text" id="opcua-new-desc" placeholder="Description" spellcheck="false"
+                                <input type="text" id="opcua-new-desc" placeholder="Description" data-i18n-placeholder="placeholder_desc" spellcheck="false"
                                     style="flex: 1.2;">
-                                <button class="btn-primary" style="width: auto;" onclick="addOpcUaNode()">
-                                    <i class='bx bx-plus-circle'></i> Add Node
+                                <button class="btn-primary opc-add-node-btn" onclick="addOpcUaNode()">
+                                    <i class='bx bx-plus-circle'></i> <span data-i18n="btn_add_node">Add Node</span>
                                 </button>
                             </div>
                             <div class="table-responsive">
                                 <table class="data-table">
                                     <thead>
                                         <tr>
-                                            <th>#</th>
-                                            <th>Node ID</th>
-                                            <th>Name</th>
-                                            <th>Machine</th>
-                                            <th>Signal Type</th>
-                                            <th>Scale</th>
-                                            <th>Description</th>
-                                            <th>Live Value</th>
-                                            <th>Actions</th>
+                                            <th data-i18n="th_opc_no">#</th>
+                                            <th data-i18n="th_opc_nodeid">Node ID</th>
+                                            <th data-i18n="th_opc_name">Name</th>
+                                            <th data-i18n="th_opc_machine">Machine</th>
+                                            <th data-i18n="th_opc_signal">Signal Type</th>
+                                            <th data-i18n="th_opc_scale">Scale</th>
+                                            <th data-i18n="th_opc_desc">Description</th>
+                                            <th data-i18n="th_opc_live">Live Value</th>
+                                            <th data-i18n="th_opc_actions">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody id="opcua-nodes-body">
@@ -332,54 +336,56 @@
                 <div id="view-history" class="view-section history-view" style="display: none;">
                     <div class="history-toolbar">
                         <div>
-                            <h2 class="history-title">Weight History</h2>
-                            <p id="history-subtitle" class="history-subtitle">Loading…</p>
+                            <h2 class="history-title" data-i18n="history_title">Weight History</h2>
+                            <p id="history-subtitle" class="history-subtitle" data-i18n="history_subtitle">Loading…</p>
                         </div>
                         <div class="history-toolbar-actions">
-                            <label for="history-carousel-filter" class="history-filter-label">Carousel</label>
+                            <label for="history-carousel-filter" class="history-filter-label" data-i18n="lbl_carousel">Carousel</label>
                             <select id="history-carousel-filter" class="history-select" onchange="loadHistory()">
-                                <option value="">All</option>
+                                <option value="" data-i18n="opt_all">All</option>
                                 <option value="CR1">CR1</option>
                                 <option value="CR2">CR2</option>
                                 <option value="CR3">CR3</option>
                                 <option value="CR4">CR4</option>
                                 <option value="CR5">CR5</option>
                             </select>
-                            <label for="history-refresh-interval" class="history-filter-label">Refresh Rate</label>
+                            <label for="history-refresh-interval" class="history-filter-label" data-i18n="lbl_refresh_rate">Refresh Rate</label>
                             <select id="history-refresh-interval" class="history-select" onchange="onHistoryRefreshChange()">
                                 <option value="10">10s</option>
                                 <option value="30" selected>30s</option>
                                 <option value="60">60s</option>
                                 <option value="120">120s</option>
-                                <option value="0">Off</option>
+                                <option value="0" data-i18n="opt_off">Off</option>
                             </select>
-                            <button class="btn-primary history-refresh-btn" type="button" onclick="loadHistory()">Refresh</button>
+                            <button class="btn-primary history-refresh-btn" type="button" onclick="loadHistory()">
+                                <i class='bx bx-refresh'></i> <span data-i18n="btn_refresh">Refresh</span>
+                            </button>
                         </div>
                     </div>
                     <div class="history-table-wrap">
                         <table class="data-table history-table">
                             <thead>
                                 <tr>
-                                    <th>Time</th>
-                                    <th>Carousel</th>
-                                    <th>Product</th>
-                                    <th>Target</th>
-                                    <th>Counter</th>
-                                    <th>Gross</th>
-                                    <th>Nett</th>
-                                    <th>Status</th>
+                                    <th data-i18n="th_time">Time</th>
+                                    <th data-i18n="th_carousel">Carousel</th>
+                                    <th data-i18n="th_product">Product</th>
+                                    <th data-i18n="th_target">Target</th>
+                                    <th data-i18n="th_counter">Counter</th>
+                                    <th data-i18n="th_gross">Gross</th>
+                                    <th data-i18n="th_nett">Nett</th>
+                                    <th data-i18n="th_status">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="history-list-body">
                                 <tr>
-                                    <td colspan="8" style="text-align:center;">Loading...</td>
+                                    <td colspan="8" style="text-align:center;" data-i18n="loading">Loading...</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                     <div class="history-pagination">
                         <div class="history-pagination-left">
-                            <label for="history-page-size" class="history-filter-label">Rows</label>
+                            <label for="history-page-size" class="history-filter-label" data-i18n="lbl_rows">Rows</label>
                             <select id="history-page-size" class="history-select history-page-size-select"
                                 onchange="onHistoryPageSizeChange()">
                                 <option value="25">25</option>
@@ -390,14 +396,14 @@
                         </div>
                         <div class="history-pagination-center">
                             <button type="button" class="history-page-btn" id="history-first-btn"
-                                onclick="historyGoToPage(1)" title="First page">«</button>
+                                onclick="historyGoToPage(1)" title="First page" data-i18n-title="btn_first_page">«</button>
                             <button type="button" class="history-page-btn" id="history-prev-btn"
-                                onclick="historyChangePage(-1)">Prev</button>
+                                onclick="historyChangePage(-1)" data-i18n="btn_prev">Prev</button>
                             <span id="history-page-info" class="history-page-info">Page 1 of 1</span>
                             <button type="button" class="history-page-btn" id="history-next-btn"
-                                onclick="historyChangePage(1)">Next</button>
+                                onclick="historyChangePage(1)" data-i18n="btn_next">Next</button>
                             <button type="button" class="history-page-btn" id="history-last-btn"
-                                onclick="historyGoToPage('last')" title="Last page">»</button>
+                                onclick="historyGoToPage('last')" title="Last page" data-i18n-title="btn_last_page">»</button>
                         </div>
                         <div id="history-range-info" class="history-range-info">—</div>
                     </div>
@@ -409,31 +415,35 @@
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                         <div>
-                            <h2 style="margin: 0 0 5px 0;">System Log</h2>
-                            <p style="margin: 0; font-size: 0.85rem; color: #888;">Real-time system events &
-                                diagnostics</p>
+                            <h2 style="margin: 0 0 5px 0;" data-i18n="syslog_title">System Log</h2>
+                            <p style="margin: 0; font-size: 0.85rem; color: #888;" data-i18n="syslog_subtitle">Real-time system events &amp; diagnostics</p>
                         </div>
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <label for="log-level-filter" style="font-size: 0.85rem; color: #aaa;">Level</label>
-                            <select id="log-level-filter" onchange="filterLogs()"
-                                style="height: 36px; min-width: 90px; background: #0d172a; color: #e5e7eb; border: 1px solid #334155; border-radius: 8px; padding: 0 10px;">
-                                <option value="">All</option>
-                                <option value="INFO">INFO</option>
-                                <option value="WARN">WARN</option>
-                                <option value="ERROR">ERROR</option>
-                            </select>
-                            <label for="log-source-filter" style="font-size: 0.85rem; color: #aaa;">Source</label>
-                            <select id="log-source-filter" onchange="filterLogs()"
-                                style="height: 36px; min-width: 100px; background: #0d172a; color: #e5e7eb; border: 1px solid #334155; border-radius: 8px; padding: 0 10px;">
-                                <option value="">All</option>
-                                <option value="OPC">OPC</option>
-                                <option value="SQL">SQL</option>
-                                <option value="SCADA">SCADA</option>
-                                <option value="SYSTEM">SYSTEM</option>
-                            </select>
-                            <button class="btn-primary" style="width: auto;" onclick="loadLogs()">Refresh</button>
-                            <button class="btn-primary" style="width: auto; background: #ef4444;"
-                                onclick="clearLogView()">Clear</button>
+                        <div class="log-toolbar">
+                            <div class="log-filter-group">
+                                <label for="log-level-filter" class="log-filter-label" data-i18n="lbl_level">Level</label>
+                                <select id="log-level-filter" class="log-select" onchange="filterLogs()">
+                                    <option value="" data-i18n="opt_all">All</option>
+                                    <option value="INFO">INFO</option>
+                                    <option value="WARN">WARN</option>
+                                    <option value="ERROR">ERROR</option>
+                                </select>
+                            </div>
+                            <div class="log-filter-group">
+                                <label for="log-source-filter" class="log-filter-label" data-i18n="lbl_source">Source</label>
+                                <select id="log-source-filter" class="log-select" onchange="filterLogs()">
+                                    <option value="" data-i18n="opt_all">All</option>
+                                    <option value="OPC">OPC</option>
+                                    <option value="SQL">SQL</option>
+                                    <option value="SCADA">SCADA</option>
+                                    <option value="SYSTEM">SYSTEM</option>
+                                </select>
+                            </div>
+                            <button type="button" class="log-btn log-btn-refresh" onclick="loadLogs()">
+                                <i class='bx bx-refresh'></i> <span data-i18n="btn_refresh">Refresh</span>
+                            </button>
+                            <button type="button" class="log-btn log-btn-clear" onclick="clearLogView()">
+                                <i class='bx bx-trash'></i> <span data-i18n="btn_clear">Clear</span>
+                            </button>
                         </div>
                     </div>
                     <div class="log-container" id="log-container">
@@ -441,10 +451,161 @@
                             <span class="log-ts">—</span>
                             <span class="log-badge">INFO</span>
                             <span class="log-src">SYSTEM</span>
-                            <span class="log-msg">Waiting for log entries...</span>
+                            <span class="log-msg" data-i18n="log_waiting">Waiting for log entries...</span>
                         </div>
                     </div>
                 </div>
+
+                <!-- USER ACTIVITY & AUDIT TRAIL VIEW -->
+                <div id="view-audit" class="view-section history-view" style="display: none; padding: 20px; width: 100%; flex-direction: column;">
+                    <!-- Header with Title & Action Buttons -->
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+                        <div>
+                            <h2 style="margin: 0 0 5px 0; display: flex; align-items: center; gap: 10px;">
+                                <i class='bx bx-history' style="color: #6366f1;"></i>
+                                <span data-i18n="audit_title">Activity Tracking & Audit Trail</span>
+                            </h2>
+                            <p style="margin: 0; font-size: 0.85rem; color: #94a3b8;" data-i18n="audit_subtitle">
+                                Log lengkap aktivitas pengguna, kontrol carousel, interlock, dan perubahan konfigurasi sistem.
+                            </p>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <button class="btn-primary audit-header-btn" style="background: #059669;" onclick="exportAuditLogs()">
+                                <i class='bx bxs-download'></i> <span data-i18n="btn_export_csv">Export CSV</span>
+                            </button>
+                            <button class="btn-primary audit-header-btn" onclick="loadAuditLogs()">
+                                <i class='bx bx-refresh'></i> <span data-i18n="btn_refresh">Refresh</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats Cards -->
+                    <div class="audit-stats-grid">
+                        <div class="audit-stat-card">
+                            <div class="stat-icon stat-icon-indigo">
+                                <i class='bx bx-pulse'></i>
+                            </div>
+                            <div class="stat-meta">
+                                <span class="stat-label" data-i18n="audit_stat_total">Total Aktivitas Hari Ini</span>
+                                <span class="stat-val" id="audit-stat-total">0</span>
+                            </div>
+                        </div>
+                        <div class="audit-stat-card">
+                            <div class="stat-icon stat-icon-emerald">
+                                <i class='bx bx-user-check'></i>
+                            </div>
+                            <div class="stat-meta">
+                                <span class="stat-label" data-i18n="audit_stat_auth">Login & Otentikasi</span>
+                                <span class="stat-val" id="audit-stat-auth">0</span>
+                            </div>
+                        </div>
+                        <div class="audit-stat-card">
+                            <div class="stat-icon stat-icon-amber">
+                                <i class='bx bx-play-circle'></i>
+                            </div>
+                            <div class="stat-meta">
+                                <span class="stat-label" data-i18n="audit_stat_control">Kontrol Carousel / Reset</span>
+                                <span class="stat-val" id="audit-stat-control">0</span>
+                            </div>
+                        </div>
+                        <div class="audit-stat-card">
+                            <div class="stat-icon stat-icon-purple">
+                                <i class='bx bx-slider-alt'></i>
+                            </div>
+                            <div class="stat-meta">
+                                <span class="stat-label" data-i18n="audit_stat_settings">Perubahan Pengaturan</span>
+                                <span class="stat-val" id="audit-stat-settings">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Filters Toolbar -->
+                    <div class="audit-filter-bar">
+                        <div class="audit-filter-item">
+                            <label for="audit-filter-category" class="audit-filter-label" data-i18n="lbl_category">Kategori</label>
+                            <select id="audit-filter-category" class="history-select" onchange="loadAuditLogs(1)">
+                                <option value="" data-i18n="opt_all_categories">Semua Kategori</option>
+                                <option value="AUTH" data-i18n="opt_cat_auth">Authentication (Login/Logout)</option>
+                                <option value="CAROUSEL" data-i18n="opt_cat_carousel">Carousel Control & Reset</option>
+                                <option value="SETTINGS" data-i18n="opt_cat_settings">Pengaturan & Interlock</option>
+                                <option value="USER_MGMT" data-i18n="opt_cat_usermgmt">Manajemen Pengguna</option>
+                                <option value="OPCUA" data-i18n="opt_cat_opcua">OPC-UA Tag & Connection</option>
+                            </select>
+                        </div>
+                        <div class="audit-filter-item">
+                            <label for="audit-filter-target" class="audit-filter-label" data-i18n="lbl_target_carousel">Target Carousel</label>
+                            <select id="audit-filter-target" class="history-select" onchange="loadAuditLogs(1)">
+                                <option value="" data-i18n="opt_all_targets">Semua Target</option>
+                                <option value="CR1">Carousel 1 (CR1)</option>
+                                <option value="CR2">Carousel 2 (CR2)</option>
+                                <option value="CR3">Carousel 3 (CR3)</option>
+                                <option value="CR4">Carousel 4 (CR4)</option>
+                                <option value="CR5">Carousel 5 (CR5)</option>
+                            </select>
+                        </div>
+                        <div class="audit-filter-item">
+                            <label for="audit-filter-start-date" class="audit-filter-label" data-i18n="lbl_start_date">Dari Tanggal</label>
+                            <input type="date" id="audit-filter-start-date" class="audit-date-input" onchange="loadAuditLogs(1)">
+                        </div>
+                        <div class="audit-filter-item">
+                            <label for="audit-filter-end-date" class="audit-filter-label" data-i18n="lbl_end_date">Sampai Tanggal</label>
+                            <input type="date" id="audit-filter-end-date" class="audit-date-input" onchange="loadAuditLogs(1)">
+                        </div>
+                        <div class="audit-filter-item audit-filter-search">
+                            <label for="audit-filter-search" class="audit-filter-label" data-i18n="lbl_search">Pencarian</label>
+                            <div style="position: relative;">
+                                <input type="text" id="audit-filter-search" placeholder="Cari user, action, detail..." data-i18n-placeholder="placeholder_audit_search" class="audit-search-input" onkeydown="if(event.key==='Enter') loadAuditLogs(1)">
+                                <i class='bx bx-search' style="position: absolute; right: 10px; top: 10px; color: #94a3b8; cursor: pointer;" onclick="loadAuditLogs(1)"></i>
+                            </div>
+                        </div>
+                        <button class="btn-primary audit-reset-btn" type="button" onclick="resetAuditFilters()" data-i18n="btn_reset">Reset</button>
+                    </div>
+
+                    <!-- Audit Table -->
+                    <div class="history-table-wrap" style="margin-top: 15px;">
+                        <table class="data-table audit-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 160px;" data-i18n="th_audit_time">Waktu (WIB)</th>
+                                    <th style="width: 140px;" data-i18n="th_audit_user">Pengguna</th>
+                                    <th style="width: 120px;" data-i18n="th_audit_category">Kategori</th>
+                                    <th style="width: 150px;" data-i18n="th_audit_action">Aktivitas</th>
+                                    <th style="width: 110px;" data-i18n="th_audit_target">Target</th>
+                                    <th data-i18n="th_audit_details">Rincian / Perubahan Nilai</th>
+                                    <th style="width: 130px;" data-i18n="th_audit_ip">IP Address</th>
+                                </tr>
+                            </thead>
+                            <tbody id="audit-list-body">
+                                <tr>
+                                    <td colspan="7" style="text-align:center; padding: 25px; color: #94a3b8;" data-i18n="loading_audit">
+                                        Memuat data audit trail...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="history-pagination" style="margin-top: 15px;">
+                        <div class="history-pagination-left">
+                            <label for="audit-page-size" class="history-filter-label" data-i18n="lbl_rows">Baris</label>
+                            <select id="audit-page-size" class="history-select history-page-size-select" onchange="onAuditPageSizeChange()">
+                                <option value="25">25</option>
+                                <option value="50" selected>50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                        <div class="history-pagination-center">
+                            <button type="button" class="history-page-btn" id="audit-first-btn" onclick="auditGoToPage(1)" title="First page" data-i18n-title="btn_first_page">«</button>
+                            <button type="button" class="history-page-btn" id="audit-prev-btn" onclick="auditChangePage(-1)" data-i18n="btn_prev">Prev</button>
+                            <span id="audit-page-info" class="history-page-info">Halaman 1 dari 1</span>
+                            <button type="button" class="history-page-btn" id="audit-next-btn" onclick="auditChangePage(1)" data-i18n="btn_next">Next</button>
+                            <button type="button" class="history-page-btn" id="audit-last-btn" onclick="auditGoToPage('last')" title="Last page" data-i18n-title="btn_last_page">»</button>
+                        </div>
+                        <div id="audit-range-info" class="history-range-info">—</div>
+                    </div>
+                </div>
+            </main>
         </div>
 
         <!-- Alarm Running Text Ticker -->
@@ -456,7 +617,7 @@
                     <div class="alarm-ticker-viewport">
                         <div class="alarm-ticker-track" id="alarm-ticker-track"></div>
                     </div>
-                    <button class="alarm-reset-btn" id="alarm-reset-btn" onclick="resetAlarms()" title="Acknowledge alarm (clear WARN/ERROR buffer)">
+                    <button class="alarm-reset-btn" id="alarm-reset-btn" onclick="resetAlarms()" title="Acknowledge alarm (clear WARN/ERROR buffer)" data-i18n-title="title_alarm_ack">
                         <i class='bx bx-reset'></i>
                         <span>ACK</span>
                     </button>
@@ -469,7 +630,7 @@
             <div class="footer-group">
 
                 <div class="footer-group">
-                    <div class="footer-header">SENSORS</div>
+                    <div class="footer-header" data-i18n="footer_sensors">SENSORS</div>
                     <div class="indicators" id="sensor-indicators">
                         <!-- Javascript will populate or we hardcode 1-5 -->
                         <div class="indicator-item" id="sensor-1">
@@ -495,11 +656,11 @@
                     <div class="connection-icons">
                         <div class="conn-item" id="conn-sql" title="SQL Server">
                             <i class='bx bxs-data'></i>
-                            <span class="conn-label">Checking...</span>
+                            <span class="conn-label" data-i18n="checking">Checking...</span>
                         </div>
                         <div class="conn-item" id="conn-opc" title="OPC UA">
                             <i class='bx bxs-plug'></i>
-                            <span class="conn-label">Checking...</span>
+                            <span class="conn-label" data-i18n="checking">Checking...</span>
                         </div>
                     </div>
                 </div>
@@ -507,17 +668,9 @@
                 <div class="footer-group">
                     <!-- <div class="footer-header">CONTROL</div> -->
                     <div class="controls">
-                        <button class="ctrl-btn" id="btn-reset-error" onclick="triggerResetError()"><span
-                                class="icon"><img src="icons/reset.svg" alt="reset" width="14" height="14" style="vertical-align: middle;"></span> RESET</button>
-                        <!-- Note: Reset usually targets a specific carousel, but here it's global? 
-                         The previous button was just RESET. I will keep it but maybe it needs logic.
-                         Wait, the previous code was: <button class="ctrl-btn"><span class="icon">🔄</span> RESET</button>
-                         It didn't have an onclick? Let's check app.js if there was an event listener.
-                         Checked app.js: No specific listener for .ctrl-btn found in the snippet.
-                         The user said "Tetap pertahankan tombol RESET". I will leave it as is visually, 
-                         but maybe add an ID to hook it up if needed later. 
-                         Actually, let's keep it exactly as requested: "Posisi kanan: Tetap pertahankan tombol RESET"
-                    -->
+                        <button class="ctrl-btn" id="btn-reset-error" onclick="triggerResetError()">
+                            <i class='bx bx-reset' style="font-size: 1.15rem; vertical-align: middle;"></i> <span data-i18n="btn_footer_reset">RESET</span>
+                        </button>
                     </div>
                 </div>
         </footer>
@@ -525,22 +678,21 @@
         <div id="control-modal" class="modal-overlay" style="display: none;">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3 id="modal-title">Carousel Control</h3>
-                    <button class="close-btn" onclick="closeControlModal()">×</button>
+                    <h3 id="modal-title" data-i18n="modal_control_title">Carousel Control</h3>
+                    <button class="close-btn" onclick="closeControlModal()"><i class='bx bx-x'></i></button>
                 </div>
                 <div class="modal-body">
-                    <p id="modal-status-text">Current Status: <span id="modal-status-val">UNKNOWN</span></p>
+                    <p id="modal-status-text"><span data-i18n="modal_current_status">Current Status:</span> <span id="modal-status-val">UNKNOWN</span></p>
                     <div class="control-actions">
                         <button class="ctrl-btn btn-run" onclick="sendControlCommand('RUN')">
-                            <span class="icon">▶</span> RUN
+                            <i class='bx bx-play'></i> <span data-i18n="btn_run">RUN</span>
                         </button>
                         <button class="ctrl-btn btn-pause" onclick="sendControlCommand('PAUSE')">
-                            <span class="icon">⏸</span> PAUSE
+                            <i class='bx bx-pause'></i> <span data-i18n="btn_pause">PAUSE</span>
                         </button>
                         <button class="ctrl-btn btn-stop" onclick="sendControlCommand('STOP')">
-                            <span class="icon">⏹</span> STOP
+                            <i class='bx bx-stop'></i> <span data-i18n="btn_stop">STOP</span>
                         </button>
-
                     </div>
                 </div>
             </div>
@@ -550,29 +702,28 @@
         <div id="user-modal" class="modal-overlay" style="display: none;">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3>Add New User</h3>
-                    <button class="close-btn" onclick="closeUserModal()">×</button>
+                    <h3 data-i18n="modal_add_user_title">Add New User</h3>
+                    <button class="close-btn" onclick="closeUserModal()"><i class='bx bx-x'></i></button>
                 </div>
                 <div class="modal-body">
                     <div class="form-group">
-                        <label>Username</label>
+                        <label data-i18n="lbl_username">Username</label>
                         <input type="text" id="new-username" autocomplete="off">
                     </div>
                     <div class="form-group">
-                        <label>Password</label>
+                        <label data-i18n="lbl_password">Password</label>
                         <input type="password" id="new-password" autocomplete="off">
                     </div>
                     <div class="form-group">
-                        <label>Role</label>
-                        <select id="new-role"
-                            style="width: 100%; padding: 10px; background: #333; color: white; border: 1px solid #444; border-radius: 4px;">
+                        <label data-i18n="lbl_role">Role</label>
+                        <select id="new-role" class="modal-select">
                             <option value="user">User</option>
                             <option value="admin">Admin</option>
                             <option value="guest">Guest</option>
                         </select>
                     </div>
                     <div style="text-align: right; margin-top: 20px;">
-                        <button class="btn-primary" onclick="submitUserCreation()">Create User</button>
+                        <button class="btn-primary" onclick="submitUserCreation()" data-i18n="btn_create_user">Create User</button>
                     </div>
                 </div>
             </div>
@@ -582,30 +733,29 @@
         <div id="edit-user-modal" class="modal-overlay" style="display: none;">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3>Edit User</h3>
-                    <button class="close-btn" onclick="closeEditUserModal()">×</button>
+                    <h3 data-i18n="modal_edit_user_title">Edit User</h3>
+                    <button class="close-btn" onclick="closeEditUserModal()"><i class='bx bx-x'></i></button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="edit-user-id">
                     <div class="form-group">
-                        <label>Username</label>
-                        <input type="text" id="edit-username" readonly style="background-color: #333; color: #888; cursor: not-allowed; border: 1px solid #444;">
+                        <label data-i18n="lbl_username">Username</label>
+                        <input type="text" id="edit-username" readonly style="cursor: not-allowed; opacity: 0.8;">
                     </div>
                     <div class="form-group">
-                        <label>New Password (leave blank to keep current)</label>
+                        <label data-i18n="lbl_new_password">New Password (leave blank to keep current)</label>
                         <input type="password" id="edit-password" autocomplete="new-password">
                     </div>
                     <div class="form-group">
-                        <label>Role</label>
-                        <select id="edit-role"
-                            style="width: 100%; padding: 10px; background: #333; color: white; border: 1px solid #444; border-radius: 4px;">
+                        <label data-i18n="lbl_role">Role</label>
+                        <select id="edit-role" class="modal-select">
                             <option value="user">User</option>
                             <option value="admin">Admin</option>
                             <option value="guest">Guest</option>
                         </select>
                     </div>
                     <div style="text-align: right; margin-top: 20px;">
-                        <button class="btn-primary" onclick="submitUserEdit()">Save Changes</button>
+                        <button class="btn-primary" onclick="submitUserEdit()" data-i18n="btn_save_changes">Save Changes</button>
                     </div>
                 </div>
             </div>
@@ -620,8 +770,8 @@
                             <i class='bx bx-edit-alt'></i>
                         </div>
                         <div>
-                            <h3 id="opcua-edit-title">Edit OPC-UA Tag</h3>
-                            <p id="opcua-edit-subtitle">Perbarui mapping node dan metadata tag.</p>
+                            <h3 id="opcua-edit-title" data-i18n="opcua_modal_title">Edit OPC-UA Tag</h3>
+                            <p id="opcua-edit-subtitle" data-i18n="opcua_modal_subtitle">Perbarui mapping node dan metadata tag.</p>
                         </div>
                     </div>
                     <button class="opcua-edit-close" type="button" onclick="closeOpcUaEditModal()"
@@ -631,21 +781,21 @@
                 </div>
                 <div class="opcua-edit-form">
                     <div class="opcua-edit-field">
-                        <label for="opcua-edit-index"><i class='bx bx-hash'></i> Node Index</label>
+                        <label for="opcua-edit-index"><i class='bx bx-hash'></i> <span data-i18n="lbl_node_index">Node Index</span></label>
                         <input type="text" id="opcua-edit-index" readonly>
                     </div>
                     <div class="opcua-edit-field">
-                        <label for="opcua-edit-name"><i class='bx bx-tag'></i> Name</label>
+                        <label for="opcua-edit-name"><i class='bx bx-tag'></i> <span data-i18n="lbl_node_name">Name</span></label>
                         <input type="text" id="opcua-edit-name" spellcheck="false">
                     </div>
                     <div class="opcua-edit-field full">
-                        <label for="opcua-edit-nodeid"><i class='bx bx-chip'></i> Node ID</label>
+                        <label for="opcua-edit-nodeid"><i class='bx bx-chip'></i> <span data-i18n="lbl_node_id">Node ID</span></label>
                         <input type="text" id="opcua-edit-nodeid" spellcheck="false">
                     </div>
                     <div class="opcua-edit-field">
-                        <label for="opcua-edit-machine"><i class='bx bx-cog'></i> Machine</label>
+                        <label for="opcua-edit-machine"><i class='bx bx-cog'></i> <span data-i18n="lbl_node_machine">Machine</span></label>
                         <select id="opcua-edit-machine">
-                            <option value="">Global</option>
+                            <option value="" data-i18n="opt_global">Global</option>
                             <option value="1">CR1</option>
                             <option value="2">CR2</option>
                             <option value="3">CR3</option>
@@ -654,7 +804,7 @@
                         </select>
                     </div>
                     <div class="opcua-edit-field">
-                        <label for="opcua-edit-signal"><i class='bx bx-broadcast'></i> Signal Type</label>
+                        <label for="opcua-edit-signal"><i class='bx bx-broadcast'></i> <span data-i18n="lbl_node_signal">Signal Type</span></label>
                         <select id="opcua-edit-signal">
                             <option value="GROSS_WEIGHT">GROSS_WEIGHT</option>
                             <option value="PRODUCT_SENSOR">PRODUCT_SENSOR</option>
@@ -674,22 +824,82 @@
                         </select>
                     </div>
                     <div class="opcua-edit-field">
-                        <label for="opcua-edit-scale"><i class='bx bx-search-alt'></i> Scale Factor</label>
+                        <label for="opcua-edit-scale"><i class='bx bx-search-alt'></i> <span data-i18n="lbl_scale_factor">Scale Factor</span></label>
                         <input type="number" id="opcua-edit-scale" step="0.001">
                     </div>
                     <div class="opcua-edit-field">
-                        <label for="opcua-edit-desc"><i class='bx bx-info-circle'></i> Description</label>
+                        <label for="opcua-edit-desc"><i class='bx bx-info-circle'></i> <span data-i18n="lbl_description">Description</span></label>
                         <input type="text" id="opcua-edit-desc" spellcheck="false">
                     </div>
                 </div>
-                <p class="opcua-edit-tip">Tip: tekan <kbd>Esc</kbd> untuk menutup window ini.</p>
+                <p class="opcua-edit-tip" data-i18n="opcua_edit_tip">Tip: tekan <kbd>Esc</kbd> untuk menutup window ini.</p>
                 <div class="opcua-edit-actions">
                     <button type="button" class="opcua-btn ghost" onclick="closeOpcUaEditModal()">
-                        <i class='bx bx-x'></i> Cancel
+                        <i class='bx bx-x'></i> <span data-i18n="btn_cancel">Cancel</span>
                     </button>
                     <button type="button" id="opcua-edit-save-btn" class="opcua-btn primary"
                         onclick="saveOpcUaNodeEdit()">
-                        <i class='bx bx-save'></i> Save Changes
+                        <i class='bx bx-save'></i> <span data-i18n="btn_save_changes">Save Changes</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Config Change Confirmation Modal (Clean Light Theme) -->
+        <div id="config-confirm-modal" class="modal-overlay" style="display: none;">
+            <div class="modal-content" style="max-width: 460px; width: 92%; background: #ffffff !important; border: 1px solid #e2e8f0 !important; border-radius: 14px !important; box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.25), 0 8px 10px -6px rgba(15, 23, 42, 0.2) !important; overflow: hidden;">
+                <div class="modal-header" style="background: #ffffff !important; padding: 18px 22px !important; border-bottom: 1px solid #f1f5f9 !important; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 38px; height: 38px; border-radius: 10px; background: #eff6ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <i class='bx bx-shield-quarter' style="font-size: 1.4rem; color: #2563eb;"></i>
+                        </div>
+                        <div>
+                            <h3 id="config-confirm-title" style="margin: 0; font-size: 1.05rem; color: #0f172a !important; font-weight: 600;" data-i18n="cfg_confirm_title">Konfirmasi Perubahan</h3>
+                            <span style="font-size: 0.78rem; color: #64748b;" data-i18n="cfg_confirm_subtitle">Verifikasi password untuk otorisasi</span>
+                        </div>
+                    </div>
+                    <button type="button" class="close-btn" onclick="closeConfigConfirmModal()" style="color: #94a3b8; font-size: 1.5rem; background: transparent; border: none; cursor: pointer; line-height: 1; padding: 0; transition: color 0.2s;" onmouseover="this.style.color='#0f172a'" onmouseout="this.style.color='#94a3b8'">&times;</button>
+                </div>
+                <div class="modal-body" style="background: #ffffff !important; padding: 20px 22px !important; text-align: left;">
+                    <!-- Direct Clean Description (No Card, No Strip) -->
+                    <div id="config-confirm-desc" style="font-size: 0.92rem; color: #334155; line-height: 1.55; margin-bottom: 18px;">
+                        Apakah Anda yakin ingin menyimpan perubahan ini?
+                    </div>
+
+                    <!-- User Identity & Password Label -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <label for="config-confirm-password" style="font-size: 0.85rem; color: #1e293b; font-weight: 600;" data-i18n="lbl_user_password">
+                            Password Pengguna
+                        </label>
+                        <span style="font-size: 0.78rem; color: #475569; background: #f1f5f9; border: 1px solid #e2e8f0; padding: 2px 8px; border-radius: 6px;">
+                            <span data-i18n="lbl_user_prefix">User:</span> <strong id="config-confirm-user" style="color: #0f172a;">admin</strong>
+                        </span>
+                    </div>
+
+                    <!-- Password Input Field (Light Clean Input) -->
+                    <div style="position: relative;">
+                        <input type="password" id="config-confirm-password" placeholder="Masukkan password Anda..." data-i18n-placeholder="placeholder_password"
+                                style="width: 100%; height: 42px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 0 42px 0 12px; color: #0f172a; font-size: 0.95rem; outline: none; box-sizing: border-box; transition: all 0.2s;"
+                                onkeydown="if(event.key==='Enter') submitConfigConfirm()">
+                        <i class='bx bx-lock-alt' style="position: absolute; right: 12px; top: 12px; color: #94a3b8; font-size: 1.2rem; pointer-events: none;"></i>
+                    </div>
+
+                    <!-- Error Alert -->
+                    <div id="config-confirm-error" style="display: none; color: #b91c1c; font-size: 0.85rem; margin-top: 10px; padding: 10px 14px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px;">
+                        <i class='bx bx-error-circle' style="vertical-align: middle; margin-right: 4px; font-size: 1rem;"></i>
+                        <span id="config-confirm-error-msg" data-i18n="msg_wrong_password">Password salah!</span>
+                    </div>
+                </div>
+                <div class="modal-footer" style="padding: 14px 22px !important; background: #f8fafc !important; border-top: 1px solid #f1f5f9 !important; display: flex; justify-content: flex-end; gap: 10px; border-radius: 0 0 14px 14px;">
+                    <button type="button" onclick="closeConfigConfirmModal()" 
+                            style="background: #ffffff; border: 1px solid #d1d5db; color: #4b5563; font-size: 0.875rem; font-weight: 500; padding: 8px 18px; border-radius: 8px; cursor: pointer; transition: all 0.2s;" 
+                            onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='#ffffff'" data-i18n="btn_cancel">
+                        Batal
+                    </button>
+                    <button type="button" id="btn-config-confirm-submit" onclick="submitConfigConfirm()" 
+                            style="background: #2563eb; color: #ffffff; border: none; font-size: 0.875rem; font-weight: 600; padding: 8px 20px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(37,99,235,0.25); transition: background 0.2s;" 
+                            onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
+                        <i class='bx bx-check-shield'></i> <span data-i18n="btn_confirm_save">Konfirmasi & Simpan</span>
                     </button>
                 </div>
             </div>

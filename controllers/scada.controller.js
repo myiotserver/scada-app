@@ -5,6 +5,7 @@ const settingsPath = path.join(__dirname, '../config/scada-settings.json');
 const opcUaManager = require('../utils/opcua.manager');
 const dataAggregator = require('../utils/data.aggregator');
 const logger = require('../utils/logger');
+const auditLogger = require('../utils/auditLogger');
 
 // Memory for settings
 let appSettings = {};
@@ -1345,6 +1346,14 @@ exports.resetErrorTag = async (req, res) => {
             return res.status(500).json({ error: `Reset ON sent but failed writing OFF: ${writeOff.error}` });
         }
 
+        auditLogger.log({
+            req,
+            action: 'ALARM_RESET',
+            category: 'OPCUA',
+            target: resetNode.name || 'RST',
+            details: `Sent PLC alarm reset pulse (${resetNode.nodeId})`
+        });
+
         return res.json({
             success: true,
             message: "Reset error signal sent successfully",
@@ -1377,6 +1386,13 @@ exports.controlCarousel = async (req, res) => {
     }
 
     if (!weighingPool) {
+        auditLogger.log({
+            req,
+            action: `CAROUSEL_${val}_FAILED`,
+            category: 'CAROUSEL',
+            target: `CR${carouselId}`,
+            details: `Command ${val} rejected: MSSQL database is offline`
+        });
         return res.status(503).json({ error: "Database Offline. Control disabled." });
     }
 
@@ -1416,6 +1432,14 @@ exports.controlCarousel = async (req, res) => {
                 carousels[carouselId].state = stateMap[val];
                 updateMachineRunStatus(carouselId);
             }
+
+            auditLogger.log({
+                req,
+                action: `CAROUSEL_${val}`,
+                category: 'CAROUSEL',
+                target: `CR${carouselId}`,
+                details: `Operator sent ${val} command to Carousel ${carouselId}`
+            });
 
             res.json({ success: true, message: `Sent ${command} to DB` });
         } else {
