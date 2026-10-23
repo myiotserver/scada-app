@@ -747,6 +747,26 @@ main {
     white-space: nowrap;
 }
 
+.md-status-normal {
+    color: #10b981 !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.5px;
+}
+
+.md-status-bypassed {
+    color: #ef4444 !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.5px;
+}
+
+[data-theme="light"] .md-status-normal {
+    color: #16a34a !important;
+}
+
+[data-theme="light"] .md-status-bypassed {
+    color: #dc2626 !important;
+}
+
 /* Weight Display */
 .weight-section {
     padding: 14px;

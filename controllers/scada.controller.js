@@ -173,6 +173,16 @@ let carouselBroadcastTimer = null;
 const lastWrittenTolerances = {};
 
 function emitCarouselSnapshot() {
+    const interlocks = appSettings.interlocks || {};
+    Object.keys(carousels).forEach(id => {
+        if (carousels[id]) {
+            const enabled = !!interlocks[`carousel${id}`];
+            carousels[id].interlock = enabled;
+            if (carousels[id].data) {
+                carousels[id].data.interlock = enabled;
+            }
+        }
+    });
     listeners.forEach(cb => {
         try { cb(carousels); } catch (e) { /* ignore */ }
     });
@@ -314,6 +324,12 @@ const toleranceSyncInterval = setInterval(() => {
 function updateInterlockStatus(carouselId) {
     const interlocks = appSettings.interlocks || {};
     const enabled = !!interlocks[`carousel${carouselId}`];
+    if (carousels[carouselId]) {
+        carousels[carouselId].interlock = enabled;
+        if (carousels[carouselId].data) {
+            carousels[carouselId].data.interlock = enabled;
+        }
+    }
     opcUaManager.writeToNodesBySignalType('CAROUSEL_INTERLOCK', carouselId, enabled ? 1 : 0)
         .catch(err => logger.error('OPC', `CR${carouselId} CAROUSEL_INTERLOCK OPC write failed: ${err.message}`));
 }
@@ -1206,7 +1222,19 @@ setInterval(() => {
     emitCarouselSnapshot();
 }, 1000);
 
-exports.getSnapshot = () => carousels;
+exports.getSnapshot = () => {
+    const interlocks = appSettings.interlocks || {};
+    Object.keys(carousels).forEach(id => {
+        if (carousels[id]) {
+            const enabled = !!interlocks[`carousel${id}`];
+            carousels[id].interlock = enabled;
+            if (carousels[id].data) {
+                carousels[id].data.interlock = enabled;
+            }
+        }
+    });
+    return carousels;
+};
 
 exports.getActiveAlarmsList = () => [];
 

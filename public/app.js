@@ -39,6 +39,7 @@ const translations = {
         card_avg_1h: "Rata-rata (1j)",
         card_btn_update: "Perbarui Data",
         card_waiting_order: "Menunggu Order Kemasan",
+        card_md_status: "MD Status",
 
         // Config View
         interlock_panel_title: "Underweight Interlock Metal Detector",
@@ -257,6 +258,7 @@ const translations = {
         card_avg_1h: "Avg (1h)",
         card_btn_update: "Update Data",
         card_waiting_order: "Waiting for Packing Order",
+        card_md_status: "MD Status",
 
         // Config View
         interlock_panel_title: "Underweight Interlock Metal Detector",
@@ -1039,6 +1041,9 @@ async function loadSettings() {
         if (res.ok) {
             appSettings = await res.json();
             renderSettings();
+            if (window.lastCarouselsData) {
+                renderCarousels(window.lastCarouselsData);
+            }
         } else if (res.status === 403) {
             // Non-admin users: silently skip. The settings view itself is
             // already hidden for them, so no alert needed.
@@ -1394,6 +1399,9 @@ async function doExecuteSaveSettings(settingsPayload, password) {
         if (res.ok) {
             appSettings = settingsPayload;
             renderSettings();
+            if (window.lastCarouselsData) {
+                renderCarousels(window.lastCarouselsData);
+            }
             setTimeout(() => pollSqlStatus(), 1500);
             showToastSuccess(data.message || 'Pengaturan berhasil diperbarui!');
             return true;
@@ -1649,6 +1657,18 @@ function renderCarousels(carousels) {
         };
         col.style.cursor = 'pointer';
 
+        // Determine MD Status (Interlock status)
+        const key = `carousel${i}`;
+        let isInterlocked = false;
+        if (appSettings && appSettings.interlocks && appSettings.interlocks[key] !== undefined) {
+            isInterlocked = !!appSettings.interlocks[key];
+        } else if (carousel && (carousel.interlock !== undefined || (carousel.data && carousel.data.interlock !== undefined))) {
+            isInterlocked = carousel.interlock !== undefined ? !!carousel.interlock : !!carousel.data.interlock;
+        }
+
+        const mdStatusText = isInterlocked ? 'Normal' : 'Bypassed';
+        const mdStatusClass = isInterlocked ? 'md-status-normal' : 'md-status-bypassed';
+
         if (carousel && carousel.data && carousel.data.productId) {
             const d = carousel.data;
             const counter = parseInt(d.counter) || 0;
@@ -1713,6 +1733,10 @@ function renderCarousels(carousels) {
                             <span class="info-label">${t('card_pack_weight')}</span>
                             <span class="info-value">${(parseFloat(d.packWeight) || 0).toFixed(2)} Kg</span>
                         </div>
+                        <div class="info-row">
+                            <span class="info-label">${t('card_md_status')}</span>
+                            <span class="info-value ${mdStatusClass}">${mdStatusText}</span>
+                        </div>
                     </div>
 
                     <div class="weight-section">
@@ -1761,7 +1785,11 @@ function renderCarousels(carousels) {
                     </div>
                     <i class='bx bx-time-five' style="font-size: 2.2rem; color: var(--accent-warning); opacity: 0.85; margin-bottom: 8px;"></i>
                     <span style="font-size:1rem; font-weight:600; color:var(--text-secondary);">${t('carousel_n', { n: i })}</span>
-                    <span style="font-weight:700; color:var(--accent-warning); letter-spacing:1px; margin-top:5px; margin-bottom:15px;">${t('card_waiting_order')}</span>
+                    <span style="font-weight:700; color:var(--accent-warning); letter-spacing:1px; margin-top:5px; margin-bottom:6px;">${t('card_waiting_order')}</span>
+                    <div style="font-size: 0.78rem; display: flex; gap: 6px; align-items: center; margin-bottom: 12px;">
+                        <span style="color: var(--text-muted); text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.5px;">${t('card_md_status')}:</span>
+                        <span class="${mdStatusClass}">${mdStatusText}</span>
+                    </div>
                     <div class="weight-section" style="width: 100%; padding: 0 14px;">
                         <div class="weight-label">${t('card_gross_weight')}</div>
                         <div class="weight-display bg-warning">0.00 Kg</div>
