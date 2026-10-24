@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SRIBOGA - Weighing Dashboard</title>
     <meta name="description" content="SRIBOGA Weighing Carousel SCADA Dashboard — Real-time industrial monitoring">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=20261024_02">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="shortcut icon" href="favicon.svg">
     <link rel='stylesheet' href='css/boxicons.min.css'>
@@ -519,90 +519,98 @@
                         </div>
                     </div>
 
-                    <!-- Filters Toolbar -->
-                    <div class="audit-filter-bar">
-                        <div class="audit-filter-item">
-                            <label for="audit-filter-category" class="audit-filter-label" data-i18n="lbl_category">Kategori</label>
-                            <select id="audit-filter-category" class="history-select" onchange="loadAuditLogs(1)">
-                                <option value="" data-i18n="opt_all_categories">Semua Kategori</option>
-                                <option value="AUTH" data-i18n="opt_cat_auth">Authentication (Login/Logout)</option>
-                                <option value="CAROUSEL" data-i18n="opt_cat_carousel">Carousel Control & Reset</option>
-                                <option value="SETTINGS" data-i18n="opt_cat_settings">Pengaturan & Interlock</option>
-                                <option value="USER_MGMT" data-i18n="opt_cat_usermgmt">Manajemen Pengguna</option>
-                                <option value="OPCUA" data-i18n="opt_cat_opcua">OPC-UA Tag & Connection</option>
-                            </select>
-                        </div>
-                        <div class="audit-filter-item">
-                            <label for="audit-filter-target" class="audit-filter-label" data-i18n="lbl_target_carousel">Target Carousel</label>
-                            <select id="audit-filter-target" class="history-select" onchange="loadAuditLogs(1)">
-                                <option value="" data-i18n="opt_all_targets">Semua Target</option>
-                                <option value="CR1">Carousel 1 (CR1)</option>
-                                <option value="CR2">Carousel 2 (CR2)</option>
-                                <option value="CR3">Carousel 3 (CR3)</option>
-                                <option value="CR4">Carousel 4 (CR4)</option>
-                                <option value="CR5">Carousel 5 (CR5)</option>
-                            </select>
-                        </div>
-                        <div class="audit-filter-item">
-                            <label for="audit-filter-start-date" class="audit-filter-label" data-i18n="lbl_start_date">Dari Tanggal</label>
-                            <input type="date" id="audit-filter-start-date" class="audit-date-input" onchange="loadAuditLogs(1)">
-                        </div>
-                        <div class="audit-filter-item">
-                            <label for="audit-filter-end-date" class="audit-filter-label" data-i18n="lbl_end_date">Sampai Tanggal</label>
-                            <input type="date" id="audit-filter-end-date" class="audit-date-input" onchange="loadAuditLogs(1)">
-                        </div>
-                        <div class="audit-filter-item audit-filter-search">
-                            <label for="audit-filter-search" class="audit-filter-label" data-i18n="lbl_search">Pencarian</label>
-                            <div style="position: relative;">
-                                <input type="text" id="audit-filter-search" placeholder="Cari user, action, detail..." data-i18n-placeholder="placeholder_audit_search" class="audit-search-input" onkeydown="if(event.key==='Enter') loadAuditLogs(1)">
-                                <i class='bx bx-search' style="position: absolute; right: 10px; top: 10px; color: #94a3b8; cursor: pointer;" onclick="loadAuditLogs(1)"></i>
+                    <!-- Unified Audit Table Container (Filter Header + Data Table + Pagination Footer) -->
+                    <div class="audit-unified-card">
+                        <!-- Filters Toolbar as Card Header -->
+                        <div class="audit-card-toolbar">
+                            <div class="audit-filter-item">
+                                <label for="audit-filter-category" class="audit-filter-label" data-i18n="lbl_category">Kategori</label>
+                                <select id="audit-filter-category" class="history-select" onchange="loadAuditLogs(1)">
+                                    <option value="" data-i18n="opt_all_categories">Semua Kategori</option>
+                                    <option value="AUTH" data-i18n="opt_cat_auth">Authentication (Login/Logout)</option>
+                                    <option value="CAROUSEL" data-i18n="opt_cat_carousel">Carousel Control & Reset</option>
+                                    <option value="SETTINGS" data-i18n="opt_cat_settings">Pengaturan & Interlock</option>
+                                    <option value="USER_MGMT" data-i18n="opt_cat_usermgmt">Manajemen Pengguna</option>
+                                    <option value="OPCUA" data-i18n="opt_cat_opcua">OPC-UA Tag & Connection</option>
+                                </select>
+                            </div>
+                            <div class="audit-filter-item">
+                                <label for="audit-filter-target" class="audit-filter-label" data-i18n="lbl_target_carousel">Target Carousel</label>
+                                <select id="audit-filter-target" class="history-select" onchange="loadAuditLogs(1)">
+                                    <option value="" data-i18n="opt_all_targets">Semua Target</option>
+                                    <option value="CR1">Carousel 1 (CR1)</option>
+                                    <option value="CR2">Carousel 2 (CR2)</option>
+                                    <option value="CR3">Carousel 3 (CR3)</option>
+                                    <option value="CR4">Carousel 4 (CR4)</option>
+                                    <option value="CR5">Carousel 5 (CR5)</option>
+                                </select>
+                            </div>
+                            <div class="audit-filter-item">
+                                <label for="audit-filter-start-date" class="audit-filter-label" data-i18n="lbl_start_date">Dari Tanggal</label>
+                                <input type="date" id="audit-filter-start-date" class="audit-date-input" onchange="loadAuditLogs(1)">
+                            </div>
+                            <div class="audit-filter-item">
+                                <label for="audit-filter-end-date" class="audit-filter-label" data-i18n="lbl_end_date">Sampai Tanggal</label>
+                                <input type="date" id="audit-filter-end-date" class="audit-date-input" onchange="loadAuditLogs(1)">
+                            </div>
+                            <div class="audit-filter-item audit-filter-search">
+                                <label for="audit-filter-search" class="audit-filter-label" data-i18n="lbl_search">Pencarian</label>
+                                <div style="position: relative;">
+                                    <input type="text" id="audit-filter-search" placeholder="Cari user, action, detail..." data-i18n-placeholder="placeholder_audit_search" class="audit-search-input" onkeydown="if(event.key==='Enter') loadAuditLogs(1)">
+                                    <i class='bx bx-search' style="position: absolute; right: 10px; top: 10px; color: #94a3b8; cursor: pointer;" onclick="loadAuditLogs(1)"></i>
+                                </div>
+                            </div>
+                            <div class="audit-filter-item audit-filter-reset-wrap">
+                                <button class="btn-primary audit-reset-btn" type="button" onclick="resetAuditFilters()">
+                                    <i class='bx bx-rotate-left'></i>
+                                    <span data-i18n="btn_reset">Reset</span>
+                                </button>
                             </div>
                         </div>
-                        <button class="btn-primary audit-reset-btn" type="button" onclick="resetAuditFilters()" data-i18n="btn_reset">Reset</button>
-                    </div>
 
-                    <!-- Audit Table -->
-                    <div class="history-table-wrap" style="margin-top: 15px;">
-                        <table class="data-table audit-table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 160px;" data-i18n="th_audit_time">Waktu (WIB)</th>
-                                    <th style="width: 140px;" data-i18n="th_audit_user">Pengguna</th>
-                                    <th style="width: 120px;" data-i18n="th_audit_category">Kategori</th>
-                                    <th style="width: 150px;" data-i18n="th_audit_action">Aktivitas</th>
-                                    <th style="width: 110px;" data-i18n="th_audit_target">Target</th>
-                                    <th data-i18n="th_audit_details">Rincian / Perubahan Nilai</th>
-                                    <th style="width: 130px;" data-i18n="th_audit_ip">IP Address</th>
-                                </tr>
-                            </thead>
-                            <tbody id="audit-list-body">
-                                <tr>
-                                    <td colspan="7" style="text-align:center; padding: 25px; color: #94a3b8;" data-i18n="loading_audit">
-                                        Memuat data audit trail...
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                        <!-- Table Area (Inside the Unified Card) -->
+                        <div class="audit-unified-table-wrap">
+                            <table class="data-table audit-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 160px;" data-i18n="th_audit_time">Waktu (WIB)</th>
+                                        <th style="width: 140px;" data-i18n="th_audit_user">Pengguna</th>
+                                        <th style="width: 120px;" data-i18n="th_audit_category">Kategori</th>
+                                        <th style="width: 150px;" data-i18n="th_audit_action">Aktivitas</th>
+                                        <th style="width: 110px;" data-i18n="th_audit_target">Target</th>
+                                        <th data-i18n="th_audit_details">Rincian / Perubahan Nilai</th>
+                                        <th style="width: 130px;" data-i18n="th_audit_ip">IP Address</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="audit-list-body">
+                                    <tr>
+                                        <td colspan="7" style="text-align:center; padding: 25px; color: #94a3b8;" data-i18n="loading_audit">
+                                            Memuat data audit trail...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
 
-                    <!-- Pagination -->
-                    <div class="history-pagination" style="margin-top: 15px;">
-                        <div class="history-pagination-left">
-                            <label for="audit-page-size" class="history-filter-label" data-i18n="lbl_rows">Baris</label>
-                            <select id="audit-page-size" class="history-select history-page-size-select" onchange="onAuditPageSizeChange()">
-                                <option value="25">25</option>
-                                <option value="50" selected>50</option>
-                                <option value="100">100</option>
-                            </select>
+                        <!-- Pagination Footer (Inside the Unified Card) -->
+                        <div class="audit-unified-footer">
+                            <div class="history-pagination-left">
+                                <label for="audit-page-size" class="history-filter-label" data-i18n="lbl_rows">Baris</label>
+                                <select id="audit-page-size" class="history-select history-page-size-select" onchange="onAuditPageSizeChange()">
+                                    <option value="25">25</option>
+                                    <option value="50" selected>50</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </div>
+                            <div class="history-pagination-center">
+                                <button type="button" class="history-page-btn" id="audit-first-btn" onclick="auditGoToPage(1)" title="First page" data-i18n-title="btn_first_page">«</button>
+                                <button type="button" class="history-page-btn" id="audit-prev-btn" onclick="auditChangePage(-1)" data-i18n="btn_prev">Prev</button>
+                                <span id="audit-page-info" class="history-page-info">Halaman 1 dari 1</span>
+                                <button type="button" class="history-page-btn" id="audit-next-btn" onclick="auditChangePage(1)" data-i18n="btn_next">Next</button>
+                                <button type="button" class="history-page-btn" id="audit-last-btn" onclick="auditGoToPage('last')" title="Last page" data-i18n-title="btn_last_page">»</button>
+                            </div>
+                            <div id="audit-range-info" class="history-range-info">—</div>
                         </div>
-                        <div class="history-pagination-center">
-                            <button type="button" class="history-page-btn" id="audit-first-btn" onclick="auditGoToPage(1)" title="First page" data-i18n-title="btn_first_page">«</button>
-                            <button type="button" class="history-page-btn" id="audit-prev-btn" onclick="auditChangePage(-1)" data-i18n="btn_prev">Prev</button>
-                            <span id="audit-page-info" class="history-page-info">Halaman 1 dari 1</span>
-                            <button type="button" class="history-page-btn" id="audit-next-btn" onclick="auditChangePage(1)" data-i18n="btn_next">Next</button>
-                            <button type="button" class="history-page-btn" id="audit-last-btn" onclick="auditGoToPage('last')" title="Last page" data-i18n-title="btn_last_page">»</button>
-                        </div>
-                        <div id="audit-range-info" class="history-range-info">—</div>
                     </div>
                 </div>
             </main>
@@ -907,7 +915,7 @@
 
     </div>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=20261024_02"></script>
 </body>
 
 </html>
