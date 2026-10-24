@@ -436,6 +436,7 @@ header {
     color: #ffffff;
     letter-spacing: 2px;
     line-height: 1;
+    transition: color var(--transition);
 }
 
 .logo-text p {
@@ -443,6 +444,7 @@ header {
     color: #94a3b8;
     letter-spacing: 1.5px;
     margin-top: 3px;
+    transition: color var(--transition);
 }
 
 .header-title {
@@ -451,11 +453,40 @@ header {
     transform: translateX(-50%);
     font-size: 1.05rem;
     font-weight: 700;
-    color: #ffffff !important;
+    color: #ffffff;
     letter-spacing: 2px;
     text-transform: uppercase;
     pointer-events: none;
     text-shadow: 0 0 16px rgba(255, 255, 255, 0.15);
+    transition: color var(--transition), text-shadow var(--transition);
+}
+
+/* Light Theme: SRIBOGA brand and title become full crisp black */
+[data-theme="light"] .logo-text h1 {
+    color: #000000 !important;
+}
+
+[data-theme="light"] .logo-text p {
+    color: #1e293b !important;
+}
+
+[data-theme="light"] .header-title {
+    color: #000000 !important;
+    text-shadow: none !important;
+}
+
+/* Dark Theme: SRIBOGA brand and title become crisp white */
+[data-theme="dark"] .logo-text h1 {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] .logo-text p {
+    color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .header-title {
+    color: #ffffff !important;
+    text-shadow: 0 0 16px rgba(255, 255, 255, 0.15) !important;
 }
 
 /* ---- Main Content Area ---- */
