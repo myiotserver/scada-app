@@ -210,11 +210,6 @@ body {
     background: linear-gradient(135deg, rgba(0, 150, 120, 0.08), rgba(8, 145, 178, 0.05));
 }
 
-[data-theme="light"] .panel-header {
-    background: linear-gradient(135deg, rgba(0, 150, 120, 0.08), rgba(8, 145, 178, 0.05));
-    color: var(--text-primary);
-}
-
 [data-theme="light"] .nav-btn {
     color: rgba(255, 255, 255, 0.7);
 }
@@ -238,10 +233,6 @@ body {
 
 [data-theme="light"] .progress-bar-track {
     background: #e2e8f0;
-}
-
-[data-theme="light"] .data-table th {
-    background: rgba(0, 150, 120, 0.06);
 }
 
 body {
@@ -361,16 +352,21 @@ body {
 .btn-primary {
     background: var(--accent-primary);
     color: var(--bg-primary);
-    padding: 12px 24px;
+    padding: 10px 20px;
     border: none;
     border-radius: var(--radius-md);
     cursor: pointer;
-    width: 100%;
+    width: auto;
     font-weight: 700;
     font-size: 0.95rem;
     font-family: var(--font-main);
     letter-spacing: 0.5px;
     transition: all var(--transition);
+}
+
+.login-card .btn-primary {
+    width: 100%;
+    padding: 12px 24px;
 }
 
 .btn-primary:hover {
@@ -607,11 +603,6 @@ nav {
     flex-direction: column;
     align-items: center;
     width: 100%;
-}
-
-.datetime {
-    text-align: center;
-    margin-bottom: 12px;
 }
 
 .btn-logout {
@@ -1055,16 +1046,20 @@ footer {
     height: 8px;
     border-radius: 50%;
     flex-shrink: 0;
+    transition: all 0.3s ease;
 }
 
+.led.on,
 .led.on-green {
     background: var(--accent-success);
     box-shadow: 0 0 6px var(--accent-success);
 }
 
 .led.off {
-    background: var(--text-muted);
-    opacity: 0.4;
+    background: var(--bg-card);
+    border: 1px solid var(--text-muted);
+    box-shadow: none;
+    opacity: 0.6;
 }
 
 .led.on-yellow {
@@ -1118,31 +1113,6 @@ footer {
     filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.4));
 }
 
-.led {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--text-muted);
-    transition: all 0.3s ease;
-    box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.5);
-}
-
-.led.on {
-    background: var(--accent-success);
-    box-shadow: 0 0 6px var(--accent-success);
-}
-
-.led.off {
-    background: var(--accent-danger);
-    /* User asked for Red when disconnected/off? 
-    "Apabila koneksi OK ... hijau ... disconnected ... merah". 
-    For Sensors: "Sensor state carousel 1-5". Usually Sensor ON = Green, OFF = Grey/Red.
-    Let's stick to Green / Red for clear distinction. */
-    background: var(--bg-card);
-    border: 1px solid var(--text-muted);
-    box-shadow: none;
-}
-
 /* Let's clarify led states */
 .led.status-good {
     background: var(--accent-success);
@@ -1185,6 +1155,8 @@ footer {
     flex-direction: column;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
     overflow: hidden;
+    min-height: 0;
+    max-height: 100%;
 }
 
 .panel-header {
@@ -1209,6 +1181,8 @@ footer {
     display: flex;
     flex-direction: column;
     gap: 14px;
+    overflow-y: auto;
+    min-height: 0;
 }
 
 .form-row {
@@ -1255,21 +1229,9 @@ footer {
 }
 
 .btn-save {
-    padding: 10px 24px;
     background: var(--accent-primary);
     color: #ffffff !important;
-    border: none;
-    border-radius: var(--radius-sm);
-    font-weight: 700;
-    font-size: 0.85rem;
-    font-family: var(--font-main);
-    cursor: pointer;
-    transition: all var(--transition);
     letter-spacing: 0.5px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
 }
 
 .btn-save i {
@@ -1365,9 +1327,12 @@ input:checked+.slider:before {
 .data-table td {
     padding: 12px 16px;
     text-align: left;
-    border-bottom: 1px solid #1c2a44;
     white-space: nowrap;
-    color: var(--text-primary);
+}
+
+.data-table td {
+    border-bottom: 1px solid #1c2a44;
+    color: var(--text-secondary);
 }
 
 .data-table thead th,
@@ -1391,10 +1356,6 @@ input:checked+.slider:before {
 .data-table tbody tr:hover td,
 .data-table tr:hover td {
     background: rgba(56, 189, 248, 0.06);
-}
-
-.data-table td {
-    color: var(--text-secondary);
 }
 
 .btn-sm {
@@ -1992,6 +1953,21 @@ input:checked+.slider:before {
     #view-config,
     #view-opcua {
         flex-direction: column;
+        overflow-y: auto;
+        height: auto;
+    }
+
+    .config-panel {
+        height: auto;
+        min-height: auto;
+        overflow: visible;
+        flex: 0 0 auto;
+        margin-bottom: 20px;
+    }
+
+    .panel-body {
+        overflow: visible;
+        height: auto;
     }
 }
 
@@ -2629,38 +2605,9 @@ input:checked+.slider:before {
 /* 2. Responsive OPC-UA Settings View */
 /* Force the view container to fill the available space and use Flexbox */
 #view-opcua {
-    /* display: flex !important; */
-    /* Controlled by app.js */
-    flex-direction: row;
-    height: 100%;
+    flex-direction: column;
     width: 100%;
-    overflow: hidden;
-    /* Prevent main body scroll, force internal scroll */
     box-sizing: border-box;
-    align-items: stretch;
-}
-
-/* Ensure configuration panels flex correctly and constrain height */
-.config-panel {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    /* Constrain content to panel dimensions */
-    min-height: 0;
-    /* Crucial for nested flex scrolling */
-    max-height: 100%;
-    flex-shrink: 1;
-    /* Allow shrinking if needed */
-}
-
-/* Ensure panel body handles the scrolling */
-.panel-body {
-    flex: 1;
-    overflow-y: auto;
-    /* Scroll internally */
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
 }
 
 /* Ensure table container scrolls */
@@ -2670,31 +2617,6 @@ input:checked+.slider:before {
     min-height: 0;
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-sm);
-}
-
-/* Mobile Responsiveness for OPC-UA View */
-@media (max-width: 900px) {
-    #view-opcua {
-        flex-direction: column;
-        overflow-y: auto;
-        /* Allow full page scroll on smaller screens */
-        height: auto;
-        display: block !important;
-        /* Stack vertically */
-    }
-
-    .config-panel {
-        height: auto;
-        min-height: auto;
-        overflow: visible;
-        flex: 0 0 auto;
-        margin-bottom: 20px;
-    }
-
-    .panel-body {
-        overflow: visible;
-        height: auto;
-    }
 }
 
 /* ============================================================
@@ -2850,13 +2772,9 @@ input:checked+.slider:before {
 
 .history-table-wrap {
     flex: 1;
-    min-height: 0;
     overflow: auto;
-    width: 100%;
-    border: 1px solid var(--border-card);
-    border-radius: var(--radius-md);
-    background: #141e33;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    border: none;
+    box-shadow: none;
 }
 
 .history-table {
@@ -2953,16 +2871,20 @@ html[data-theme="light"] .history-table-wrap {
 }
 
 html[data-theme="light"] .history-table thead th {
-    background: #dbeafe;
+    background: #f8fafc;
     color: #0f172a;
+    border-bottom: 2px solid #e2e8f0;
 }
 
 /* ============================================================
    SYSTEM LOG VIEW
    ============================================================ */
 #view-logs {
-    height: 100%;
-    overflow: hidden;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
 }
 
 /* Log Toolbar Controls */
@@ -3010,23 +2932,6 @@ html[data-theme="light"] .history-table thead th {
     box-shadow: 0 0 0 2px rgba(0, 150, 120, 0.2);
 }
 
-.log-btn {
-    height: 38px !important;
-    padding: 0 16px !important;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    transition: all 0.2s ease;
-    box-sizing: border-box;
-    line-height: 1;
-}
-
 .log-btn-refresh {
     background: #009678;
     color: #ffffff;
@@ -3035,7 +2940,6 @@ html[data-theme="light"] .history-table thead th {
 
 .log-btn-refresh:hover {
     background: #008066;
-    transform: translateY(-1px);
 }
 
 .log-btn-clear {
@@ -3046,7 +2950,6 @@ html[data-theme="light"] .history-table thead th {
 
 .log-btn-clear:hover {
     background: #dc2626;
-    transform: translateY(-1px);
 }
 
 .log-container {
