@@ -42,6 +42,8 @@ const translations = {
         card_md_status: "MD Status",
 
         // Config View
+        config_title: "Konfigurasi Sistem",
+        config_subtitle: "Pengaturan interlock underweight dan koneksi server database SQL",
         interlock_panel_title: "Underweight Interlock Metal Detector",
         sql_panel_title: "Pengaturan SQL Server",
         checking: "MEMERIKSA...",
@@ -73,6 +75,7 @@ const translations = {
 
         // Users View
         users_title: "Manajemen Pengguna",
+        users_subtitle: "Kelola akun pengguna, peran otorisasi, dan kredensial sistem",
         btn_add_user: "Tambah Pengguna",
         th_user_id: "ID",
         th_user_name: "Username",
@@ -85,6 +88,8 @@ const translations = {
         user_created_success: "User berhasil dibuat",
 
         // OPC-UA View
+        opcua_title: "Antarmuka OPC-UA",
+        opcua_subtitle: "Konfigurasi koneksi industrial PLC, profil keamanan, dan pemantauan tag live",
         opcua_conn_title: "Koneksi OPC-UA",
         lbl_endpoint: "URL Endpoint :",
         lbl_security: "Keamanan :",
@@ -261,6 +266,8 @@ const translations = {
         card_md_status: "MD Status",
 
         // Config View
+        config_title: "System Configuration",
+        config_subtitle: "Underweight interlock tolerances and SQL database server connection settings",
         interlock_panel_title: "Underweight Interlock Metal Detector",
         sql_panel_title: "SQL Server Setting",
         checking: "CHECKING...",
@@ -292,6 +299,7 @@ const translations = {
 
         // Users View
         users_title: "User Management",
+        users_subtitle: "Manage user accounts, authorization roles, and system credentials",
         btn_add_user: "Add User",
         th_user_id: "ID",
         th_user_name: "Username",
@@ -304,6 +312,8 @@ const translations = {
         user_created_success: "User created successfully",
 
         // OPC-UA View
+        opcua_title: "OPC-UA Interface",
+        opcua_subtitle: "Industrial PLC communication endpoint, security profile, and live tag monitoring",
         opcua_conn_title: "OPC-UA Connection",
         lbl_endpoint: "Endpoint URL :",
         lbl_security: "Security :",

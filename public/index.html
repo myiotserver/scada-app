@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SRIBOGA - Weighing Dashboard</title>
     <meta name="description" content="SRIBOGA Weighing Carousel SCADA Dashboard — Real-time industrial monitoring">
-    <link rel="stylesheet" href="style.css?v=20261024_02">
+    <link rel="stylesheet" href="style.css?v=20261024_03">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="shortcut icon" href="favicon.svg">
     <link rel='stylesheet' href='css/boxicons.min.css'>
@@ -128,50 +128,61 @@
 
                 <!-- CONFIG VIEW -->
                 <div id="view-config" class="view-section"
-                    style="display: none; padding: 20px; width: 100%; gap: 20px;">
-                    <!-- Left: Interlock Settings -->
-                    <div class="config-panel" style="flex: 1;">
-                        <div class="panel-header" data-i18n="interlock_panel_title">Underweight Interlock Metal Detector</div>
-                        <div class="panel-body" id="interlock-settings">
-                            <!-- Injected via JS -->
+                    style="display: none; padding: 20px; width: 100%; flex-direction: column;">
+                    <!-- Page Header -->
+                    <div class="view-header">
+                        <div>
+                            <h2 data-i18n="config_title">System Configuration</h2>
+                            <p class="view-subtitle" data-i18n="config_subtitle">Underweight interlock tolerances and SQL database server connection settings</p>
                         </div>
                     </div>
 
-                    <!-- Right: SQL Settings -->
-                    <div class="config-panel" style="flex: 1.2;">
-                        <div class="panel-header"
-                            style="display: flex; justify-content: space-between; align-items: center;">
-                            <span data-i18n="sql_panel_title">SQL Server Setting</span>
-                            <div id="sql-status-badge" class="status-badge"
-                                style="font-size: 0.7rem; padding: 2px 8px;" data-i18n="checking">CHECKING...</div>
+                    <!-- Config Panels Grid -->
+                    <div class="config-panels-grid">
+                        <!-- Left: Interlock Settings -->
+                        <div class="config-panel" style="flex: 1; min-width: 320px;">
+                            <div class="panel-header" data-i18n="interlock_panel_title">Underweight Interlock Metal Detector</div>
+                            <div class="panel-body" id="interlock-settings">
+                                <!-- Injected via JS -->
+                            </div>
                         </div>
-                        <div class="panel-body">
-                            <div class="form-row">
-                                <label data-i18n="lbl_server">Server :</label> <input type="text" id="cfg-server">
-                                <label data-i18n="lbl_port">Port :</label> <input type="text" id="cfg-port" style="width:70px" placeholder="1433">
-                            </div>
-                            <div class="form-row">
-                                <label data-i18n="lbl_uid">UID :</label> <input type="text" id="cfg-uid">
-                                <label data-i18n="lbl_pass">PASS :</label> <input type="password" id="cfg-pass">
-                            </div>
-                            <div class="form-row">
-                                <label data-i18n="lbl_db">Database :</label> <input type="text" id="cfg-db">
-                            </div>
-                            <div class="form-row"><label data-i18n="lbl_table_zero">Table Zeroing :</label> <input type="text" id="cfg-table-zero">
-                            </div>
-                            <div class="form-row"><label data-i18n="lbl_table_weight">Table Weight :</label> <input type="text"
-                                    id="cfg-table-weight"></div>
-                            <div class="form-row"><label data-i18n="lbl_table_preset">Table Preset Data :</label> <input type="text"
-                                    id="cfg-table-main"></div>
 
-                            <div class="form-row" style="align-items: center; margin-top: 10px;">
-                                <label data-i18n="lbl_auto_reconnect">Auto-Reconnect :</label>
-                                <input type="checkbox" id="cfg-sql-auto-reconnect"
-                                    style="width: auto; margin-right: auto;">
+                        <!-- Right: SQL Settings -->
+                        <div class="config-panel" style="flex: 1.2; min-width: 340px;">
+                            <div class="panel-header"
+                                style="display: flex; justify-content: space-between; align-items: center;">
+                                <span data-i18n="sql_panel_title">SQL Server Setting</span>
+                                <div id="sql-status-badge" class="status-badge"
+                                    style="font-size: 0.7rem; padding: 2px 8px;" data-i18n="checking">CHECKING...</div>
                             </div>
+                            <div class="panel-body">
+                                <div class="form-row">
+                                    <label data-i18n="lbl_server">Server :</label> <input type="text" id="cfg-server">
+                                    <label data-i18n="lbl_port">Port :</label> <input type="text" id="cfg-port" style="width:70px" placeholder="1433">
+                                </div>
+                                <div class="form-row">
+                                    <label data-i18n="lbl_uid">UID :</label> <input type="text" id="cfg-uid">
+                                    <label data-i18n="lbl_pass">PASS :</label> <input type="password" id="cfg-pass">
+                                </div>
+                                <div class="form-row">
+                                    <label data-i18n="lbl_db">Database :</label> <input type="text" id="cfg-db">
+                                </div>
+                                <div class="form-row"><label data-i18n="lbl_table_zero">Table Zeroing :</label> <input type="text" id="cfg-table-zero">
+                                </div>
+                                <div class="form-row"><label data-i18n="lbl_table_weight">Table Weight :</label> <input type="text"
+                                        id="cfg-table-weight"></div>
+                                <div class="form-row"><label data-i18n="lbl_table_preset">Table Preset Data :</label> <input type="text"
+                                        id="cfg-table-main"></div>
 
-                            <div style="text-align: right; margin-top: 20px;">
-                                <button class="btn-save" onclick="promptSaveSqlSettings()"><i class='bx bx-save'></i> <span data-i18n="btn_save_settings">SAVE SETTINGS</span></button>
+                                <div class="form-row" style="align-items: center; margin-top: 10px;">
+                                    <label data-i18n="lbl_auto_reconnect">Auto-Reconnect :</label>
+                                    <input type="checkbox" id="cfg-sql-auto-reconnect"
+                                        style="width: auto; margin-right: auto;">
+                                </div>
+
+                                <div style="text-align: right; margin-top: 20px;">
+                                    <button class="btn-save" onclick="promptSaveSqlSettings()"><i class='bx bx-save'></i> <span data-i18n="btn_save_settings">SAVE SETTINGS</span></button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -180,12 +191,16 @@
                 <!-- USER MGMT VIEW -->
                 <div id="view-users" class="view-section"
                     style="display: none; padding: 20px; width: 100%; flex-direction: column;">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h2 data-i18n="users_title">User Management</h2>
-                        <button class="btn-primary user-header-btn" onclick="showAddUserModal()">
-                            <i class='bx bx-user-plus'></i> <span data-i18n="btn_add_user">Add User</span>
-                        </button>
+                    <div class="view-header">
+                        <div>
+                            <h2 data-i18n="users_title">User Management</h2>
+                            <p class="view-subtitle" data-i18n="users_subtitle">Manage user accounts, authorization roles, and system credentials</p>
+                        </div>
+                        <div>
+                            <button class="btn-primary user-header-btn" onclick="showAddUserModal()">
+                                <i class='bx bx-user-plus'></i> <span data-i18n="btn_add_user">Add User</span>
+                            </button>
+                        </div>
                     </div>
                     <table class="data-table">
                         <thead>
@@ -203,130 +218,140 @@
                 </div>
 
                 <!-- OPC-UA CONFIG VIEW -->
-                <div id="view-opcua" class="view-section" style="display: none; padding: 20px; width: 100%; gap: 20px;">
-
-                    <!-- Left: Connection Settings -->
-                    <div class="config-panel opc-connection-panel">
-                        <div class="panel-header"><span data-i18n="opcua_conn_title">OPC-UA Connection</span> <span class="opcua-badge"
-                                id="opcua-status-badge">DISCONNECTED</span></div>
-                        <div class="panel-body">
-                            <div class="form-row">
-                                <label data-i18n="lbl_endpoint">Endpoint URL :</label>
-                                <input type="text" id="opcua-endpoint" placeholder="opc.tcp://192.168.21.1:4840"
-                                    spellcheck="false">
-                            </div>
-                            <div class="form-row opc-inline-row">
-                                <label data-i18n="lbl_security">Security :</label>
-                                <select id="opcua-security">
-                                    <option value="None">None</option>
-                                    <option value="Sign">Sign</option>
-                                    <option value="SignAndEncrypt">Sign & Encrypt</option>
-                                </select>
-                                <label data-i18n="lbl_policy">Policy :</label>
-                                <select id="opcua-policy">
-                                    <option value="Basic128Rsa15">Basic128Rsa15</option>
-                                    <option value="Basic256">Basic256</option>
-                                    <option value="Basic256Sha256">Basic256Sha256</option>
-                                </select>
-                            </div>
-                            <div class="form-row opc-inline-row">
-                                <label data-i18n="lbl_publish">Publish (ms) :</label>
-                                <input type="number" id="opcua-publish" value="1000" min="100">
-                                <label data-i18n="lbl_sampling">Sample (ms) :</label>
-                                <input type="number" id="opcua-sampling" value="500" min="100">
-                            </div>
-                            <div class="form-row">
-                                <label data-i18n="lbl_opcua_user">Username :</label>
-                                <input type="text" id="opcua-username" placeholder="(anonymous)" spellcheck="false">
-                            </div>
-                            <div class="form-row">
-                                <label data-i18n="lbl_opcua_pass">Password :</label>
-                                <input type="password" id="opcua-password" placeholder="••••••">
-                            </div>
-                            <div class="form-row opc-checkbox-row" style="align-items: center;">
-                                <label data-i18n="lbl_opcua_autoconnect">Auto-Connect :</label>
-                                <input type="checkbox" id="opcua-autoconnect" style="width: auto;">
-                            </div>
-                            <div class="opc-btn-row" style="display: flex; gap: 10px; margin-top: 10px;">
-                                <button class="btn-save" onclick="saveOpcUaConfig()">
-                                    <i class='bx bx-save'></i> <span data-i18n="btn_opcua_save">SAVE</span>
-                                </button>
-                                <button class="btn-primary opc-conn-btn" id="btn-opcua-connect"
-                                    style="background: #22c55e;" onclick="opcuaConnect()">
-                                    <i class='bx bx-plug'></i> <span data-i18n="btn_opcua_connect">CONNECT</span>
-                                </button>
-                                <button class="btn-primary opc-conn-btn" id="btn-opcua-disconnect"
-                                    style="background: #ef4444; display: none;"
-                                    onclick="opcuaDisconnect()">
-                                    <i class='bx bx-unlink'></i> <span data-i18n="btn_opcua_disconnect">DISCONNECT</span>
-                                </button>
-                            </div>
+                <div id="view-opcua" class="view-section" style="display: none; padding: 20px; width: 100%; flex-direction: column;">
+                    <!-- Page Header -->
+                    <div class="view-header">
+                        <div>
+                            <h2 data-i18n="opcua_title">OPC-UA Interface</h2>
+                            <p class="view-subtitle" data-i18n="opcua_subtitle">Industrial PLC communication endpoint, security profile, and live tag monitoring</p>
                         </div>
                     </div>
 
-                    <!-- Right: Node Mapping -->
-                    <div class="config-panel opc-tags-panel">
-                        <div class="panel-header"><span data-i18n="opcua_tags_title">Monitored Nodes</span> <span id="opcua-node-count"
-                                style="font-weight:normal; font-size:0.75rem; color:var(--text-muted);">0 nodes</span>
-                        </div>
-                        <div class="panel-body">
-                            <div class="form-row" style="margin-bottom: 10px;">
-                                <input type="text" id="opcua-new-nodeid" placeholder="ns=3;s=GrossWeight_1"
-                                    spellcheck="false" style="flex: 2;">
-                                <input type="text" id="opcua-new-name" placeholder="Tag Name" data-i18n-placeholder="placeholder_tag_name" spellcheck="false"
-                                    style="flex: 1;">
-                                <select id="opcua-new-machine" style="width: 110px;">
-                                    <option value="">Global</option>
-                                    <option value="1">CR1</option>
-                                    <option value="2">CR2</option>
-                                    <option value="3">CR3</option>
-                                    <option value="4">CR4</option>
-                                    <option value="5">CR5</option>
-                                </select>
-                                <select id="opcua-new-signal" style="flex: 1;">
-                                    <option value="GROSS_WEIGHT">GROSS_WEIGHT</option>
-                                    <option value="PRODUCT_SENSOR">PRODUCT_SENSOR</option>
-                                    <option value="COUNTER">COUNTER</option>
-                                    <option value="RESET">RESET</option>
-                                    <option value="CAROUSEL_INTERLOCK">CAROUSEL_INTERLOCK</option>
-                                    <option value="GROSS_NORMAL">GROSS_NORMAL</option>
-                                    <option value="GROSS_UNDER">GROSS_UNDER</option>
-                                    <option value="GROSS_OVER">GROSS_OVER</option>
-                                    <option value="MACHINE_RUN">MACHINE_RUN</option>
-                                    <option value="ZEROING">ZEROING</option>
-                                    <option value="MD_SWITCH">MD_SWITCH</option>
-                                    <option value="SYSTEM_PAUSED">SYSTEM_PAUSED</option>
-                                    <option value="TOLERANCE_MIN">TOLERANCE_MIN</option>
-                                    <option value="TOLERANCE_MAX">TOLERANCE_MAX</option>
-                                    <option value="DEVIATION_TOLERANCE_MIN">DEVIATION_TOLERANCE_MIN</option>
-                                </select>
-                                <input type="number" id="opcua-new-scale" placeholder="Scale" data-i18n-placeholder="placeholder_scale" value="0.01" step="0.001"
-                                    style="width: 90px;">
-                                <input type="text" id="opcua-new-desc" placeholder="Description" data-i18n-placeholder="placeholder_desc" spellcheck="false"
-                                    style="flex: 1.2;">
-                                <button class="btn-primary opc-add-node-btn" onclick="addOpcUaNode()">
-                                    <i class='bx bx-plus-circle'></i> <span data-i18n="btn_add_node">Add Node</span>
-                                </button>
+                    <!-- OPC Panels Grid -->
+                    <div class="opc-panels-grid">
+                        <!-- Left: Connection Settings -->
+                        <div class="config-panel opc-connection-panel" style="flex: 1; min-width: 320px;">
+                            <div class="panel-header"><span data-i18n="opcua_conn_title">OPC-UA Connection</span> <span class="opcua-badge"
+                                    id="opcua-status-badge">DISCONNECTED</span></div>
+                            <div class="panel-body">
+                                <div class="form-row">
+                                    <label data-i18n="lbl_endpoint">Endpoint URL :</label>
+                                    <input type="text" id="opcua-endpoint" placeholder="opc.tcp://192.168.21.1:4840"
+                                        spellcheck="false">
+                                </div>
+                                <div class="form-row opc-inline-row">
+                                    <label data-i18n="lbl_security">Security :</label>
+                                    <select id="opcua-security">
+                                        <option value="None">None</option>
+                                        <option value="Sign">Sign</option>
+                                        <option value="SignAndEncrypt">Sign & Encrypt</option>
+                                    </select>
+                                    <label data-i18n="lbl_policy">Policy :</label>
+                                    <select id="opcua-policy">
+                                        <option value="Basic128Rsa15">Basic128Rsa15</option>
+                                        <option value="Basic256">Basic256</option>
+                                        <option value="Basic256Sha256">Basic256Sha256</option>
+                                    </select>
+                                </div>
+                                <div class="form-row opc-inline-row">
+                                    <label data-i18n="lbl_publish">Publish (ms) :</label>
+                                    <input type="number" id="opcua-publish" value="1000" min="100">
+                                    <label data-i18n="lbl_sampling">Sample (ms) :</label>
+                                    <input type="number" id="opcua-sampling" value="500" min="100">
+                                </div>
+                                <div class="form-row">
+                                    <label data-i18n="lbl_opcua_user">Username :</label>
+                                    <input type="text" id="opcua-username" placeholder="(anonymous)" spellcheck="false">
+                                </div>
+                                <div class="form-row">
+                                    <label data-i18n="lbl_opcua_pass">Password :</label>
+                                    <input type="password" id="opcua-password" placeholder="••••••">
+                                </div>
+                                <div class="form-row opc-checkbox-row" style="align-items: center;">
+                                    <label data-i18n="lbl_opcua_autoconnect">Auto-Connect :</label>
+                                    <input type="checkbox" id="opcua-autoconnect" style="width: auto;">
+                                </div>
+                                <div class="opc-btn-row" style="display: flex; gap: 10px; margin-top: 10px;">
+                                    <button class="btn-save" onclick="saveOpcUaConfig()">
+                                        <i class='bx bx-save'></i> <span data-i18n="btn_opcua_save">SAVE</span>
+                                    </button>
+                                    <button class="btn-primary opc-conn-btn" id="btn-opcua-connect"
+                                        style="background: #22c55e;" onclick="opcuaConnect()">
+                                        <i class='bx bx-plug'></i> <span data-i18n="btn_opcua_connect">CONNECT</span>
+                                    </button>
+                                    <button class="btn-primary opc-conn-btn" id="btn-opcua-disconnect"
+                                        style="background: #ef4444; display: none;"
+                                        onclick="opcuaDisconnect()">
+                                        <i class='bx bx-unlink'></i> <span data-i18n="btn_opcua_disconnect">DISCONNECT</span>
+                                    </button>
+                                </div>
                             </div>
-                            <div class="table-responsive">
-                                <table class="data-table">
-                                    <thead>
-                                        <tr>
-                                            <th data-i18n="th_opc_no">#</th>
-                                            <th data-i18n="th_opc_nodeid">Node ID</th>
-                                            <th data-i18n="th_opc_name">Name</th>
-                                            <th data-i18n="th_opc_machine">Machine</th>
-                                            <th data-i18n="th_opc_signal">Signal Type</th>
-                                            <th data-i18n="th_opc_scale">Scale</th>
-                                            <th data-i18n="th_opc_desc">Description</th>
-                                            <th data-i18n="th_opc_live">Live Value</th>
-                                            <th data-i18n="th_opc_actions">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="opcua-nodes-body">
-                                        <!-- Filled by JS -->
-                                    </tbody>
-                                </table>
+                        </div>
+
+                        <!-- Right: Node Mapping -->
+                        <div class="config-panel opc-tags-panel" style="flex: 2; min-width: 360px; display: flex; flex-direction: column;">
+                            <div class="panel-header"><span data-i18n="opcua_tags_title">Monitored Nodes</span> <span id="opcua-node-count"
+                                    style="font-weight:normal; font-size:0.75rem; color:var(--text-muted);">0 nodes</span>
+                            </div>
+                            <div class="panel-body">
+                                <div class="form-row" style="margin-bottom: 10px;">
+                                    <input type="text" id="opcua-new-nodeid" placeholder="ns=3;s=GrossWeight_1"
+                                        spellcheck="false" style="flex: 2;">
+                                    <input type="text" id="opcua-new-name" placeholder="Tag Name" data-i18n-placeholder="placeholder_tag_name" spellcheck="false"
+                                        style="flex: 1;">
+                                    <select id="opcua-new-machine" style="width: 110px;">
+                                        <option value="">Global</option>
+                                        <option value="1">CR1</option>
+                                        <option value="2">CR2</option>
+                                        <option value="3">CR3</option>
+                                        <option value="4">CR4</option>
+                                        <option value="5">CR5</option>
+                                    </select>
+                                    <select id="opcua-new-signal" style="flex: 1;">
+                                        <option value="GROSS_WEIGHT">GROSS_WEIGHT</option>
+                                        <option value="PRODUCT_SENSOR">PRODUCT_SENSOR</option>
+                                        <option value="COUNTER">COUNTER</option>
+                                        <option value="RESET">RESET</option>
+                                        <option value="CAROUSEL_INTERLOCK">CAROUSEL_INTERLOCK</option>
+                                        <option value="GROSS_NORMAL">GROSS_NORMAL</option>
+                                        <option value="GROSS_UNDER">GROSS_UNDER</option>
+                                        <option value="GROSS_OVER">GROSS_OVER</option>
+                                        <option value="MACHINE_RUN">MACHINE_RUN</option>
+                                        <option value="ZEROING">ZEROING</option>
+                                        <option value="MD_SWITCH">MD_SWITCH</option>
+                                        <option value="SYSTEM_PAUSED">SYSTEM_PAUSED</option>
+                                        <option value="TOLERANCE_MIN">TOLERANCE_MIN</option>
+                                        <option value="TOLERANCE_MAX">TOLERANCE_MAX</option>
+                                        <option value="DEVIATION_TOLERANCE_MIN">DEVIATION_TOLERANCE_MIN</option>
+                                    </select>
+                                    <input type="number" id="opcua-new-scale" placeholder="Scale" data-i18n-placeholder="placeholder_scale" value="0.01" step="0.001"
+                                        style="width: 90px;">
+                                    <input type="text" id="opcua-new-desc" placeholder="Description" data-i18n-placeholder="placeholder_desc" spellcheck="false"
+                                        style="flex: 1.2;">
+                                    <button class="btn-primary opc-add-node-btn" onclick="addOpcUaNode()">
+                                        <i class='bx bx-plus-circle'></i> <span data-i18n="btn_add_node">Add Node</span>
+                                    </button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th data-i18n="th_opc_no">#</th>
+                                                <th data-i18n="th_opc_nodeid">Node ID</th>
+                                                <th data-i18n="th_opc_name">Name</th>
+                                                <th data-i18n="th_opc_machine">Machine</th>
+                                                <th data-i18n="th_opc_signal">Signal Type</th>
+                                                <th data-i18n="th_opc_scale">Scale</th>
+                                                <th data-i18n="th_opc_desc">Description</th>
+                                                <th data-i18n="th_opc_live">Live Value</th>
+                                                <th data-i18n="th_opc_actions">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="opcua-nodes-body">
+                                            <!-- Filled by JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -458,14 +483,11 @@
 
                 <!-- USER ACTIVITY & AUDIT TRAIL VIEW -->
                 <div id="view-audit" class="view-section history-view" style="display: none; padding: 20px; width: 100%; flex-direction: column;">
-                    <!-- Header with Title & Action Buttons -->
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+                    <!-- Header with Title & Action Buttons (NO ICON) -->
+                    <div class="view-header">
                         <div>
-                            <h2 style="margin: 0 0 5px 0; display: flex; align-items: center; gap: 10px;">
-                                <i class='bx bx-history' style="color: #6366f1;"></i>
-                                <span data-i18n="audit_title">Activity Tracking & Audit Trail</span>
-                            </h2>
-                            <p style="margin: 0; font-size: 0.85rem; color: #94a3b8;" data-i18n="audit_subtitle">
+                            <h2 data-i18n="audit_title">Activity Tracking & Audit Trail</h2>
+                            <p class="view-subtitle" data-i18n="audit_subtitle">
                                 Log lengkap aktivitas pengguna, kontrol carousel, interlock, dan perubahan konfigurasi sistem.
                             </p>
                         </div>
@@ -915,7 +937,7 @@
 
     </div>
 
-    <script src="app.js?v=20261024_02"></script>
+    <script src="app.js?v=20261024_03"></script>
 </body>
 
 </html>

@@ -3844,4 +3844,52 @@ html[data-theme="light"] .history-table thead th {
     color: #475569 !important;
 }
 
+/* ============================================================
+   STANDARDIZED PAGE HEADERS (CONSISTENT TYPOGRAPHY & NO ICONS)
+   ============================================================ */
+.view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+    width: 100%;
+}
+
+.view-header h2 {
+    margin: 0 0 5px 0 !important;
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.3px !important;
+    color: #ffffff;
+    display: block;
+}
+
+.view-header p,
+.view-subtitle {
+    margin: 0 !important;
+    font-size: 0.85rem !important;
+    color: #94a3b8 !important;
+    line-height: 1.4 !important;
+}
+
+[data-theme="light"] .view-header h2 {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .view-header p,
+[data-theme="light"] .view-subtitle {
+    color: #64748b !important;
+}
+
+.config-panels-grid,
+.opc-panels-grid {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+
 
