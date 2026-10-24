@@ -244,6 +244,13 @@ function getWorkflowSignals(data) {
     };
 }
 
+function getDeviationThreshold(carouselId, data) {
+    const manualThreshold = (appSettings.deviationThresholds || {})[`carousel${carouselId}`];
+    return (manualThreshold !== undefined && Number.isFinite(parseFloat(manualThreshold)))
+        ? parseFloat(parseFloat(manualThreshold).toFixed(4))
+        : parseFloat((((data.toleranceMax || 0) - (data.toleranceMin || 0)) / 2).toFixed(4));
+}
+
 function canInsertWeightData(data) {
     const signals = getWorkflowSignals(data);
     // MD_SWITCH check removed — sensor edge is sufficient proof of valid production.
@@ -446,11 +453,7 @@ async function insertWeightData(carouselId, data) {
 
     // Calculate STATUS based on GROSS_WEIGHT (must be done BEFORE insertKey so anomaly uses PRODUCT_COUNT=0)
     // Priority: Anomaly (interlock ON + severe underweight) > Underweight > Overweight > Normal
-    const thresholds = appSettings.deviationThresholds || {};
-    const manualThreshold = thresholds[`carousel${carouselId}`];
-    const deviationToleranceMin = (manualThreshold !== undefined && Number.isFinite(parseFloat(manualThreshold)))
-        ? parseFloat(parseFloat(manualThreshold).toFixed(4))
-        : parseFloat((((data.toleranceMax || 0) - (data.toleranceMin || 0)) / 2).toFixed(4));
+    const deviationToleranceMin = getDeviationThreshold(carouselId, data);
     const interlocks = appSettings.interlocks || {};
     const isInterlocked = !!interlocks[`carousel${carouselId}`];
 
@@ -503,6 +506,7 @@ async function insertWeightData(carouselId, data) {
             .input('nettWeight', sql.Decimal(18, 2), data.lastNett)
             .input('toleranceMin', sql.Decimal(18, 2), data.toleranceMin)
             .input('toleranceMax', sql.Decimal(18, 2), data.toleranceMax)
+            .input('threshold', sql.Decimal(18, 4), deviationToleranceMin)
             .input('baseTarget', sql.Decimal(18, 2), data.target) // Using target as product count/target count placeholder if needed? No, schema has PRODUCT_COUNT and TARGET_COUNT
             // Schema from image: PRODUCT_COUNT, TARGET_COUNT. Let's assume these are current counters or target settings.
             // data.target is likely TARGET_COUNT. PRODUCT_COUNT is likely the current counter.
@@ -519,10 +523,10 @@ async function insertWeightData(carouselId, data) {
                 BEGIN
                     INSERT INTO ${appSettings.table_weight || 'WEIGHT_DATA'} 
                     (TIMESTAMP, PACKING_ORDER, PRODUCT_ID, PRODUCT_NAME, PACKAGING_MATERIAL, CAROUSEL, 
-                     GROSS_WEIGHT, NETT_WEIGHT, TOLERANCE_MIN, TOLERANCE_MAX, PRODUCT_COUNT, TARGET_COUNT, STATUS)
+                     GROSS_WEIGHT, NETT_WEIGHT, TOLERANCE_MIN, TOLERANCE_MAX, THRESHOLD, PRODUCT_COUNT, TARGET_COUNT, STATUS)
                     VALUES 
                     (DATEADD(HOUR, 7, GETUTCDATE()), @packingOrder, @productId, @productName, @packagingMaterial, @carousel, 
-                     @grossWeight, @nettWeight, @toleranceMin, @toleranceMax, @productCount, @targetCount, @status)
+                     @grossWeight, @nettWeight, @toleranceMin, @toleranceMax, @threshold, @productCount, @targetCount, @status)
                 END
             `);
 
@@ -659,11 +663,7 @@ async function writeTolerancesToOpc(carouselId, data, force = false) {
         if (!Number.isFinite(tolMin) || !Number.isFinite(tolMax)) return;
 
         // Use manual threshold from settings if available, otherwise calculate
-        const thresholds = appSettings.deviationThresholds || {};
-        const manualThreshold = thresholds[`carousel${carouselId}`];
-        const deviationToleranceMin = (manualThreshold !== undefined && Number.isFinite(parseFloat(manualThreshold)))
-            ? parseFloat(parseFloat(manualThreshold).toFixed(4))
-            : parseFloat(((tolMax - tolMin) / 2).toFixed(4));
+        const deviationToleranceMin = getDeviationThreshold(carouselId, data);
 
         // Cache key per carousel — only write if values actually changed
         // UNLESS force=true (e.g., after OPC reconnect, PLC values are unknown/reset)

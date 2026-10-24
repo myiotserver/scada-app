@@ -153,7 +153,7 @@
             "enabled": true
         },
         {
-            "nodeId": "MB;s=Carousel3 OPC.Siemens Carousel3.MACHINE_RUN",
+            "nodeId": "ns=2;s=Carousel3 OPC.Siemens Carousel3.MACHINE_RUN",
             "name": "Running state CR3",
             "description": "Running status CR3",
             "machineId": 3,
@@ -198,7 +198,7 @@
             "enabled": true
         },
         {
-            "nodeId": "MB=2;s=Carousel3 OPC.Siemens Carousel3.TOLERANCE_MIN",
+            "nodeId": "ns=2;s=Carousel3 OPC.Siemens Carousel3.TOLERANCE_MIN",
             "name": "Tol min CR3",
             "description": "Tolerance min CR3",
             "machineId": 3,
@@ -243,7 +243,7 @@
             "enabled": true
         },
         {
-            "nodeId": "MB=2;s=Carousel3 OPC.Siemens Carousel3.TOLERANCE_MAX",
+            "nodeId": "ns=2;s=Carousel3 OPC.Siemens Carousel3.TOLERANCE_MAX",
             "name": "Tol max CR3",
             "description": "Tolerance max CR3",
             "machineId": 3,
@@ -288,7 +288,7 @@
             "enabled": true
         },
         {
-            "nodeId": "MB=2;s=Carousel3 OPC.Siemens Carousel3.ZEROING_BUTTON",
+            "nodeId": "ns=2;s=Carousel3 OPC.Siemens Carousel3.ZEROING_BUTTON",
             "name": "Zeroing CR3",
             "description": "Zeroing CR3",
             "machineId": 3,
@@ -311,6 +311,150 @@
             "description": "Zeroing CR5",
             "machineId": 5,
             "signalType": "ZEROING",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel1 OPC.Siemens Carousel1.INTERLOCK_MD",
+            "name": "Interlock MD CR1",
+            "description": "Stop MD if underweight",
+            "machineId": 1,
+            "signalType": "CAROUSEL_INTERLOCK",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel2 OPC.Siemens Carousel2.INTERLOCK_MD",
+            "name": "Interlock MD CR",
+            "description": "Stop MD if underrweight",
+            "machineId": 2,
+            "signalType": "CAROUSEL_INTERLOCK",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel3 OPC.Siemens Carousel3.INTERLOCK_MD",
+            "name": "Interlock MD CR3",
+            "description": "Stop MD if underweight",
+            "machineId": 3,
+            "signalType": "CAROUSEL_INTERLOCK",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel4 OPC.Siemens Carousel4.INTERLOCK_MD",
+            "name": "Interlock MD CR4",
+            "description": "Stop MD if underweight",
+            "machineId": 4,
+            "signalType": "CAROUSEL_INTERLOCK",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel5 OPC.Siemens Carousel5.INTERLOCK_MD",
+            "name": "Interlock MD CR5",
+            "description": "Stop MD if underweight",
+            "machineId": 5,
+            "signalType": "CAROUSEL_INTERLOCK",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel1 OPC.Siemens Carousel1.THRESHOLD_MIN",
+            "name": "Threshold Min CR1",
+            "description": "Threshold min underweight",
+            "machineId": 1,
+            "signalType": "DEVIATION_TOLERANCE_MIN",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel2 OPC.Siemens Carousel2.THRESHOLD_MIN",
+            "name": "Threshold Min CR2",
+            "description": "Threshold min underweight",
+            "machineId": 2,
+            "signalType": "DEVIATION_TOLERANCE_MIN",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel3 OPC.Siemens Carousel3.THRESHOLD_MIN",
+            "name": "Threshold Min CR3",
+            "description": "Threshold min underweight",
+            "machineId": 3,
+            "signalType": "DEVIATION_TOLERANCE_MIN",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel4 OPC.Siemens Carousel4.THRESHOLD_MIN",
+            "name": "Threshold Min CR4",
+            "description": "Threshold min underweight",
+            "machineId": 4,
+            "signalType": "DEVIATION_TOLERANCE_MIN",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel5 OPC.Siemens Carousel5.THRESHOLD_MIN",
+            "name": "Threshold Min CR5",
+            "description": "Threshold min underweight",
+            "machineId": 5,
+            "signalType": "DEVIATION_TOLERANCE_MIN",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel1 OPC.Siemens Carousel1.SENSOR_STATUS",
+            "name": "PAUSE COUNT CR1",
+            "description": "Disabled counting CR1",
+            "machineId": 1,
+            "signalType": "SYSTEM_PAUSED",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel2 OPC.Siemens Carousel2.SENSOR_STATUS",
+            "name": "PAUSE COUNT CR2",
+            "description": "Disable counting CR2",
+            "machineId": 2,
+            "signalType": "SYSTEM_PAUSED",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel3 OPC.Siemens Carousel3.SENSOR_STATUS",
+            "name": "PAUSE COUNT CR3",
+            "description": "Disabled counting CR3",
+            "machineId": 3,
+            "signalType": "SYSTEM_PAUSED",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel4 OPC.Siemens Carousel4.SENSOR_STATUS",
+            "name": "PAUSE COUNT CR4",
+            "description": "Disabled counting CR4",
+            "machineId": 4,
+            "signalType": "SYSTEM_PAUSED",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel5 OPC.Siemens Carousel5.SENSOR_STATUS",
+            "name": "PAUSE COUNT CR5",
+            "description": "Disabled counting CR5",
+            "machineId": 5,
+            "signalType": "SYSTEM_PAUSED",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel3 OPC.Siemens Carousel3.PRODUCT_SENSOR",
+            "name": "Sensor CR3",
+            "description": "Sensor CR3",
+            "machineId": 3,
+            "signalType": "PRODUCT_SENSOR",
             "scale": 1,
             "enabled": true
         }

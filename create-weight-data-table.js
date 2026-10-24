@@ -20,12 +20,17 @@ async function createTable() {
             NETT_WEIGHT DECIMAL(18, 2),
             TOLERANCE_MIN DECIMAL(18, 2),
             TOLERANCE_MAX DECIMAL(18, 2),
+            THRESHOLD DECIMAL(18, 4),
             PRODUCT_COUNT INT,
             TARGET_COUNT INT,
             STATUS NVARCHAR(50)
         )`;
 
         await pool.request().query(query);
+        await pool.request().query(`
+            IF COL_LENGTH('dbo.WEIGHT_DATA', 'THRESHOLD') IS NULL
+                ALTER TABLE dbo.WEIGHT_DATA ADD THRESHOLD DECIMAL(18, 4) NULL
+        `);
         console.log("Table WEIGHT_DATA created or already exists.");
 
         pool.close();

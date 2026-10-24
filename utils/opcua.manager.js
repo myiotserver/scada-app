@@ -193,8 +193,10 @@ class OpcUaManager {
     _saveConfig() {
         try {
             fs.writeFileSync(CONFIG_PATH, JSON.stringify(this.config, null, 4), 'utf-8');
+            return true;
         } catch (err) {
             logger.error('OPC', `Failed to save config: ${err.message}`);
+            return false;
         }
     }
 
@@ -242,6 +244,34 @@ class OpcUaManager {
             logger.info('OPC', `Node saved to config but not monitored (not connected). Will be monitored on next connection.`);
         }
 
+        return { success: true, nodes: this.config.nodes };
+    }
+
+    replaceNodes(nodes) {
+        const previousNodes = this.config.nodes;
+        this.config.nodes = nodes;
+        if (!this._saveConfig()) {
+            this.config.nodes = previousNodes;
+            return { error: 'Failed to save imported nodes' };
+        }
+
+        this.liveValues = {};
+        if (this.connected && this.subscription) {
+            for (const item of this.monitoredItems) {
+                try {
+                    item.monitoredItem?.terminate();
+                } catch (err) {
+                    logger.warn('OPC', `Failed to terminate monitored node during import: ${err.message}`);
+                }
+            }
+            this.monitoredItems = [];
+            for (const node of nodes) {
+                if (node.enabled !== false) this._monitorSingleNode(node);
+            }
+        }
+        this._emitStatus();
+
+        logger.info('OPC', `Node configuration replaced with ${nodes.length} imported nodes`);
         return { success: true, nodes: this.config.nodes };
     }
 

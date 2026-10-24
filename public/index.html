@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SRIBOGA - Weighing Dashboard</title>
     <meta name="description" content="SRIBOGA Weighing Carousel SCADA Dashboard — Real-time industrial monitoring">
-    <link rel="stylesheet" href="style.css?v=20261024_12">
+    <link rel="stylesheet" href="style.css?v=20261024_13">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="shortcut icon" href="favicon.svg">
     <link rel='stylesheet' href='css/boxicons.min.css'>
@@ -97,7 +97,7 @@
                 </nav>
 
                 <div class="sidebar-footer">
-                    <div class="user-info" id="current-user-display">Login as admin</div>
+                    <div class="user-info" id="current-user-display">admin</div>
                     <div class="datetime">
                         <div id="clock-time">08:19:13</div>
                         <div id="clock-date">17 February 2026</div>
@@ -313,16 +313,30 @@
 
                         <!-- Right: Node Mapping -->
                         <div class="config-panel opc-tags-panel" style="flex: 2; min-width: 360px; display: flex; flex-direction: column;">
-                            <div class="panel-header"><span data-i18n="opcua_tags_title">Monitored Nodes</span> <span id="opcua-node-count"
-                                    style="font-weight:normal; font-size:0.75rem; color:var(--text-muted);">0 nodes</span>
+                            <div class="panel-header">
+                                <div class="opc-node-panel-title">
+                                    <span data-i18n="opcua_tags_title">Monitored Nodes</span>
+                                    <span id="opcua-node-count"
+                                        style="font-weight:normal; font-size:0.75rem; color:var(--text-muted);">0 nodes</span>
+                                </div>
+                                <div class="opc-node-transfer-actions">
+                                    <button type="button" class="opc-node-transfer-btn" onclick="exportOpcUaNodes()">
+                                        <i class='bx bx-export'></i> <span data-i18n="btn_export_nodes">Export</span>
+                                    </button>
+                                    <button type="button" class="opc-node-transfer-btn" onclick="document.getElementById('opcua-node-import-file').click()">
+                                        <i class='bx bx-import'></i> <span data-i18n="btn_import_nodes">Import</span>
+                                    </button>
+                                    <input type="file" id="opcua-node-import-file" accept=".json,application/json"
+                                        hidden onchange="importOpcUaNodes(this)">
+                                </div>
                             </div>
                             <div class="panel-body">
-                                <div class="opc-add-node-bar" style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px;">
+                                <div class="opc-add-node-bar">
                                     <input type="text" id="opcua-new-nodeid" placeholder="ns=3;s=GrossWeight_1"
-                                        spellcheck="false" style="flex: 2;">
-                                    <input type="text" id="opcua-new-name" placeholder="Tag Name" data-i18n-placeholder="placeholder_tag_name" spellcheck="false"
-                                        style="flex: 1;">
-                                    <select id="opcua-new-machine" style="width: 110px;">
+                                        spellcheck="false">
+                                    <input type="text" id="opcua-new-name" placeholder="Tag Name"
+                                        data-i18n-placeholder="placeholder_tag_name" spellcheck="false">
+                                    <select id="opcua-new-machine">
                                         <option value="">Global</option>
                                         <option value="1">CR1</option>
                                         <option value="2">CR2</option>
@@ -330,7 +344,7 @@
                                         <option value="4">CR4</option>
                                         <option value="5">CR5</option>
                                     </select>
-                                    <select id="opcua-new-signal" style="flex: 1;">
+                                    <select id="opcua-new-signal">
                                         <option value="GROSS_WEIGHT">GROSS_WEIGHT</option>
                                         <option value="PRODUCT_SENSOR">PRODUCT_SENSOR</option>
                                         <option value="COUNTER">COUNTER</option>
@@ -347,10 +361,10 @@
                                         <option value="TOLERANCE_MAX">TOLERANCE_MAX</option>
                                         <option value="DEVIATION_TOLERANCE_MIN">DEVIATION_TOLERANCE_MIN</option>
                                     </select>
-                                    <input type="number" id="opcua-new-scale" placeholder="Scale" data-i18n-placeholder="placeholder_scale" value="0.01" step="0.001"
-                                        style="width: 90px;">
-                                    <input type="text" id="opcua-new-desc" placeholder="Description" data-i18n-placeholder="placeholder_desc" spellcheck="false"
-                                        style="flex: 1.2;">
+                                    <input type="number" id="opcua-new-scale" placeholder="Scale"
+                                        data-i18n-placeholder="placeholder_scale" value="0.01" step="0.001">
+                                    <input type="text" id="opcua-new-desc" placeholder="Description"
+                                        data-i18n-placeholder="placeholder_desc" spellcheck="false">
                                     <button class="btn-primary opc-add-node-btn" onclick="addOpcUaNode()">
                                         <i class='bx bx-plus-circle'></i> <span data-i18n="btn_add_node">Add Node</span>
                                     </button>
@@ -388,35 +402,31 @@
                             <h2 data-i18n="history_title">Weight History</h2>
                             <p id="history-subtitle" class="view-subtitle" data-i18n="history_subtitle">Real-time bag weighing logs and historical records across all carousels.</p>
                         </div>
-                        <div style="display: flex; gap: 10px; align-items: center;">
+                        <div class="history-header-actions">
+                            <div class="audit-filter-item">
+                                <label for="history-carousel-filter" class="audit-filter-label" data-i18n="lbl_carousel">Carousel</label>
+                                <select id="history-carousel-filter" class="history-select" onchange="loadHistory()">
+                                    <option value="" data-i18n="opt_all">All</option>
+                                    <option value="CR1">CR1</option>
+                                    <option value="CR2">CR2</option>
+                                    <option value="CR3">CR3</option>
+                                    <option value="CR4">CR4</option>
+                                    <option value="CR5">CR5</option>
+                                </select>
+                            </div>
+                            <div class="audit-filter-item">
+                                <label for="history-refresh-interval" class="audit-filter-label" data-i18n="lbl_refresh_rate">Refresh Rate</label>
+                                <select id="history-refresh-interval" class="history-select" onchange="onHistoryRefreshChange()">
+                                    <option value="10">10s</option>
+                                    <option value="30" selected>30s</option>
+                                    <option value="60">60s</option>
+                                    <option value="120">120s</option>
+                                    <option value="0" data-i18n="opt_off">Off</option>
+                                </select>
+                            </div>
                             <button class="btn-primary history-refresh-btn" type="button" onclick="loadHistory()">
                                 <i class='bx bx-refresh'></i> <span data-i18n="btn_refresh">Refresh</span>
                             </button>
-                        </div>
-                    </div>
-
-                    <!-- Filters Card ("Card Atas") -->
-                    <div class="scada-filter-card history-filter-card">
-                        <div class="audit-filter-item">
-                            <label for="history-carousel-filter" class="audit-filter-label" data-i18n="lbl_carousel">Carousel</label>
-                            <select id="history-carousel-filter" class="history-select" onchange="loadHistory()">
-                                <option value="" data-i18n="opt_all">All</option>
-                                <option value="CR1">CR1</option>
-                                <option value="CR2">CR2</option>
-                                <option value="CR3">CR3</option>
-                                <option value="CR4">CR4</option>
-                                <option value="CR5">CR5</option>
-                            </select>
-                        </div>
-                        <div class="audit-filter-item">
-                            <label for="history-refresh-interval" class="audit-filter-label" data-i18n="lbl_refresh_rate">Refresh Rate</label>
-                            <select id="history-refresh-interval" class="history-select" onchange="onHistoryRefreshChange()">
-                                <option value="10">10s</option>
-                                <option value="30" selected>30s</option>
-                                <option value="60">60s</option>
-                                <option value="120">120s</option>
-                                <option value="0" data-i18n="opt_off">Off</option>
-                            </select>
                         </div>
                     </div>
 

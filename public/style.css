@@ -1205,6 +1205,58 @@ footer {
     gap: 10px;
 }
 
+.opc-node-panel-title,
+.opc-node-transfer-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.opc-node-panel-title {
+    min-width: 0;
+}
+
+.opc-node-transfer-actions {
+    margin-left: auto;
+    gap: 8px;
+}
+
+.opc-node-transfer-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 0 10px;
+    border: 1px solid #2b3d5c;
+    border-radius: 6px;
+    background: #0a0f1d;
+    color: #e2e8f0;
+    font: 600 0.75rem var(--font-main);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.opc-node-transfer-btn:hover {
+    border-color: #38bdf8;
+    color: #ffffff;
+}
+
+.opc-node-transfer-btn i {
+    font-size: 1rem;
+}
+
+[data-theme="light"] .opc-node-transfer-btn {
+    border-color: #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+}
+
+[data-theme="light"] .opc-node-transfer-btn:hover {
+    border-color: #2563eb;
+    color: #1d4ed8;
+}
+
 .panel-body {
     padding: 20px;
     background: transparent;
@@ -1214,6 +1266,68 @@ footer {
     gap: 14px;
     overflow-y: auto;
     min-height: 0;
+}
+
+.opc-add-node-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) 110px minmax(0, 1.6fr) 90px minmax(0, 1.2fr) auto;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin-bottom: 14px;
+}
+
+.opc-add-node-bar input,
+.opc-add-node-bar select {
+    width: 100%;
+    min-width: 0;
+    height: 38px;
+    padding: 0 10px;
+    border: 1px solid #2b3d5c;
+    border-radius: 6px;
+    background: #0a0f1d;
+    color: #ffffff;
+    font-family: var(--font-digital);
+    font-size: 0.82rem;
+    box-sizing: border-box;
+}
+
+.opc-add-node-bar select {
+    cursor: pointer;
+}
+
+.opc-add-node-bar select option {
+    background: #0a0f1d;
+    color: #ffffff;
+}
+
+.opc-add-node-bar input:focus,
+.opc-add-node-bar select:focus {
+    outline: none;
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
+.opc-add-node-bar button {
+    justify-self: start;
+}
+
+[data-theme="light"] .opc-add-node-bar input,
+[data-theme="light"] .opc-add-node-bar select {
+    border-color: #cbd5e1;
+    background: #ffffff;
+    color: #0f172a;
+}
+
+[data-theme="light"] .opc-add-node-bar select option {
+    background: #ffffff;
+    color: #0f172a;
+}
+
+[data-theme="light"] .opc-add-node-bar input:focus,
+[data-theme="light"] .opc-add-node-bar select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
 }
 
 .form-row {
@@ -2635,8 +2749,12 @@ input:checked+.slider:before {
 
 /* 2. Responsive OPC-UA Settings View */
 /* Force the view container to fill the available space and use Flexbox */
+#view-config,
 #view-opcua {
     flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
     width: 100%;
     box-sizing: border-box;
 }
@@ -2722,6 +2840,13 @@ input:checked+.slider:before {
     display: flex;
     gap: 10px;
     align-items: center;
+    flex-wrap: wrap;
+}
+
+.history-header-actions {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
     flex-wrap: wrap;
 }
 
@@ -3390,6 +3515,7 @@ html[data-theme="light"] .history-table thead th {
 .log-card-toolbar .history-select,
 .scada-filter-card .history-select,
 .history-filter-card .history-select,
+.history-header-actions .history-select,
 .user-filter-card .history-select,
 .audit-filter-card .history-select {
     height: 38px;
@@ -3410,6 +3536,7 @@ html[data-theme="light"] .history-table thead th {
 .log-card-toolbar .history-select option,
 .scada-filter-card .history-select option,
 .history-filter-card .history-select option,
+.history-header-actions .history-select option,
 .user-filter-card .history-select option,
 .audit-filter-card .history-select option {
     background: #0a0f1d;
@@ -3424,6 +3551,7 @@ html[data-theme="light"] .history-table thead th {
 .log-card-toolbar .history-select:focus,
 .scada-filter-card .history-select:focus,
 .history-filter-card .history-select:focus,
+.history-header-actions .history-select:focus,
 .user-filter-card .history-select:focus,
 .audit-filter-card .history-select:focus {
     border-color: #38bdf8 !important;
@@ -3690,6 +3818,7 @@ html[data-theme="light"] .history-table thead th {
 [data-theme="light"] .log-card-toolbar .history-select,
 [data-theme="light"] .scada-filter-card .history-select,
 [data-theme="light"] .history-filter-card .history-select,
+[data-theme="light"] .history-header-actions .history-select,
 [data-theme="light"] .user-filter-card .history-select,
 [data-theme="light"] .audit-filter-card .history-select {
     background: #f8fafc !important;
@@ -3703,6 +3832,7 @@ html[data-theme="light"] .history-table thead th {
 [data-theme="light"] .log-card-toolbar .history-select option,
 [data-theme="light"] .scada-filter-card .history-select option,
 [data-theme="light"] .history-filter-card .history-select option,
+[data-theme="light"] .history-header-actions .history-select option,
 [data-theme="light"] .user-filter-card .history-select option,
 [data-theme="light"] .audit-filter-card .history-select option {
     background: #ffffff !important;
@@ -3717,6 +3847,7 @@ html[data-theme="light"] .history-table thead th {
 [data-theme="light"] .log-card-toolbar .history-select:focus,
 [data-theme="light"] .scada-filter-card .history-select:focus,
 [data-theme="light"] .history-filter-card .history-select:focus,
+[data-theme="light"] .history-header-actions .history-select:focus,
 [data-theme="light"] .user-filter-card .history-select:focus,
 [data-theme="light"] .audit-filter-card .history-select:focus {
     background: #ffffff !important;
@@ -3918,5 +4049,82 @@ html[data-theme="light"] .history-table thead th {
     flex-wrap: wrap;
 }
 
+.config-panels-grid,
+.opc-panels-grid {
+    flex: 1;
+    min-height: 0;
+    flex-wrap: nowrap;
+    align-items: stretch;
+}
 
+@media (max-width: 900px) {
+    #view-config,
+    #view-opcua {
+        flex: 0 0 auto;
+        min-height: auto;
+        overflow-y: auto;
+        height: auto;
+    }
 
+    .config-panels-grid,
+    .opc-panels-grid {
+        flex: 0 0 auto;
+        min-height: auto;
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 1200px) {
+    .opc-add-node-bar {
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+
+    #opcua-new-nodeid {
+        grid-column: span 2;
+    }
+
+    #opcua-new-name,
+    #opcua-new-machine {
+        grid-column: span 1;
+    }
+
+    #opcua-new-signal {
+        grid-column: span 2;
+    }
+
+    #opcua-new-scale {
+        grid-column: span 1;
+    }
+
+    #opcua-new-desc {
+        grid-column: span 5;
+    }
+
+    .opc-add-node-bar .opc-add-node-btn {
+        grid-column: span 2;
+    }
+}
+
+@media (max-width: 600px) {
+    .opc-tags-panel > .panel-header {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .opc-node-transfer-actions {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .opc-add-node-bar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    #opcua-new-nodeid,
+    #opcua-new-name,
+    #opcua-new-signal,
+    #opcua-new-desc,
+    .opc-add-node-bar .opc-add-node-btn {
+        grid-column: span 2;
+    }
+}

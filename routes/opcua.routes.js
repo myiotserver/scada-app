@@ -52,6 +52,12 @@ module.exports = function (app) {
         controller.addNode
     );
 
+    app.post(
+        "/api/opcua/config/nodes/import",
+        [authJwt.verifyToken, authJwt.isAdmin],
+        controller.importNodes
+    );
+
     app.delete(
         "/api/opcua/config/nodes/:index",
         [authJwt.verifyToken, authJwt.isAdmin],

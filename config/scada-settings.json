@@ -9,17 +9,17 @@
     "sql_auto_reconnect": true,
     "interlocks": {
         "carousel1": true,
-        "carousel2": false,
+        "carousel2": true,
         "carousel3": false,
-        "carousel4": false,
-        "carousel5": false
+        "carousel4": true,
+        "carousel5": true
     },
     "deviationThresholds": {
-        "carousel1": 1,
-        "carousel2": 1,
-        "carousel3": 3.5,
-        "carousel4": 1,
-        "carousel5": 5
+        "carousel1": 0.05,
+        "carousel2": 0.05,
+        "carousel3": 0.05,
+        "carousel4": 0.05,
+        "carousel5": 0.05
     },
     "sql_port": 1433
 }

@@ -19,7 +19,6 @@ const translations = {
         nav_logs: "Log Sistem",
         nav_audit: "Audit Trail",
         nav_logout: "Keluar",
-        login_as: "Login sebagai {user}",
         btn_signin: "Masuk",
 
         // Home View / Carousel Cards
@@ -103,6 +102,14 @@ const translations = {
         btn_opcua_connect: "HUBUNGKAN",
         btn_opcua_disconnect: "PUTUSKAN",
         opcua_tags_title: "Daftar Tag Dipantau",
+        btn_export_nodes: "Ekspor",
+        btn_import_nodes: "Impor",
+        confirm_import_nodes: "Impor {count} node dan mengganti seluruh daftar node OPC-UA saat ini?",
+        nodes_exported_success: "Node berhasil diekspor",
+        nodes_imported_success: "{count} node berhasil diimpor",
+        nodes_import_invalid_file: "File JSON node tidak valid",
+        nodes_import_failed: "Gagal mengimpor node",
+        nodes_export_failed: "Konfigurasi node belum tersedia untuk diekspor",
         placeholder_tag_name: "Nama Tag",
         placeholder_scale: "Skala",
         placeholder_desc: "Deskripsi",
@@ -244,7 +251,6 @@ const translations = {
         nav_logs: "Logs",
         nav_audit: "Audit Trail",
         nav_logout: "Logout",
-        login_as: "Login as {user}",
         btn_signin: "Sign In",
 
         // Home View / Carousel Cards
@@ -328,6 +334,14 @@ const translations = {
         btn_opcua_connect: "CONNECT",
         btn_opcua_disconnect: "DISCONNECT",
         opcua_tags_title: "Monitored Nodes",
+        btn_export_nodes: "Export",
+        btn_import_nodes: "Import",
+        confirm_import_nodes: "Import {count} nodes and replace the entire current OPC-UA node list?",
+        nodes_exported_success: "Nodes exported successfully",
+        nodes_imported_success: "{count} nodes imported successfully",
+        nodes_import_invalid_file: "Invalid node JSON file",
+        nodes_import_failed: "Failed to import nodes",
+        nodes_export_failed: "Node configuration is not available to export",
         placeholder_tag_name: "Tag Name",
         placeholder_scale: "Scale",
         placeholder_desc: "Description",
@@ -519,11 +533,11 @@ function applyTranslations() {
         }
     });
 
-    // 6. Update user info label in sidebar
+    // 6. Update username in sidebar
     if (currentUser && currentUser.username) {
         const userDisplay = document.getElementById('current-user-display');
         if (userDisplay) {
-            userDisplay.innerText = t('login_as', { user: currentUser.username });
+            userDisplay.innerText = currentUser.username;
         }
     }
 
@@ -725,7 +739,7 @@ function initApp() {
     updateNavVisibility();
 
     if (currentUser && currentUser.username) {
-        document.getElementById('current-user-display').innerText = t('login_as', { user: currentUser.username });
+        document.getElementById('current-user-display').innerText = currentUser.username;
     }
 
     // Default to offline state before data is received
@@ -2225,6 +2239,74 @@ async function addOpcUaNode() {
         }
     } catch (e) {
         showOpcUaToast('Add error', 'error');
+    }
+}
+
+function exportOpcUaNodes() {
+    if (!opcuaConfig || !Array.isArray(opcuaConfig.nodes)) {
+        showOpcUaToast(t('nodes_export_failed'), 'error');
+        return;
+    }
+    const nodes = opcuaConfig.nodes;
+    const exportData = {
+        format: 'scada-opcua-nodes',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        nodes
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `opcua-nodes-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showOpcUaToast(t('nodes_exported_success'), 'success');
+}
+
+async function importOpcUaNodes(fileInput) {
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) return;
+
+    try {
+        let imported;
+        try {
+            imported = JSON.parse(await file.text());
+        } catch {
+            showOpcUaToast(t('nodes_import_invalid_file'), 'error');
+            return;
+        }
+
+        const nodes = Array.isArray(imported) ? imported : imported && imported.nodes;
+        if (!Array.isArray(nodes)) {
+            showOpcUaToast(t('nodes_import_invalid_file'), 'error');
+            return;
+        }
+        if (!confirm(t('confirm_import_nodes', { count: nodes.length }))) return;
+
+        const token = currentUser.accessToken;
+        const res = await fetch('/api/opcua/config/nodes/import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-access-token': token },
+            body: JSON.stringify({ nodes })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+            showOpcUaToast(data.error || t('nodes_import_failed'), 'error');
+            return;
+        }
+
+        opcuaConfig.nodes = data.nodes;
+        opcuaLiveValues = {};
+        renderOpcUaNodes();
+        showOpcUaToast(t('nodes_imported_success', { count: data.nodes.length }), 'success');
+    } catch (err) {
+        console.error('OPC-UA node import failed:', err);
+        showOpcUaToast(t('nodes_import_failed'), 'error');
+    } finally {
+        fileInput.value = '';
     }
 }
 
