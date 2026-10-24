@@ -2792,9 +2792,14 @@ input:checked+.slider:before {
 /* ==========================================================================
    UNIFIED STANDARD BUTTON SIZING (Exact 38px Height, 8px Radius, 0.85rem Font)
    ========================================================================== */
+.view-header button,
 .history-refresh-btn,
 .user-header-btn,
 .audit-header-btn,
+.log-header-btn,
+.log-btn-refresh,
+.log-btn-clear,
+.log-btn,
 .opc-conn-btn,
 .opc-add-node-btn,
 .btn-save,
@@ -2805,21 +2810,38 @@ input:checked+.slider:before {
     padding: 0 16px !important;
     font-size: 0.85rem !important;
     font-weight: 600 !important;
+    border: none !important;
     border-radius: 8px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 6px !important;
+    gap: 8px !important;
     box-sizing: border-box !important;
     line-height: 1 !important;
     width: auto !important;
+    white-space: nowrap !important;
     cursor: pointer !important;
     transition: all 0.2s ease !important;
+}
+
+.view-header button i,
+.history-refresh-btn i,
+.user-header-btn i,
+.audit-header-btn i,
+.log-header-btn i,
+.log-btn-refresh i,
+.log-btn-clear i {
+    font-size: 1.1rem !important;
+    line-height: 1 !important;
+    display: inline-block !important;
 }
 
 .history-refresh-btn:hover,
 .user-header-btn:hover,
 .audit-header-btn:hover,
+.log-header-btn:hover,
+.log-btn-refresh:hover,
+.log-btn-clear:hover,
 .opc-conn-btn:hover,
 .opc-add-node-btn:hover {
     filter: brightness(1.1);
