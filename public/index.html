@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SRIBOGA - Weighing Dashboard</title>
     <meta name="description" content="SRIBOGA Weighing Carousel SCADA Dashboard — Real-time industrial monitoring">
-    <link rel="stylesheet" href="style.css?v=20261024_07">
+    <link rel="stylesheet" href="style.css?v=20261024_08">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="shortcut icon" href="favicon.svg">
     <link rel='stylesheet' href='css/boxicons.min.css'>
@@ -203,23 +203,25 @@
                         </div>
                     </div>
 
-                    <!-- Unified User Table Card -->
-                    <div class="scada-unified-card user-unified-card">
-                        <div class="scada-card-toolbar user-card-toolbar">
-                            <div class="audit-filter-item">
-                                <label for="user-search-input" class="audit-filter-label" data-i18n="lbl_search">Pencarian</label>
-                                <div style="position: relative;">
-                                    <input type="text" id="user-search-input" placeholder="Cari user, role..." data-i18n-placeholder="placeholder_user_search" class="audit-search-input" oninput="filterUserTable(this.value)">
-                                    <i class='bx bx-search' style="position: absolute; right: 10px; top: 10px; color: #94a3b8;"></i>
-                                </div>
-                            </div>
-                            <div class="audit-filter-item audit-filter-reset-wrap" style="margin-left: auto;">
-                                <button class="btn-primary audit-reset-btn" type="button" onclick="document.getElementById('user-search-input').value=''; filterUserTable('');">
-                                    <i class='bx bx-rotate-left'></i>
-                                    <span data-i18n="btn_reset">Reset</span>
-                                </button>
+                    <!-- Search & Filter Card ("Card Atas") -->
+                    <div class="scada-filter-card user-filter-card">
+                        <div class="audit-filter-item">
+                            <label for="user-search-input" class="audit-filter-label" data-i18n="lbl_search">Pencarian</label>
+                            <div style="position: relative;">
+                                <input type="text" id="user-search-input" placeholder="Cari user, role..." data-i18n-placeholder="placeholder_user_search" class="audit-search-input" oninput="filterUserTable(this.value)">
+                                <i class='bx bx-search' style="position: absolute; right: 10px; top: 10px; color: #94a3b8;"></i>
                             </div>
                         </div>
+                        <div class="audit-filter-item audit-filter-reset-wrap" style="margin-left: auto;">
+                            <button class="btn-primary audit-reset-btn" type="button" onclick="document.getElementById('user-search-input').value=''; filterUserTable('');">
+                                <i class='bx bx-rotate-left'></i>
+                                <span data-i18n="btn_reset">Reset</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- User Table Card ("Tabel") -->
+                    <div class="scada-unified-card user-unified-card">
                         <div class="scada-table-wrap user-table-wrap">
                             <table class="data-table user-table">
                                 <thead>
@@ -393,33 +395,33 @@
                         </div>
                     </div>
 
-                    <!-- Unified History Card (Filters + Table + Pagination) -->
-                    <div class="scada-unified-card history-unified-card">
-                        <!-- Filters Toolbar as Card Header -->
-                        <div class="scada-card-toolbar history-card-toolbar">
-                            <div class="audit-filter-item">
-                                <label for="history-carousel-filter" class="audit-filter-label" data-i18n="lbl_carousel">Carousel</label>
-                                <select id="history-carousel-filter" class="history-select" onchange="loadHistory()">
-                                    <option value="" data-i18n="opt_all">All</option>
-                                    <option value="CR1">CR1</option>
-                                    <option value="CR2">CR2</option>
-                                    <option value="CR3">CR3</option>
-                                    <option value="CR4">CR4</option>
-                                    <option value="CR5">CR5</option>
-                                </select>
-                            </div>
-                            <div class="audit-filter-item">
-                                <label for="history-refresh-interval" class="audit-filter-label" data-i18n="lbl_refresh_rate">Refresh Rate</label>
-                                <select id="history-refresh-interval" class="history-select" onchange="onHistoryRefreshChange()">
-                                    <option value="10">10s</option>
-                                    <option value="30" selected>30s</option>
-                                    <option value="60">60s</option>
-                                    <option value="120">120s</option>
-                                    <option value="0" data-i18n="opt_off">Off</option>
-                                </select>
-                            </div>
+                    <!-- Filters Card ("Card Atas") -->
+                    <div class="scada-filter-card history-filter-card">
+                        <div class="audit-filter-item">
+                            <label for="history-carousel-filter" class="audit-filter-label" data-i18n="lbl_carousel">Carousel</label>
+                            <select id="history-carousel-filter" class="history-select" onchange="loadHistory()">
+                                <option value="" data-i18n="opt_all">All</option>
+                                <option value="CR1">CR1</option>
+                                <option value="CR2">CR2</option>
+                                <option value="CR3">CR3</option>
+                                <option value="CR4">CR4</option>
+                                <option value="CR5">CR5</option>
+                            </select>
                         </div>
+                        <div class="audit-filter-item">
+                            <label for="history-refresh-interval" class="audit-filter-label" data-i18n="lbl_refresh_rate">Refresh Rate</label>
+                            <select id="history-refresh-interval" class="history-select" onchange="onHistoryRefreshChange()">
+                                <option value="10">10s</option>
+                                <option value="30" selected>30s</option>
+                                <option value="60">60s</option>
+                                <option value="120">120s</option>
+                                <option value="0" data-i18n="opt_off">Off</option>
+                            </select>
+                        </div>
+                    </div>
 
+                    <!-- History Table Card ("Tabel") -->
+                    <div class="scada-unified-card history-unified-card">
                         <!-- Table Area -->
                         <div class="scada-table-wrap history-table-wrap">
                             <table class="data-table history-table">
@@ -583,56 +585,56 @@
                         </div>
                     </div>
 
-                    <!-- Unified Audit Table Container (Filter Header + Data Table + Pagination Footer) -->
-                    <div class="scada-unified-card audit-unified-card">
-                        <!-- Filters Toolbar as Card Header -->
-                        <div class="scada-card-toolbar audit-card-toolbar">
-                            <div class="audit-filter-item">
-                                <label for="audit-filter-category" class="audit-filter-label" data-i18n="lbl_category">Kategori</label>
-                                <select id="audit-filter-category" class="history-select" onchange="loadAuditLogs(1)">
-                                    <option value="" data-i18n="opt_all_categories">Semua Kategori</option>
-                                    <option value="AUTH" data-i18n="opt_cat_auth">Authentication (Login/Logout)</option>
-                                    <option value="CAROUSEL" data-i18n="opt_cat_carousel">Carousel Control & Reset</option>
-                                    <option value="SETTINGS" data-i18n="opt_cat_settings">Pengaturan & Interlock</option>
-                                    <option value="USER_MGMT" data-i18n="opt_cat_usermgmt">Manajemen Pengguna</option>
-                                    <option value="OPCUA" data-i18n="opt_cat_opcua">OPC-UA Tag & Connection</option>
-                                </select>
-                            </div>
-                            <div class="audit-filter-item">
-                                <label for="audit-filter-target" class="audit-filter-label" data-i18n="lbl_target_carousel">Target Carousel</label>
-                                <select id="audit-filter-target" class="history-select" onchange="loadAuditLogs(1)">
-                                    <option value="" data-i18n="opt_all_targets">Semua Target</option>
-                                    <option value="CR1">Carousel 1 (CR1)</option>
-                                    <option value="CR2">Carousel 2 (CR2)</option>
-                                    <option value="CR3">Carousel 3 (CR3)</option>
-                                    <option value="CR4">Carousel 4 (CR4)</option>
-                                    <option value="CR5">Carousel 5 (CR5)</option>
-                                </select>
-                            </div>
-                            <div class="audit-filter-item">
-                                <label for="audit-filter-start-date" class="audit-filter-label" data-i18n="lbl_start_date">Dari Tanggal</label>
-                                <input type="date" id="audit-filter-start-date" class="audit-date-input" onchange="loadAuditLogs(1)">
-                            </div>
-                            <div class="audit-filter-item">
-                                <label for="audit-filter-end-date" class="audit-filter-label" data-i18n="lbl_end_date">Sampai Tanggal</label>
-                                <input type="date" id="audit-filter-end-date" class="audit-date-input" onchange="loadAuditLogs(1)">
-                            </div>
-                            <div class="audit-filter-item audit-filter-search">
-                                <label for="audit-filter-search" class="audit-filter-label" data-i18n="lbl_search">Pencarian</label>
-                                <div style="position: relative;">
-                                    <input type="text" id="audit-filter-search" placeholder="Cari user, action, detail..." data-i18n-placeholder="placeholder_audit_search" class="audit-search-input" onkeydown="if(event.key==='Enter') loadAuditLogs(1)">
-                                    <i class='bx bx-search' style="position: absolute; right: 10px; top: 10px; color: #94a3b8; cursor: pointer;" onclick="loadAuditLogs(1)"></i>
-                                </div>
-                            </div>
-                            <div class="audit-filter-item audit-filter-reset-wrap">
-                                <button class="btn-primary audit-reset-btn" type="button" onclick="resetAuditFilters()">
-                                    <i class='bx bx-rotate-left'></i>
-                                    <span data-i18n="btn_reset">Reset</span>
-                                </button>
+                    <!-- Filter Card ("Card Atas") -->
+                    <div class="scada-filter-card audit-filter-card">
+                        <div class="audit-filter-item">
+                            <label for="audit-filter-category" class="audit-filter-label" data-i18n="lbl_category">Kategori</label>
+                            <select id="audit-filter-category" class="history-select" onchange="loadAuditLogs(1)">
+                                <option value="" data-i18n="opt_all_categories">Semua Kategori</option>
+                                <option value="AUTH" data-i18n="opt_cat_auth">Authentication (Login/Logout)</option>
+                                <option value="CAROUSEL" data-i18n="opt_cat_carousel">Carousel Control & Reset</option>
+                                <option value="SETTINGS" data-i18n="opt_cat_settings">Pengaturan & Interlock</option>
+                                <option value="USER_MGMT" data-i18n="opt_cat_usermgmt">Manajemen Pengguna</option>
+                                <option value="OPCUA" data-i18n="opt_cat_opcua">OPC-UA Tag & Connection</option>
+                            </select>
+                        </div>
+                        <div class="audit-filter-item">
+                            <label for="audit-filter-target" class="audit-filter-label" data-i18n="lbl_target_carousel">Target Carousel</label>
+                            <select id="audit-filter-target" class="history-select" onchange="loadAuditLogs(1)">
+                                <option value="" data-i18n="opt_all_targets">Semua Target</option>
+                                <option value="CR1">Carousel 1 (CR1)</option>
+                                <option value="CR2">Carousel 2 (CR2)</option>
+                                <option value="CR3">Carousel 3 (CR3)</option>
+                                <option value="CR4">Carousel 4 (CR4)</option>
+                                <option value="CR5">Carousel 5 (CR5)</option>
+                            </select>
+                        </div>
+                        <div class="audit-filter-item">
+                            <label for="audit-filter-start-date" class="audit-filter-label" data-i18n="lbl_start_date">Dari Tanggal</label>
+                            <input type="date" id="audit-filter-start-date" class="audit-date-input" onchange="loadAuditLogs(1)">
+                        </div>
+                        <div class="audit-filter-item">
+                            <label for="audit-filter-end-date" class="audit-filter-label" data-i18n="lbl_end_date">Sampai Tanggal</label>
+                            <input type="date" id="audit-filter-end-date" class="audit-date-input" onchange="loadAuditLogs(1)">
+                        </div>
+                        <div class="audit-filter-item audit-filter-search">
+                            <label for="audit-filter-search" class="audit-filter-label" data-i18n="lbl_search">Pencarian</label>
+                            <div style="position: relative;">
+                                <input type="text" id="audit-filter-search" placeholder="Cari user, action, detail..." data-i18n-placeholder="placeholder_audit_search" class="audit-search-input" onkeydown="if(event.key==='Enter') loadAuditLogs(1)">
+                                <i class='bx bx-search' style="position: absolute; right: 10px; top: 10px; color: #94a3b8; cursor: pointer;" onclick="loadAuditLogs(1)"></i>
                             </div>
                         </div>
+                        <div class="audit-filter-item audit-filter-reset-wrap">
+                            <button class="btn-primary audit-reset-btn" type="button" onclick="resetAuditFilters()">
+                                <i class='bx bx-rotate-left'></i>
+                                <span data-i18n="btn_reset">Reset</span>
+                            </button>
+                        </div>
+                    </div>
 
-                        <!-- Table Area (Inside the Unified Card) -->
+                    <!-- Audit Table Container ("Tabel") -->
+                    <div class="scada-unified-card audit-unified-card">
+                        <!-- Table Area (Inside the Table Card) -->
                         <div class="scada-table-wrap audit-unified-table-wrap">
                             <table class="data-table audit-table">
                                 <thead>
@@ -979,7 +981,7 @@
 
     </div>
 
-    <script src="app.js?v=20261024_07"></script>
+    <script src="app.js?v=20261024_08"></script>
 </body>
 
 </html>

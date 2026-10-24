@@ -3381,6 +3381,24 @@ html[data-theme="light"] .history-table thead th {
     width: 100%;
 }
 
+.scada-filter-card,
+.history-filter-card,
+.user-filter-card,
+.audit-filter-card {
+    background: #141e33;
+    border: 1px solid #23334d;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 14px;
+    padding: 16px 20px;
+    margin-bottom: 18px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
 .scada-card-toolbar,
 .audit-card-toolbar,
 .history-card-toolbar,
@@ -3413,7 +3431,11 @@ html[data-theme="light"] .history-table thead th {
 .scada-card-toolbar .history-select,
 .audit-card-toolbar .history-select,
 .history-card-toolbar .history-select,
-.log-card-toolbar .history-select {
+.log-card-toolbar .history-select,
+.scada-filter-card .history-select,
+.history-filter-card .history-select,
+.user-filter-card .history-select,
+.audit-filter-card .history-select {
     height: 38px;
     background: #0a0f1d !important;
     color: #ffffff !important;
@@ -3429,7 +3451,11 @@ html[data-theme="light"] .history-table thead th {
 .scada-card-toolbar .history-select option,
 .audit-card-toolbar .history-select option,
 .history-card-toolbar .history-select option,
-.log-card-toolbar .history-select option {
+.log-card-toolbar .history-select option,
+.scada-filter-card .history-select option,
+.history-filter-card .history-select option,
+.user-filter-card .history-select option,
+.audit-filter-card .history-select option {
     background: #0a0f1d;
     color: #ffffff;
 }
@@ -3439,7 +3465,11 @@ html[data-theme="light"] .history-table thead th {
 .scada-card-toolbar .history-select:focus,
 .audit-card-toolbar .history-select:focus,
 .history-card-toolbar .history-select:focus,
-.log-card-toolbar .history-select:focus {
+.log-card-toolbar .history-select:focus,
+.scada-filter-card .history-select:focus,
+.history-filter-card .history-select:focus,
+.user-filter-card .history-select:focus,
+.audit-filter-card .history-select:focus {
     border-color: #38bdf8 !important;
     box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25) !important;
 }
@@ -3673,7 +3703,11 @@ html[data-theme="light"] .history-table thead th {
 [data-theme="light"] .history-unified-card,
 [data-theme="light"] .user-unified-card,
 [data-theme="light"] .log-unified-card,
-[data-theme="light"] .config-panel {
+[data-theme="light"] .config-panel,
+[data-theme="light"] .scada-filter-card,
+[data-theme="light"] .history-filter-card,
+[data-theme="light"] .user-filter-card,
+[data-theme="light"] .audit-filter-card {
     background: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05) !important;
@@ -3697,7 +3731,11 @@ html[data-theme="light"] .history-table thead th {
 [data-theme="light"] .scada-card-toolbar .history-select,
 [data-theme="light"] .audit-card-toolbar .history-select,
 [data-theme="light"] .history-card-toolbar .history-select,
-[data-theme="light"] .log-card-toolbar .history-select {
+[data-theme="light"] .log-card-toolbar .history-select,
+[data-theme="light"] .scada-filter-card .history-select,
+[data-theme="light"] .history-filter-card .history-select,
+[data-theme="light"] .user-filter-card .history-select,
+[data-theme="light"] .audit-filter-card .history-select {
     background: #f8fafc !important;
     color: #0f172a !important;
     border: 1px solid #cbd5e1 !important;
@@ -3706,7 +3744,11 @@ html[data-theme="light"] .history-table thead th {
 [data-theme="light"] .scada-card-toolbar .history-select option,
 [data-theme="light"] .audit-card-toolbar .history-select option,
 [data-theme="light"] .history-card-toolbar .history-select option,
-[data-theme="light"] .log-card-toolbar .history-select option {
+[data-theme="light"] .log-card-toolbar .history-select option,
+[data-theme="light"] .scada-filter-card .history-select option,
+[data-theme="light"] .history-filter-card .history-select option,
+[data-theme="light"] .user-filter-card .history-select option,
+[data-theme="light"] .audit-filter-card .history-select option {
     background: #ffffff !important;
     color: #0f172a !important;
 }
@@ -3716,7 +3758,11 @@ html[data-theme="light"] .history-table thead th {
 [data-theme="light"] .scada-card-toolbar .history-select:focus,
 [data-theme="light"] .audit-card-toolbar .history-select:focus,
 [data-theme="light"] .history-card-toolbar .history-select:focus,
-[data-theme="light"] .log-card-toolbar .history-select:focus {
+[data-theme="light"] .log-card-toolbar .history-select:focus,
+[data-theme="light"] .scada-filter-card .history-select:focus,
+[data-theme="light"] .history-filter-card .history-select:focus,
+[data-theme="light"] .user-filter-card .history-select:focus,
+[data-theme="light"] .audit-filter-card .history-select:focus {
     background: #ffffff !important;
     border-color: #2563eb !important;
     box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
