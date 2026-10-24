@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SRIBOGA - Weighing Dashboard</title>
     <meta name="description" content="SRIBOGA Weighing Carousel SCADA Dashboard — Real-time industrial monitoring">
-    <link rel="stylesheet" href="style.css?v=20261024_03">
+    <link rel="stylesheet" href="style.css?v=20261024_04">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="shortcut icon" href="favicon.svg">
     <link rel='stylesheet' href='css/boxicons.min.css'>
@@ -65,34 +65,34 @@
             <!-- Sidebar -->
             <aside>
                 <nav>
-                    <button class="nav-btn active" onclick="navigate('home')">
+                    <button class="nav-btn active" data-view="home" onclick="navigate('home')">
                         <i class='bx bxs-home icon'></i>
                         <span class="nav-label" data-i18n="nav_home">Home</span>
                     </button>
-                    <button class="nav-btn" onclick="navigate('config')">
+                    <button class="nav-btn" data-view="config" onclick="navigate('config')">
                         <i class='bx bxs-cog icon'></i>
                         <span class="nav-label" data-i18n="nav_config">Config</span>
                     </button>
-                    <button class="nav-btn" onclick="navigate('users')">
-                        <i class='bx bxs-group icon'></i>
-                        <span class="nav-label" data-i18n="nav_users">Users</span>
-                    </button>
-                    <button class="nav-btn" onclick="navigate('opcua')">
+                    <button class="nav-btn" data-view="opcua" onclick="navigate('opcua')">
                         <i class='bx bxs-plug icon'></i>
                         <span class="nav-label" data-i18n="nav_opcua">OPC</span>
                         <span class="opcua-dot" id="opcua-nav-dot"></span>
                     </button>
-                    <button class="nav-btn" onclick="navigate('history')">
+                    <button class="nav-btn" data-view="history" onclick="navigate('history')">
                         <i class='bx bxs-report icon'></i>
                         <span class="nav-label" data-i18n="nav_history">History</span>
                     </button>
-                    <button class="nav-btn" onclick="navigate('logs')">
+                    <button class="nav-btn" data-view="logs" onclick="navigate('logs')">
                         <i class='bx bx-terminal icon'></i>
                         <span class="nav-label" data-i18n="nav_logs">Logs</span>
                     </button>
-                    <button class="nav-btn" id="nav-btn-audit" onclick="navigate('audit')">
+                    <button class="nav-btn" data-view="audit" id="nav-btn-audit" onclick="navigate('audit')">
                         <i class='bx bx-history icon'></i>
                         <span class="nav-label" data-i18n="nav_audit">Audit Trail</span>
+                    </button>
+                    <button class="nav-btn" data-view="users" id="nav-btn-users" onclick="navigate('users')">
+                        <i class='bx bxs-group icon'></i>
+                        <span class="nav-label" data-i18n="nav_users">Users</span>
                     </button>
                 </nav>
 
@@ -937,7 +937,7 @@
 
     </div>
 
-    <script src="app.js?v=20261024_03"></script>
+    <script src="app.js?v=20261024_04"></script>
 </body>
 
 </html>

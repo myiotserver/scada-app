@@ -1003,10 +1003,10 @@ function navigate(view) {
         updateNavVisibility();
 
         // Update Nav Active State
-        document.querySelectorAll('.nav-btn').forEach((btn, idx) => {
+        document.querySelectorAll('.nav-btn').forEach((btn) => {
             btn.classList.remove('active');
-            const views = ['home', 'config', 'users', 'opcua', 'history', 'logs', 'audit'];
-            if (views[idx] === view) btn.classList.add('active');
+            const targetView = btn.getAttribute('data-view');
+            if (targetView === view) btn.classList.add('active');
         });
     }
 
@@ -1018,24 +1018,22 @@ function navigate(view) {
         const isUser = currentUser && currentUser.roles && currentUser.roles.includes('ROLE_USER');
         const isAdmin = currentUser && currentUser.roles && currentUser.roles.includes('ROLE_ADMIN');
 
-        document.querySelectorAll('.nav-btn').forEach((btn, idx) => {
-            if (idx === 1) { // Config
+        document.querySelectorAll('.nav-btn').forEach((btn) => {
+            const viewType = btn.getAttribute('data-view');
+            if (viewType === 'config') {
                 btn.style.display = (isAdmin || isUser) ? 'flex' : 'none';
-            }
-            if (idx === 2) { // Users
+            } else if (viewType === 'opcua') {
                 btn.style.display = (isAdmin) ? 'flex' : 'none';
-            }
-            if (idx === 3) { // OPCUA
-                btn.style.display = (isAdmin) ? 'flex' : 'none';
-            }
-            if (idx === 4) { // History
+            } else if (viewType === 'history') {
                 btn.style.display = (isAdmin || isUser || isGuest) ? 'flex' : 'none';
-            }
-            if (idx === 5) { // Logs
+            } else if (viewType === 'logs') {
                 btn.style.display = (isAdmin || isUser) ? 'flex' : 'none';
-            }
-            if (idx === 6) { // Audit Trail
+            } else if (viewType === 'audit') {
                 btn.style.display = (isAdmin) ? 'flex' : 'none';
+            } else if (viewType === 'users') {
+                btn.style.display = (isAdmin) ? 'flex' : 'none';
+            } else {
+                btn.style.display = 'flex'; // Home
             }
         });
     }
