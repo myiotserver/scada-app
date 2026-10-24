@@ -175,6 +175,7 @@ const translations = {
         lbl_end_date: "Sampai Tanggal",
         lbl_search: "Pencarian",
         placeholder_audit_search: "Cari user, action, detail...",
+        placeholder_user_search: "Cari user, role...",
         btn_reset: "Atur Ulang",
         th_audit_time: "Waktu (WIB)",
         th_audit_user: "Pengguna",
@@ -399,6 +400,7 @@ const translations = {
         lbl_end_date: "To Date",
         lbl_search: "Search",
         placeholder_audit_search: "Search user, action, details...",
+        placeholder_user_search: "Search user, role...",
         btn_reset: "Reset",
         th_audit_time: "Time (WIB)",
         th_audit_user: "User",
@@ -1518,6 +1520,48 @@ function renderUsers(users) {
         tbody.appendChild(tr);
     });
 }
+
+function filterUserTable(term) {
+    if (!window.lastUsersData) return;
+    const query = (term || '').toLowerCase().trim();
+    const filtered = query
+        ? window.lastUsersData.filter(u => {
+            const roles = u.roles ? u.roles.map(r => r.name).join(' ').toLowerCase() : '';
+            return (u.username || '').toLowerCase().includes(query) ||
+                   String(u.id).includes(query) ||
+                   roles.includes(query);
+          })
+        : window.lastUsersData;
+
+    const tbody = document.getElementById('user-list-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 25px; color: var(--text-muted);">${t('no_data') || 'Tidak ada data pengguna'}</td></tr>`;
+        return;
+    }
+    filtered.forEach(u => {
+        const roles = u.roles ? u.roles.map(r => r.name).join(', ') : '';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${u.id}</td>
+            <td>${u.username}</td>
+            <td>${roles}</td>
+            <td style="white-space: nowrap; width: 180px;">
+                <div style="display: flex; flex-direction: row; gap: 8px; align-items: center; justify-content: flex-start;">
+                    <button class="user-action-btn edit" onclick="showEditUserModal(${u.id}, '${u.username}', '${roles}')">
+                        <i class='bx bx-edit-alt'></i> ${t('btn_edit')}
+                    </button>
+                    <button class="user-action-btn delete" onclick="deleteUser(${u.id})">
+                        <i class='bx bx-trash'></i> ${t('btn_delete')}
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+window.filterUserTable = filterUserTable;
 
 function showAddUserModal() {
     document.getElementById('user-modal').style.display = 'flex';

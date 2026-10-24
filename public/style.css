@@ -1178,23 +1178,24 @@ footer {
 }
 
 .config-panel {
-    background: var(--bg-card);
-    border: 1px solid var(--border-card);
-    border-radius: var(--radius-lg);
+    background: #141e33;
+    border: 1px solid #23334d;
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
-    box-shadow: var(--shadow-card);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
     overflow: hidden;
 }
 
 .panel-header {
-    background: linear-gradient(135deg, rgba(0, 212, 170, 0.12), rgba(0, 180, 216, 0.08));
-    border-bottom: 1px solid var(--border-accent);
-    color: var(--text-primary);
+    background: #182338;
+    border-bottom: 1px solid #23334d;
+    color: #ffffff;
     padding: 14px 20px;
-    font-weight: 600;
-    font-size: 0.9rem;
+    font-weight: 700;
+    font-size: 0.82rem;
     letter-spacing: 0.5px;
+    text-transform: uppercase;
     text-align: left;
     display: flex;
     align-items: center;
@@ -1350,39 +1351,44 @@ input:checked+.slider:before {
 }
 
 /* ============================================================
-   DATA TABLE
+   DATA TABLE (STANDARDIZED SCADA DESIGN SYSTEM)
    ============================================================ */
 .data-table {
     width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    border: 1px solid var(--border-card);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-    background: var(--bg-card);
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    background: transparent;
+    margin: 0;
 }
 
 .data-table th,
 .data-table td {
     padding: 12px 16px;
-    border-bottom: 1px solid var(--border-card);
     text-align: left;
-    font-size: 0.8rem;
+    border-bottom: 1px solid #1c2a44;
+    white-space: nowrap;
+    color: var(--text-primary);
 }
 
+.data-table thead th,
 .data-table th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
     background: #182338;
     color: #ffffff;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
     font-size: 0.72rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border-bottom: 2px solid #2a3d5e;
 }
 
 .data-table tr:last-child td {
     border-bottom: none;
 }
 
+.data-table tbody tr:hover td,
 .data-table tr:hover td {
     background: rgba(56, 189, 248, 0.06);
 }
@@ -1519,31 +1525,7 @@ input:checked+.slider:before {
     margin-bottom: 10px;
 }
 
-.data-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.85rem;
-}
-
-.data-table th,
-.data-table td {
-    padding: 12px 14px;
-    text-align: left;
-    border-bottom: 1px solid var(--border-subtle);
-    white-space: nowrap;
-    /* Force horizontal scroll for long content */
-    color: var(--text-primary);
-}
-
-.data-table th {
-    font-weight: 600;
-    color: var(--text-secondary);
-    border-bottom: 2px solid var(--border-subtle);
-}
-
-.data-table tr:hover {
-    background: rgba(255, 255, 255, 0.02);
-}
+/* Conflicting duplicate .data-table definition removed; standardized via line 1355 */
 
 .data-table td .btn-icon {
     padding: 4px;
@@ -3374,9 +3356,13 @@ html[data-theme="light"] .history-table thead th {
 }
 
 /* ============================================================
-   UNIFIED AUDIT TABLE CARD (TOOLBAR + TABLE + PAGINATION)
+   STANDARDIZED UNIFIED CARD DESIGN SYSTEM (ALL VIEWS)
    ============================================================ */
-.audit-unified-card {
+.scada-unified-card,
+.audit-unified-card,
+.history-unified-card,
+.user-unified-card,
+.log-unified-card {
     background: #141e33;
     border: 1px solid #23334d;
     border-radius: 12px;
@@ -3388,7 +3374,11 @@ html[data-theme="light"] .history-table thead th {
     width: 100%;
 }
 
-.audit-card-toolbar {
+.scada-card-toolbar,
+.audit-card-toolbar,
+.history-card-toolbar,
+.user-card-toolbar,
+.log-card-toolbar {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
@@ -3413,7 +3403,10 @@ html[data-theme="light"] .history-table thead th {
 
 .audit-date-input,
 .audit-search-input,
-.audit-card-toolbar .history-select {
+.scada-card-toolbar .history-select,
+.audit-card-toolbar .history-select,
+.history-card-toolbar .history-select,
+.log-card-toolbar .history-select {
     height: 38px;
     background: #0a0f1d !important;
     color: #ffffff !important;
@@ -3426,14 +3419,20 @@ html[data-theme="light"] .history-table thead th {
     box-sizing: border-box;
 }
 
-.audit-card-toolbar .history-select option {
+.scada-card-toolbar .history-select option,
+.audit-card-toolbar .history-select option,
+.history-card-toolbar .history-select option,
+.log-card-toolbar .history-select option {
     background: #0a0f1d;
     color: #ffffff;
 }
 
 .audit-date-input:focus,
 .audit-search-input:focus,
-.audit-card-toolbar .history-select:focus {
+.scada-card-toolbar .history-select:focus,
+.audit-card-toolbar .history-select:focus,
+.history-card-toolbar .history-select:focus,
+.log-card-toolbar .history-select:focus {
     border-color: #38bdf8 !important;
     box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25) !important;
 }
@@ -3471,38 +3470,28 @@ html[data-theme="light"] .history-table thead th {
     border-color: #4b628a !important;
 }
 
-.audit-unified-table-wrap {
+.scada-table-wrap,
+.audit-unified-table-wrap,
+.history-table-wrap,
+.user-table-wrap {
     overflow-x: auto;
     width: 100%;
-    min-height: 240px;
+    min-height: 220px;
+    background: #141e33;
 }
 
-.audit-unified-table-wrap .audit-table {
+.scada-table-wrap .data-table,
+.audit-unified-table-wrap .audit-table,
+.history-table-wrap .history-table,
+.user-table-wrap .user-table {
     width: 100%;
     border-collapse: collapse;
     margin: 0;
 }
 
-.audit-unified-table-wrap .audit-table thead th {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    background: #182338;
-    color: #ffffff;
-    font-weight: 700;
-    font-size: 0.72rem;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    border-bottom: 2px solid #2a3d5e;
-    padding: 12px 16px;
-}
-
-.audit-unified-table-wrap .audit-table tbody td {
-    padding: 12px 16px;
-    border-bottom: 1px solid #1c2a44;
-}
-
-.audit-unified-footer {
+.scada-card-footer,
+.audit-unified-footer,
+.history-unified-footer {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -3672,13 +3661,22 @@ html[data-theme="light"] .history-table thead th {
     box-shadow: none !important;
 }
 
-[data-theme="light"] .audit-unified-card {
+[data-theme="light"] .scada-unified-card,
+[data-theme="light"] .audit-unified-card,
+[data-theme="light"] .history-unified-card,
+[data-theme="light"] .user-unified-card,
+[data-theme="light"] .log-unified-card,
+[data-theme="light"] .config-panel {
     background: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05) !important;
 }
 
-[data-theme="light"] .audit-card-toolbar {
+[data-theme="light"] .scada-card-toolbar,
+[data-theme="light"] .audit-card-toolbar,
+[data-theme="light"] .history-card-toolbar,
+[data-theme="light"] .user-card-toolbar,
+[data-theme="light"] .log-card-toolbar {
     background: #ffffff !important;
     border-bottom: 1px solid #e2e8f0 !important;
 }
@@ -3689,20 +3687,29 @@ html[data-theme="light"] .history-table thead th {
 
 [data-theme="light"] .audit-date-input,
 [data-theme="light"] .audit-search-input,
-[data-theme="light"] .audit-card-toolbar .history-select {
+[data-theme="light"] .scada-card-toolbar .history-select,
+[data-theme="light"] .audit-card-toolbar .history-select,
+[data-theme="light"] .history-card-toolbar .history-select,
+[data-theme="light"] .log-card-toolbar .history-select {
     background: #f8fafc !important;
     color: #0f172a !important;
     border: 1px solid #cbd5e1 !important;
 }
 
-[data-theme="light"] .audit-card-toolbar .history-select option {
+[data-theme="light"] .scada-card-toolbar .history-select option,
+[data-theme="light"] .audit-card-toolbar .history-select option,
+[data-theme="light"] .history-card-toolbar .history-select option,
+[data-theme="light"] .log-card-toolbar .history-select option {
     background: #ffffff !important;
     color: #0f172a !important;
 }
 
 [data-theme="light"] .audit-date-input:focus,
 [data-theme="light"] .audit-search-input:focus,
-[data-theme="light"] .audit-card-toolbar .history-select:focus {
+[data-theme="light"] .scada-card-toolbar .history-select:focus,
+[data-theme="light"] .audit-card-toolbar .history-select:focus,
+[data-theme="light"] .history-card-toolbar .history-select:focus,
+[data-theme="light"] .log-card-toolbar .history-select:focus {
     background: #ffffff !important;
     border-color: #2563eb !important;
     box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
@@ -3718,25 +3725,36 @@ html[data-theme="light"] .history-table thead th {
     background: #e2e8f0 !important;
 }
 
-[data-theme="light"] .audit-unified-table-wrap .audit-table thead th {
+[data-theme="light"] .scada-table-wrap,
+[data-theme="light"] .audit-unified-table-wrap,
+[data-theme="light"] .history-table-wrap,
+[data-theme="light"] .user-table-wrap {
+    background: #ffffff !important;
+}
+
+[data-theme="light"] .data-table thead th,
+[data-theme="light"] .data-table th,
+[data-theme="light"] .audit-unified-table-wrap .audit-table thead th,
+[data-theme="light"] .history-table-wrap .history-table thead th,
+[data-theme="light"] .user-table-wrap .user-table thead th,
+[data-theme="light"] .panel-header {
     background: #f8fafc !important;
     color: #0f172a !important;
     border-bottom: 2px solid #e2e8f0 !important;
 }
 
+[data-theme="light"] .data-table tbody td,
+[data-theme="light"] .data-table td,
 [data-theme="light"] .audit-unified-table-wrap .audit-table tbody td {
     border-bottom: 1px solid #f1f5f9 !important;
+    color: #1e293b !important;
 }
 
-[data-theme="light"] .audit-unified-footer {
+[data-theme="light"] .scada-card-footer,
+[data-theme="light"] .audit-unified-footer,
+[data-theme="light"] .history-unified-footer {
     background: #ffffff !important;
     border-top: 1px solid #e2e8f0 !important;
-}
-
-[data-theme="light"] .audit-table thead th {
-    background: #f1f5f9 !important;
-    color: #0f172a !important;
-    border-bottom: 1px solid #e2e8f0 !important;
 }
 
 [data-theme="light"] .audit-cell-time {

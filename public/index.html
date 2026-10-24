@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SRIBOGA - Weighing Dashboard</title>
     <meta name="description" content="SRIBOGA Weighing Carousel SCADA Dashboard — Real-time industrial monitoring">
-    <link rel="stylesheet" href="style.css?v=20261024_04">
+    <link rel="stylesheet" href="style.css?v=20261024_05">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="shortcut icon" href="favicon.svg">
     <link rel='stylesheet' href='css/boxicons.min.css'>
@@ -196,25 +196,46 @@
                             <h2 data-i18n="users_title">User Management</h2>
                             <p class="view-subtitle" data-i18n="users_subtitle">Manage user accounts, authorization roles, and system credentials</p>
                         </div>
-                        <div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
                             <button class="btn-primary user-header-btn" onclick="showAddUserModal()">
                                 <i class='bx bx-user-plus'></i> <span data-i18n="btn_add_user">Add User</span>
                             </button>
                         </div>
                     </div>
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th data-i18n="th_user_id">ID</th>
-                                <th data-i18n="th_user_name">Username</th>
-                                <th data-i18n="th_user_roles">Roles</th>
-                                <th data-i18n="th_user_actions">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="user-list-body">
-                            <!-- Injected via JS -->
-                        </tbody>
-                    </table>
+
+                    <!-- Unified User Table Card -->
+                    <div class="scada-unified-card user-unified-card">
+                        <div class="scada-card-toolbar user-card-toolbar">
+                            <div class="audit-filter-item">
+                                <label for="user-search-input" class="audit-filter-label" data-i18n="lbl_search">Pencarian</label>
+                                <div style="position: relative;">
+                                    <input type="text" id="user-search-input" placeholder="Cari user, role..." data-i18n-placeholder="placeholder_user_search" class="audit-search-input" oninput="filterUserTable(this.value)">
+                                    <i class='bx bx-search' style="position: absolute; right: 10px; top: 10px; color: #94a3b8;"></i>
+                                </div>
+                            </div>
+                            <div class="audit-filter-item audit-filter-reset-wrap" style="margin-left: auto;">
+                                <button class="btn-primary audit-reset-btn" type="button" onclick="document.getElementById('user-search-input').value=''; filterUserTable('');">
+                                    <i class='bx bx-rotate-left'></i>
+                                    <span data-i18n="btn_reset">Reset</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="scada-table-wrap user-table-wrap">
+                            <table class="data-table user-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 80px;" data-i18n="th_user_id">ID</th>
+                                        <th data-i18n="th_user_name">Username</th>
+                                        <th style="width: 240px;" data-i18n="th_user_roles">Roles</th>
+                                        <th style="width: 180px;" data-i18n="th_user_actions">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="user-list-body">
+                                    <!-- Injected via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- OPC-UA CONFIG VIEW -->
@@ -294,7 +315,7 @@
                                     style="font-weight:normal; font-size:0.75rem; color:var(--text-muted);">0 nodes</span>
                             </div>
                             <div class="panel-body">
-                                <div class="form-row" style="margin-bottom: 10px;">
+                                <div class="opc-add-node-bar" style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px;">
                                     <input type="text" id="opcua-new-nodeid" placeholder="ns=3;s=GrossWeight_1"
                                         spellcheck="false" style="flex: 2;">
                                     <input type="text" id="opcua-new-name" placeholder="Tag Name" data-i18n-placeholder="placeholder_tag_name" spellcheck="false"
@@ -358,104 +379,131 @@
                 </div>
 
                 <!-- HISTORY VIEW -->
-                <div id="view-history" class="view-section history-view" style="display: none;">
-                    <div class="history-toolbar">
+                <div id="view-history" class="view-section history-view" style="display: none; padding: 20px; width: 100%; flex-direction: column;">
+                    <!-- View Header -->
+                    <div class="view-header">
                         <div>
-                            <h2 class="history-title" data-i18n="history_title">Weight History</h2>
-                            <p id="history-subtitle" class="history-subtitle" data-i18n="history_subtitle">Loading…</p>
+                            <h2 data-i18n="history_title">Weight History</h2>
+                            <p id="history-subtitle" class="view-subtitle" data-i18n="history_subtitle">Loading…</p>
                         </div>
-                        <div class="history-toolbar-actions">
-                            <label for="history-carousel-filter" class="history-filter-label" data-i18n="lbl_carousel">Carousel</label>
-                            <select id="history-carousel-filter" class="history-select" onchange="loadHistory()">
-                                <option value="" data-i18n="opt_all">All</option>
-                                <option value="CR1">CR1</option>
-                                <option value="CR2">CR2</option>
-                                <option value="CR3">CR3</option>
-                                <option value="CR4">CR4</option>
-                                <option value="CR5">CR5</option>
-                            </select>
-                            <label for="history-refresh-interval" class="history-filter-label" data-i18n="lbl_refresh_rate">Refresh Rate</label>
-                            <select id="history-refresh-interval" class="history-select" onchange="onHistoryRefreshChange()">
-                                <option value="10">10s</option>
-                                <option value="30" selected>30s</option>
-                                <option value="60">60s</option>
-                                <option value="120">120s</option>
-                                <option value="0" data-i18n="opt_off">Off</option>
-                            </select>
+                        <div style="display: flex; gap: 10px; align-items: center;">
                             <button class="btn-primary history-refresh-btn" type="button" onclick="loadHistory()">
                                 <i class='bx bx-refresh'></i> <span data-i18n="btn_refresh">Refresh</span>
                             </button>
                         </div>
                     </div>
-                    <div class="history-table-wrap">
-                        <table class="data-table history-table">
-                            <thead>
-                                <tr>
-                                    <th data-i18n="th_time">Time</th>
-                                    <th data-i18n="th_carousel">Carousel</th>
-                                    <th data-i18n="th_product">Product</th>
-                                    <th data-i18n="th_target">Target</th>
-                                    <th data-i18n="th_counter">Counter</th>
-                                    <th data-i18n="th_gross">Gross</th>
-                                    <th data-i18n="th_nett">Nett</th>
-                                    <th data-i18n="th_status">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="history-list-body">
-                                <tr>
-                                    <td colspan="8" style="text-align:center;" data-i18n="loading">Loading...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="history-pagination">
-                        <div class="history-pagination-left">
-                            <label for="history-page-size" class="history-filter-label" data-i18n="lbl_rows">Rows</label>
-                            <select id="history-page-size" class="history-select history-page-size-select"
-                                onchange="onHistoryPageSizeChange()">
-                                <option value="25">25</option>
-                                <option value="50" selected>50</option>
-                                <option value="100">100</option>
-                                <option value="200">200</option>
-                            </select>
+
+                    <!-- Unified History Card (Filters + Table + Pagination) -->
+                    <div class="scada-unified-card history-unified-card">
+                        <!-- Filters Toolbar as Card Header -->
+                        <div class="scada-card-toolbar history-card-toolbar">
+                            <div class="audit-filter-item">
+                                <label for="history-carousel-filter" class="audit-filter-label" data-i18n="lbl_carousel">Carousel</label>
+                                <select id="history-carousel-filter" class="history-select" onchange="loadHistory()">
+                                    <option value="" data-i18n="opt_all">All</option>
+                                    <option value="CR1">CR1</option>
+                                    <option value="CR2">CR2</option>
+                                    <option value="CR3">CR3</option>
+                                    <option value="CR4">CR4</option>
+                                    <option value="CR5">CR5</option>
+                                </select>
+                            </div>
+                            <div class="audit-filter-item">
+                                <label for="history-refresh-interval" class="audit-filter-label" data-i18n="lbl_refresh_rate">Refresh Rate</label>
+                                <select id="history-refresh-interval" class="history-select" onchange="onHistoryRefreshChange()">
+                                    <option value="10">10s</option>
+                                    <option value="30" selected>30s</option>
+                                    <option value="60">60s</option>
+                                    <option value="120">120s</option>
+                                    <option value="0" data-i18n="opt_off">Off</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="history-pagination-center">
-                            <button type="button" class="history-page-btn" id="history-first-btn"
-                                onclick="historyGoToPage(1)" title="First page" data-i18n-title="btn_first_page">«</button>
-                            <button type="button" class="history-page-btn" id="history-prev-btn"
-                                onclick="historyChangePage(-1)" data-i18n="btn_prev">Prev</button>
-                            <span id="history-page-info" class="history-page-info">Page 1 of 1</span>
-                            <button type="button" class="history-page-btn" id="history-next-btn"
-                                onclick="historyChangePage(1)" data-i18n="btn_next">Next</button>
-                            <button type="button" class="history-page-btn" id="history-last-btn"
-                                onclick="historyGoToPage('last')" title="Last page" data-i18n-title="btn_last_page">»</button>
+
+                        <!-- Table Area -->
+                        <div class="scada-table-wrap history-table-wrap">
+                            <table class="data-table history-table">
+                                <thead>
+                                    <tr>
+                                        <th data-i18n="th_time">Time</th>
+                                        <th data-i18n="th_carousel">Carousel</th>
+                                        <th data-i18n="th_product">Product</th>
+                                        <th data-i18n="th_target">Target</th>
+                                        <th data-i18n="th_counter">Counter</th>
+                                        <th data-i18n="th_gross">Gross</th>
+                                        <th data-i18n="th_nett">Nett</th>
+                                        <th data-i18n="th_status">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-list-body">
+                                    <tr>
+                                        <td colspan="8" style="text-align:center;" data-i18n="loading">Loading...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
-                        <div id="history-range-info" class="history-range-info">—</div>
+
+                        <!-- Pagination Footer -->
+                        <div class="scada-card-footer history-unified-footer">
+                            <div class="history-pagination-left">
+                                <label for="history-page-size" class="history-filter-label" data-i18n="lbl_rows">Rows</label>
+                                <select id="history-page-size" class="history-select history-page-size-select"
+                                    onchange="onHistoryPageSizeChange()">
+                                    <option value="25">25</option>
+                                    <option value="50" selected>50</option>
+                                    <option value="100">100</option>
+                                    <option value="200">200</option>
+                                </select>
+                            </div>
+                            <div class="history-pagination-center">
+                                <button type="button" class="history-page-btn" id="history-first-btn"
+                                    onclick="historyGoToPage(1)" title="First page" data-i18n-title="btn_first_page">«</button>
+                                <button type="button" class="history-page-btn" id="history-prev-btn"
+                                    onclick="historyChangePage(-1)" data-i18n="btn_prev">Prev</button>
+                                <span id="history-page-info" class="history-page-info">Page 1 of 1</span>
+                                <button type="button" class="history-page-btn" id="history-next-btn"
+                                    onclick="historyChangePage(1)" data-i18n="btn_next">Next</button>
+                                <button type="button" class="history-page-btn" id="history-last-btn"
+                                    onclick="historyGoToPage('last')" title="Last page" data-i18n-title="btn_last_page">»</button>
+                            </div>
+                            <div id="history-range-info" class="history-range-info">—</div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- SYSTEM LOG VIEW -->
                 <div id="view-logs" class="view-section"
                     style="display: none; padding: 20px; width: 100%; flex-direction: column;">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <div class="view-header">
                         <div>
-                            <h2 style="margin: 0 0 5px 0;" data-i18n="syslog_title">System Log</h2>
-                            <p style="margin: 0; font-size: 0.85rem; color: #888;" data-i18n="syslog_subtitle">Real-time system events &amp; diagnostics</p>
+                            <h2 data-i18n="syslog_title">System Log</h2>
+                            <p class="view-subtitle" data-i18n="syslog_subtitle">Real-time system events &amp; diagnostics</p>
                         </div>
-                        <div class="log-toolbar">
-                            <div class="log-filter-group">
-                                <label for="log-level-filter" class="log-filter-label" data-i18n="lbl_level">Level</label>
-                                <select id="log-level-filter" class="log-select" onchange="filterLogs()">
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <button type="button" class="btn-primary log-btn-refresh" onclick="loadLogs()">
+                                <i class='bx bx-refresh'></i> <span data-i18n="btn_refresh">Refresh</span>
+                            </button>
+                            <button type="button" class="btn-primary log-btn-clear" style="background: #ef4444;" onclick="clearLogView()">
+                                <i class='bx bx-trash'></i> <span data-i18n="btn_clear">Clear</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Unified Log Card -->
+                    <div class="scada-unified-card log-unified-card" style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
+                        <div class="scada-card-toolbar log-card-toolbar">
+                            <div class="audit-filter-item">
+                                <label for="log-level-filter" class="audit-filter-label" data-i18n="lbl_level">Level</label>
+                                <select id="log-level-filter" class="history-select" onchange="filterLogs()">
                                     <option value="" data-i18n="opt_all">All</option>
                                     <option value="INFO">INFO</option>
                                     <option value="WARN">WARN</option>
                                     <option value="ERROR">ERROR</option>
                                 </select>
                             </div>
-                            <div class="log-filter-group">
-                                <label for="log-source-filter" class="log-filter-label" data-i18n="lbl_source">Source</label>
-                                <select id="log-source-filter" class="log-select" onchange="filterLogs()">
+                            <div class="audit-filter-item">
+                                <label for="log-source-filter" class="audit-filter-label" data-i18n="lbl_source">Source</label>
+                                <select id="log-source-filter" class="history-select" onchange="filterLogs()">
                                     <option value="" data-i18n="opt_all">All</option>
                                     <option value="OPC">OPC</option>
                                     <option value="SQL">SQL</option>
@@ -463,20 +511,14 @@
                                     <option value="SYSTEM">SYSTEM</option>
                                 </select>
                             </div>
-                            <button type="button" class="log-btn log-btn-refresh" onclick="loadLogs()">
-                                <i class='bx bx-refresh'></i> <span data-i18n="btn_refresh">Refresh</span>
-                            </button>
-                            <button type="button" class="log-btn log-btn-clear" onclick="clearLogView()">
-                                <i class='bx bx-trash'></i> <span data-i18n="btn_clear">Clear</span>
-                            </button>
                         </div>
-                    </div>
-                    <div class="log-container" id="log-container">
-                        <div class="log-entry log-level-info">
-                            <span class="log-ts">—</span>
-                            <span class="log-badge">INFO</span>
-                            <span class="log-src">SYSTEM</span>
-                            <span class="log-msg" data-i18n="log_waiting">Waiting for log entries...</span>
+                        <div class="log-container" id="log-container" style="flex: 1; min-height: 0; border: none; border-radius: 0 0 12px 12px; margin: 0;">
+                            <div class="log-entry log-level-info">
+                                <span class="log-ts">—</span>
+                                <span class="log-badge">INFO</span>
+                                <span class="log-src">SYSTEM</span>
+                                <span class="log-msg" data-i18n="log_waiting">Waiting for log entries...</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -542,9 +584,9 @@
                     </div>
 
                     <!-- Unified Audit Table Container (Filter Header + Data Table + Pagination Footer) -->
-                    <div class="audit-unified-card">
+                    <div class="scada-unified-card audit-unified-card">
                         <!-- Filters Toolbar as Card Header -->
-                        <div class="audit-card-toolbar">
+                        <div class="scada-card-toolbar audit-card-toolbar">
                             <div class="audit-filter-item">
                                 <label for="audit-filter-category" class="audit-filter-label" data-i18n="lbl_category">Kategori</label>
                                 <select id="audit-filter-category" class="history-select" onchange="loadAuditLogs(1)">
@@ -591,7 +633,7 @@
                         </div>
 
                         <!-- Table Area (Inside the Unified Card) -->
-                        <div class="audit-unified-table-wrap">
+                        <div class="scada-table-wrap audit-unified-table-wrap">
                             <table class="data-table audit-table">
                                 <thead>
                                     <tr>
@@ -615,7 +657,7 @@
                         </div>
 
                         <!-- Pagination Footer (Inside the Unified Card) -->
-                        <div class="audit-unified-footer">
+                        <div class="scada-card-footer audit-unified-footer">
                             <div class="history-pagination-left">
                                 <label for="audit-page-size" class="history-filter-label" data-i18n="lbl_rows">Baris</label>
                                 <select id="audit-page-size" class="history-select history-page-size-select" onchange="onAuditPageSizeChange()">
@@ -937,7 +979,7 @@
 
     </div>
 
-    <script src="app.js?v=20261024_04"></script>
+    <script src="app.js?v=20261024_05"></script>
 </body>
 
 </html>
