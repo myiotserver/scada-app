@@ -2731,7 +2731,6 @@ input:checked+.slider:before {
 .view-section {
     display: flex;
     flex-direction: column;
-    gap: 14px;
     box-sizing: border-box;
     width: 100%;
 }
@@ -2744,7 +2743,6 @@ input:checked+.slider:before {
     width: 100%;
     padding: 20px;
     box-sizing: border-box;
-    gap: 14px;
 }
 
 .history-toolbar {
@@ -3282,7 +3280,7 @@ html[data-theme="light"] .history-table thead th {
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 14px;
     margin-top: 0;
-    margin-bottom: 0;
+    margin-bottom: 18px;
 }
 
 .audit-stat-card {
@@ -3391,10 +3389,10 @@ html[data-theme="light"] .history-table thead th {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
-    gap: 12px;
+    gap: 14px;
     background: #141e33;
     border-bottom: 1px solid #23334d;
-    padding: 14px 18px;
+    padding: 16px 20px;
 }
 
 .audit-filter-item {
@@ -3506,7 +3504,7 @@ html[data-theme="light"] .history-table thead th {
     justify-content: space-between;
     gap: 12px;
     flex-wrap: wrap;
-    padding: 12px 18px;
+    padding: 14px 20px;
     background: #141e33;
     border-top: 1px solid #23334d;
 }
@@ -3878,7 +3876,7 @@ html[data-theme="light"] .history-table thead th {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 0;
+    margin-bottom: 22px;
     flex-wrap: wrap;
     gap: 15px;
     width: 100%;
