@@ -10,24 +10,24 @@ module.exports = function (app) {
         next();
     });
 
-    // List audit logs (accessible by User and Admin)
+    // List audit logs (accessible by Admin only)
     app.get(
         "/api/audit-logs",
-        [authJwt.verifyToken, authJwt.isUserOrAdmin],
+        [authJwt.verifyToken, authJwt.isAdmin],
         controller.getAuditLogs
     );
 
     // Get audit quick statistics
     app.get(
         "/api/audit-logs/stats",
-        [authJwt.verifyToken, authJwt.isUserOrAdmin],
+        [authJwt.verifyToken, authJwt.isAdmin],
         controller.getAuditStats
     );
 
     // Export audit logs as CSV
     app.get(
         "/api/audit-logs/export",
-        [authJwt.verifyToken, authJwt.isUserOrAdmin],
+        [authJwt.verifyToken, authJwt.isAdmin],
         controller.exportAuditLogs
     );
 };
