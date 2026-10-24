@@ -2728,15 +2728,23 @@ input:checked+.slider:before {
 /* ============================================================
    WEIGHT HISTORY VIEW
    ============================================================ */
+.view-section {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    box-sizing: border-box;
+    width: 100%;
+}
+
 .history-view {
     display: none;
     flex-direction: column;
     flex: 1;
     min-height: 0;
     width: 100%;
-    padding: 16px 20px 12px;
+    padding: 20px;
     box-sizing: border-box;
-    gap: 12px;
+    gap: 14px;
 }
 
 .history-toolbar {
@@ -3272,8 +3280,9 @@ html[data-theme="light"] .history-table thead th {
 .audit-stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 16px;
-    margin-bottom: 20px;
+    gap: 14px;
+    margin-top: 0;
+    margin-bottom: 0;
 }
 
 .audit-stat-card {
@@ -3370,7 +3379,7 @@ html[data-theme="light"] .history-table thead th {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    margin-top: 15px;
+    margin-top: 0;
     width: 100%;
 }
 
@@ -3869,7 +3878,7 @@ html[data-theme="light"] .history-table thead th {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 20px;
+    margin-bottom: 0;
     flex-wrap: wrap;
     gap: 15px;
     width: 100%;
