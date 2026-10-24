@@ -1,5 +1,5 @@
 {
-    "sql_server": "100.127.239.116",
+    "sql_server": "192.168.21.72",
     "sql_uid": "sa",
     "sql_pass": "VPS@thinkcentre",
     "sql_db": "SFM Main",
@@ -20,5 +20,6 @@
         "carousel3": 3.5,
         "carousel4": 1,
         "carousel5": 5
-    }
+    },
+    "sql_port": 1433
 }
