@@ -121,7 +121,7 @@ const translations = {
 
         // History View
         history_title: "Riwayat Penimbangan",
-        history_subtitle: "Memuat…",
+        history_subtitle: "Log riwayat penimbangan kantong tepung real-time pada seluruh carousel.",
         lbl_carousel: "Carousel",
         opt_all: "Semua",
         lbl_refresh_rate: "Kecepatan Refresh",
@@ -346,7 +346,7 @@ const translations = {
 
         // History View
         history_title: "Weight History",
-        history_subtitle: "Loading…",
+        history_subtitle: "Real-time bag weighing logs and historical records across all carousels.",
         lbl_carousel: "Carousel",
         opt_all: "All",
         lbl_refresh_rate: "Refresh Rate",
@@ -2522,8 +2522,7 @@ function getHistoryTotalPages() {
 function updateHistorySubtitle() {
     const subtitle = document.getElementById('history-subtitle');
     if (!subtitle) return;
-    const pages = getHistoryTotalPages();
-    subtitle.textContent = t("history_subtitle_text", { count: historyTotalCount.toLocaleString(), size: historyPageSize, pages: pages });
+    subtitle.textContent = t("history_subtitle");
 }
 
 function updateHistoryPaginationUi() {
