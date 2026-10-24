@@ -39,7 +39,7 @@ const translations = {
         card_avg_1h: "Rata-rata (1j)",
         card_btn_update: "Perbarui Data",
         card_waiting_order: "Menunggu Order Kemasan",
-        card_md_status: "MD Status",
+        card_md_status: "Interlock",
 
         // Config View
         config_title: "Konfigurasi Sistem",
@@ -264,7 +264,7 @@ const translations = {
         card_avg_1h: "Avg (1h)",
         card_btn_update: "Update Data",
         card_waiting_order: "Waiting for Packing Order",
-        card_md_status: "MD Status",
+        card_md_status: "Interlock",
 
         // Config View
         config_title: "System Configuration",
