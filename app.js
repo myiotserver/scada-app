@@ -1718,7 +1718,7 @@ function renderCarousels(carousels) {
             isInterlocked = carousel.interlock !== undefined ? !!carousel.interlock : !!carousel.data.interlock;
         }
 
-        const mdStatusText = isInterlocked ? 'Normal' : 'Bypassed';
+        const mdStatusText = isInterlocked ? 'Active' : 'Bypassed';
         const mdStatusClass = isInterlocked ? 'md-status-normal' : 'md-status-bypassed';
 
         if (carousel && carousel.data && carousel.data.productId) {
