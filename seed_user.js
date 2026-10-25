@@ -13,7 +13,7 @@ async function init() {
   await Role.findOrCreate({ where: { id: 4, name: 'guest' } });
 
   let user = await User.findOne({ where: { username: 'admin' } });
-  if (usermod -a -G radiusd www) {
+  if (!user) {
     user = await User.create({
       username: 'admin',
       email: 'admin@scada.local',
