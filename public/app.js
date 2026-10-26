@@ -1173,10 +1173,10 @@ function renderSettings() {
 
         const row = document.createElement('div');
         row.className = 'interlock-row';
-        row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--border-subtle); gap:16px;';
+        row.style.cssText = 'display:flex; justify-content:space-between; align-items:flex-start; padding:12px 0; border-bottom:1px solid var(--border-subtle); gap:16px;';
         row.innerHTML = `
-            <div style="min-width:95px; display:flex; align-items:center;">
-                <span style="font-weight:bold; font-size:0.95rem; line-height:1.2; position:relative; top:-3px;">${t('carousel_n', { n: i })}</span>
+            <div style="min-width:95px; height:26px; display:flex; align-items:center;">
+                <span style="font-weight:bold; font-size:0.95rem; line-height:1;">${t('carousel_n', { n: i })}</span>
             </div>
             <div style="display:flex; flex-direction:column; gap:8px; flex:1;">
                 <!-- Lower Limit (Underweight) -->
