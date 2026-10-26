@@ -531,7 +531,7 @@ async function insertWeightData(carouselId, data) {
             .input('nettWeight', sql.Decimal(18, 2), data.lastNett)
             .input('toleranceMin', sql.Decimal(18, 2), data.toleranceMin)
             .input('toleranceMax', sql.Decimal(18, 2), data.toleranceMax)
-            .input('threshold', sql.Decimal(18, 4), deviationToleranceMin)
+            .input('threshold', sql.Decimal(18, 4), (data.lastGross > data.toleranceMax) ? deviationToleranceMax : deviationToleranceMin)
             .input('baseTarget', sql.Decimal(18, 2), data.target) // Using target as product count/target count placeholder if needed? No, schema has PRODUCT_COUNT and TARGET_COUNT
             // Schema from image: PRODUCT_COUNT, TARGET_COUNT. Let's assume these are current counters or target settings.
             // data.target is likely TARGET_COUNT. PRODUCT_COUNT is likely the current counter.
