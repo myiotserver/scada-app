@@ -1176,12 +1176,12 @@ function renderSettings() {
         row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--border-subtle); gap:16px;';
         row.innerHTML = `
             <div style="min-width:95px; display:flex; align-items:center;">
-                <span style="font-weight:bold; font-size:0.95rem; line-height:1;">${t('carousel_n', { n: i })}</span>
+                <span style="font-weight:bold; font-size:0.95rem; line-height:1; position:relative; top:-2px;">${t('carousel_n', { n: i })}</span>
             </div>
             <div style="display:flex; flex-direction:column; gap:8px; justify-content:center; flex:1;">
                 <!-- Lower Limit (Underweight) -->
                 <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px; height:26px;">
-                    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; min-width:138px; text-align:right; line-height:26px;">${t('lower_limit_label') || 'Threshold Lower Limit :'}</span>
+                    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; min-width:138px; text-align:right; display:inline-flex; align-items:center; justify-content:flex-end; height:26px; line-height:1; position:relative; top:-2.5px;">${t('lower_limit_label') || 'Threshold Lower Limit :'}</span>
                     <input type="number"
                            id="dev-min-${key}"
                            value="${devMin}"
@@ -1190,19 +1190,19 @@ function renderSettings() {
                            style="${thresholdStyle}"
                            onchange="promptUpdateDeviation('${key}', 'min', this)"
                            ${isAdmin ? '' : 'readonly'}>
-                    <span style="font-size:0.7rem; color:#888; line-height:26px;">Kg</span>
-                    <span style="font-size:0.75rem; color:var(--text-muted); margin-left:4px; line-height:26px;">${t('normal_label')}</span>
+                    <span style="font-size:0.7rem; color:#888; display:inline-flex; align-items:center; height:26px; line-height:1; position:relative; top:-2.5px;">Kg</span>
+                    <span style="font-size:0.75rem; color:var(--text-muted); margin-left:4px; display:inline-flex; align-items:center; height:26px; line-height:1; position:relative; top:-2.5px;">${t('normal_label')}</span>
                     <div style="display:inline-flex; align-items:center; justify-content:center; height:26px;">
                         <label class="switch" style="transform:scale(0.82); transform-origin:center center; margin:0 -2px;">
                             <input type="checkbox" id="interlock-switch-under-${key}" onchange="promptToggleInterlock('${key}', 'under', this)" ${isUnderInterlocked ? 'checked' : ''} ${isAdmin ? '' : 'disabled'}>
                             <span class="slider round"></span>
                         </label>
                     </div>
-                    <span style="font-size:0.75rem; font-weight:600; min-width:50px; line-height:26px; color:${isUnderInterlocked ? '#059669' : 'inherit'};">${t('interlock_label')}</span>
+                    <span style="font-size:0.75rem; font-weight:600; min-width:50px; display:inline-flex; align-items:center; height:26px; line-height:1; position:relative; top:-2.5px; color:${isUnderInterlocked ? '#059669' : 'inherit'};">${t('interlock_label')}</span>
                 </div>
                 <!-- Upper Limit (Overweight) -->
                 <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px; height:26px;">
-                    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; min-width:138px; text-align:right; line-height:26px;">${t('upper_limit_label') || 'Threshold Upper Limit :'}</span>
+                    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; min-width:138px; text-align:right; display:inline-flex; align-items:center; justify-content:flex-end; height:26px; line-height:1; position:relative; top:-2.5px;">${t('upper_limit_label') || 'Threshold Upper Limit :'}</span>
                     <input type="number"
                            id="dev-max-${key}"
                            value="${devMax}"
@@ -1211,15 +1211,15 @@ function renderSettings() {
                            style="${thresholdStyle}"
                            onchange="promptUpdateDeviation('${key}', 'max', this)"
                            ${isAdmin ? '' : 'readonly'}>
-                    <span style="font-size:0.7rem; color:#888; line-height:26px;">Kg</span>
-                    <span style="font-size:0.75rem; color:var(--text-muted); margin-left:4px; line-height:26px;">${t('normal_label')}</span>
+                    <span style="font-size:0.7rem; color:#888; display:inline-flex; align-items:center; height:26px; line-height:1; position:relative; top:-2.5px;">Kg</span>
+                    <span style="font-size:0.75rem; color:var(--text-muted); margin-left:4px; display:inline-flex; align-items:center; height:26px; line-height:1; position:relative; top:-2.5px;">${t('normal_label')}</span>
                     <div style="display:inline-flex; align-items:center; justify-content:center; height:26px;">
                         <label class="switch" style="transform:scale(0.82); transform-origin:center center; margin:0 -2px;">
                             <input type="checkbox" id="interlock-switch-over-${key}" onchange="promptToggleInterlock('${key}', 'over', this)" ${isOverInterlocked ? 'checked' : ''} ${isAdmin ? '' : 'disabled'}>
                             <span class="slider round"></span>
                         </label>
                     </div>
-                    <span style="font-size:0.75rem; font-weight:600; min-width:50px; line-height:26px; color:${isOverInterlocked ? '#059669' : 'inherit'};">${t('interlock_label')}</span>
+                    <span style="font-size:0.75rem; font-weight:600; min-width:50px; display:inline-flex; align-items:center; height:26px; line-height:1; position:relative; top:-2.5px; color:${isOverInterlocked ? '#059669' : 'inherit'};">${t('interlock_label')}</span>
                 </div>
             </div>
         `;
