@@ -86,8 +86,11 @@ class OpcUaManager {
         if (/TOLERANCE[_\s-]?MAX/.test(name) || /TOLERANCE[_\s-]?MAX/.test(nodeId)) {
             return 'TOLERANCE_MAX';
         }
-        if (/DEVIATION[_\s-]?TOLERANCE[_\s-]?MIN/.test(name) || /DEVIATION[_\s-]?TOLERANCE[_\s-]?MIN/.test(nodeId)) {
-            return 'DEVIATION_TOLERANCE_MIN';
+        if (/THRESHOLD[_\s-]?MAX/.test(name) || /THRESHOLD[_\s-]?MAX/.test(nodeId) || /DEVIATION[_\s-]?TOLERANCE[_\s-]?MAX/.test(name) || /DEVIATION[_\s-]?TOLERANCE[_\s-]?MAX/.test(nodeId)) {
+            return 'THRESHOLD_MAX';
+        }
+        if (/THRESHOLD[_\s-]?MIN/.test(name) || /THRESHOLD[_\s-]?MIN/.test(nodeId) || /DEVIATION[_\s-]?TOLERANCE[_\s-]?MIN/.test(name) || /DEVIATION[_\s-]?TOLERANCE[_\s-]?MIN/.test(nodeId)) {
+            return 'THRESHOLD_MIN';
         }
         return null;
     }
@@ -868,7 +871,7 @@ class OpcUaManager {
         const results = [];
         for (const node of nodes) {
             const isMachineRun = String(signalType).toUpperCase() === 'MACHINE_RUN';
-            const isTolerance = ['TOLERANCE_MIN', 'TOLERANCE_MAX', 'DEVIATION_TOLERANCE_MIN']
+            const isTolerance = ['TOLERANCE_MIN', 'TOLERANCE_MAX', 'DEVIATION_TOLERANCE_MIN', 'DEVIATION_TOLERANCE_MAX', 'THRESHOLD_MIN', 'THRESHOLD_MAX']
                 .includes(String(signalType).toUpperCase());
             const scale = Number(node.scale);
             const rawValue = isTolerance && Number.isFinite(scale) && scale > 0

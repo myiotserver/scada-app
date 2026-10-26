@@ -713,13 +713,32 @@ async function writeTolerancesToOpc(carouselId, data, force = false) {
                 notifyToleranceWriteFailure(carouselId, 'TOLERANCE_MAX', result);
             }
         }
-        if (force || prev.deviationMin !== deviationToleranceMin) {
-            const result = await opcUaManager.writeToNodesBySignalType('DEVIATION_TOLERANCE_MIN', carouselId, deviationToleranceMin);
-            if (result.length > 0 && result.every(item => item.success)) {
-                prev.deviationMin = deviationToleranceMin;
-            } else if (result.length > 0) {
-                logger.warn('OPC', `CR${carouselId} DEVIATION_TOLERANCE_MIN write NOT confirmed on PLC — will retry next cycle.`);
-                notifyToleranceWriteFailure(carouselId, 'DEVIATION_TOLERANCE_MIN', result);
+        const devMinVal = deviationToleranceMin;
+        const devMaxVal = (typeof getDeviationThresholdMax === 'function')
+            ? getDeviationThresholdMax(carouselId, data)
+            : deviationToleranceMin;
+
+        if (force || prev.deviationMin !== devMinVal) {
+            await opcUaManager.writeToNodesBySignalType('DEVIATION_TOLERANCE_MIN', carouselId, devMinVal);
+            const resMin = await opcUaManager.writeToNodesBySignalType('THRESHOLD_MIN', carouselId, devMinVal);
+            if (resMin.length > 0 && resMin.every(item => item.success)) {
+                prev.deviationMin = devMinVal;
+            } else if (resMin.length > 0) {
+                logger.warn('OPC', `CR${carouselId} THRESHOLD_MIN write NOT confirmed on PLC — will retry next cycle.`);
+            } else {
+                prev.deviationMin = devMinVal;
+            }
+        }
+
+        if (force || prev.deviationMax !== devMaxVal) {
+            await opcUaManager.writeToNodesBySignalType('DEVIATION_TOLERANCE_MAX', carouselId, devMaxVal);
+            const resMax = await opcUaManager.writeToNodesBySignalType('THRESHOLD_MAX', carouselId, devMaxVal);
+            if (resMax.length > 0 && resMax.every(item => item.success)) {
+                prev.deviationMax = devMaxVal;
+            } else if (resMax.length > 0) {
+                logger.warn('OPC', `CR${carouselId} THRESHOLD_MAX write NOT confirmed on PLC — will retry next cycle.`);
+            } else {
+                prev.deviationMax = devMaxVal;
             }
         }
 

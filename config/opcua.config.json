@@ -364,7 +364,7 @@
             "name": "Threshold Min CR1",
             "description": "Threshold min underweight",
             "machineId": 1,
-            "signalType": "DEVIATION_TOLERANCE_MIN",
+            "signalType": "THRESHOLD_MIN",
             "scale": 1,
             "enabled": true
         },
@@ -373,7 +373,7 @@
             "name": "Threshold Min CR2",
             "description": "Threshold min underweight",
             "machineId": 2,
-            "signalType": "DEVIATION_TOLERANCE_MIN",
+            "signalType": "THRESHOLD_MIN",
             "scale": 1,
             "enabled": true
         },
@@ -382,7 +382,7 @@
             "name": "Threshold Min CR3",
             "description": "Threshold min underweight",
             "machineId": 3,
-            "signalType": "DEVIATION_TOLERANCE_MIN",
+            "signalType": "THRESHOLD_MIN",
             "scale": 1,
             "enabled": true
         },
@@ -391,7 +391,7 @@
             "name": "Threshold Min CR4",
             "description": "Threshold min underweight",
             "machineId": 4,
-            "signalType": "DEVIATION_TOLERANCE_MIN",
+            "signalType": "THRESHOLD_MIN",
             "scale": 1,
             "enabled": true
         },
@@ -400,7 +400,7 @@
             "name": "Threshold Min CR5",
             "description": "Threshold min underweight",
             "machineId": 5,
-            "signalType": "DEVIATION_TOLERANCE_MIN",
+            "signalType": "THRESHOLD_MIN",
             "scale": 1,
             "enabled": true
         },

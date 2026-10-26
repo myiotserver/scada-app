@@ -2214,7 +2214,8 @@ function getOpcUaNodeSignalType(node) {
     if (/COUNT/.test(name) || /COUNT/.test(nodeId)) return 'COUNTER';
     if (/TOLERANCE[_\s-]?MIN/.test(name) || /TOLERANCE[_\s-]?MIN/.test(nodeId)) return 'TOLERANCE_MIN';
     if (/TOLERANCE[_\s-]?MAX/.test(name) || /TOLERANCE[_\s-]?MAX/.test(nodeId)) return 'TOLERANCE_MAX';
-    if (/DEVIATION[_\s-]?TOLERANCE[_\s-]?MIN/.test(name) || /DEVIATION[_\s-]?TOLERANCE[_\s-]?MIN/.test(nodeId)) return 'DEVIATION_TOLERANCE_MIN';
+    if (/THRESHOLD[_\s-]?MAX/.test(name) || /THRESHOLD[_\s-]?MAX/.test(nodeId) || /DEVIATION[_\s-]?TOLERANCE[_\s-]?MAX/.test(name) || /DEVIATION[_\s-]?TOLERANCE[_\s-]?MAX/.test(nodeId)) return 'THRESHOLD_MAX';
+    if (/THRESHOLD[_\s-]?MIN/.test(name) || /THRESHOLD[_\s-]?MIN/.test(nodeId) || /THRESHOLD/.test(name) || /THRESHOLD/.test(nodeId) || /DEVIATION[_\s-]?TOLERANCE[_\s-]?MIN/.test(name) || /DEVIATION[_\s-]?TOLERANCE[_\s-]?MIN/.test(nodeId)) return 'THRESHOLD_MIN';
     return '';
 }
 
