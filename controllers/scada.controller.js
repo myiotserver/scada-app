@@ -244,11 +244,22 @@ function getWorkflowSignals(data) {
     };
 }
 
-function getDeviationThreshold(carouselId, data) {
-    const manualThreshold = (appSettings.deviationThresholds || {})[`carousel${carouselId}`];
+function getDeviationThresholdMin(carouselId, data) {
+    const manualThreshold = (appSettings.deviationThresholdsMin || appSettings.deviationThresholds || {})[`carousel${carouselId}`];
     return (manualThreshold !== undefined && Number.isFinite(parseFloat(manualThreshold)))
         ? parseFloat(parseFloat(manualThreshold).toFixed(4))
         : parseFloat((((data.toleranceMax || 0) - (data.toleranceMin || 0)) / 2).toFixed(4));
+}
+
+function getDeviationThresholdMax(carouselId, data) {
+    const manualThreshold = (appSettings.deviationThresholdsMax || {})[`carousel${carouselId}`];
+    return (manualThreshold !== undefined && Number.isFinite(parseFloat(manualThreshold)))
+        ? parseFloat(parseFloat(manualThreshold).toFixed(4))
+        : parseFloat((((data.toleranceMax || 0) - (data.toleranceMin || 0)) / 2).toFixed(4));
+}
+
+function getDeviationThreshold(carouselId, data) {
+    return getDeviationThresholdMin(carouselId, data);
 }
 
 function canInsertWeightData(data) {
@@ -330,11 +341,19 @@ const toleranceSyncInterval = setInterval(() => {
  */
 function updateInterlockStatus(carouselId) {
     const interlocks = appSettings.interlocks || {};
-    const enabled = !!interlocks[`carousel${carouselId}`];
+    const interlocksUnder = appSettings.interlocksUnder || {};
+    const interlocksOver = appSettings.interlocksOver || {};
+    const under = !!(interlocksUnder[`carousel${carouselId}`] !== undefined ? interlocksUnder[`carousel${carouselId}`] : interlocks[`carousel${carouselId}`]);
+    const over = !!interlocksOver[`carousel${carouselId}`];
+    const enabled = under || over;
     if (carousels[carouselId]) {
         carousels[carouselId].interlock = enabled;
+        carousels[carouselId].interlockUnder = under;
+        carousels[carouselId].interlockOver = over;
         if (carousels[carouselId].data) {
             carousels[carouselId].data.interlock = enabled;
+            carousels[carouselId].data.interlockUnder = under;
+            carousels[carouselId].data.interlockOver = over;
         }
     }
     opcUaManager.writeToNodesBySignalType('CAROUSEL_INTERLOCK', carouselId, enabled ? 1 : 0)
@@ -452,13 +471,19 @@ async function insertWeightData(carouselId, data) {
     }
 
     // Calculate STATUS based on GROSS_WEIGHT (must be done BEFORE insertKey so anomaly uses PRODUCT_COUNT=0)
-    // Priority: Anomaly (interlock ON + severe underweight) > Underweight > Overweight > Normal
-    const deviationToleranceMin = getDeviationThreshold(carouselId, data);
+    // Priority: Anomaly (interlock ON + severe underweight or severe overweight) > Underweight > Overweight > Normal
+    const deviationToleranceMin = getDeviationThresholdMin(carouselId, data);
+    const deviationToleranceMax = getDeviationThresholdMax(carouselId, data);
     const interlocks = appSettings.interlocks || {};
-    const isInterlocked = !!interlocks[`carousel${carouselId}`];
+    const interlocksUnder = appSettings.interlocksUnder || {};
+    const interlocksOver = appSettings.interlocksOver || {};
+    const isUnderInterlocked = !!(interlocksUnder[`carousel${carouselId}`] !== undefined ? interlocksUnder[`carousel${carouselId}`] : interlocks[`carousel${carouselId}`]);
+    const isOverInterlocked = !!interlocksOver[`carousel${carouselId}`];
 
     let status = 'Normal';
-    if (isInterlocked && data.lastGross < (data.toleranceMin - deviationToleranceMin)) {
+    if (isUnderInterlocked && data.lastGross < (data.toleranceMin - deviationToleranceMin)) {
+        status = 'Anomaly';
+    } else if (isOverInterlocked && data.lastGross > (data.toleranceMax + deviationToleranceMax)) {
         status = 'Anomaly';
     } else if (data.lastGross < data.toleranceMin) {
         status = 'Underweight';

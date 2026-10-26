@@ -9,7 +9,7 @@ const translations = {
     id: {
         // General & Header
         sriboga_tagline: "PIONEER IN FLOUR INNOVATION",
-        header_title: "DASHBOARD PENIMBANGAN",
+        header_title: "DASHBOARD TIMBANGAN",
         theme_toggle_title: "Ganti tema tampilan",
         nav_home: "Beranda",
         nav_config: "Konfigurasi",
@@ -19,7 +19,6 @@ const translations = {
         nav_logs: "Log Sistem",
         nav_audit: "Audit Trail",
         nav_logout: "Keluar",
-        login_as: "Login sebagai {user}",
         btn_signin: "Masuk",
 
         // Home View / Carousel Cards
@@ -44,7 +43,9 @@ const translations = {
         // Config View
         config_title: "Konfigurasi Sistem",
         config_subtitle: "Pengaturan interlock underweight dan koneksi server database SQL",
-        interlock_panel_title: "Underweight Interlock Metal Detector",
+        interlock_panel_title: "Batas Deviasi & Interlock Metal Detector",
+        lower_limit_label: "Lower Limit :",
+        upper_limit_label: "Upper Limit :",
         sql_panel_title: "Pengaturan SQL Server",
         checking: "MEMERIKSA...",
         lbl_server: "Server :",
@@ -64,6 +65,14 @@ const translations = {
         admin_only_deviation: "Hanya admin yang dapat mengubah batas deviasi.",
         admin_only_sql: "Hanya admin yang dapat mengubah pengaturan SQL Server.",
         confirm_interlock_title: "Konfirmasi Interlock Carousel {n}",
+        confirm_interlock_under_title: "Konfirmasi Interlock Batas Bawah CR{n}",
+        confirm_interlock_under_desc: "Apakah Anda yakin ingin mengubah status Interlock Batas Bawah (Underweight) untuk <strong>Carousel {n}</strong> menjadi {status}?",
+        confirm_interlock_over_title: "Konfirmasi Interlock Batas Atas CR{n}",
+        confirm_interlock_over_desc: "Apakah Anda yakin ingin mengubah status Interlock Batas Atas (Overweight) untuk <strong>Carousel {n}</strong> menjadi {status}?",
+        confirm_deviation_min_title: "Konfirmasi Lower Limit Deviasi",
+        confirm_deviation_min_desc: "Apakah Anda yakin ingin mengubah batas deviasi Lower Limit (Underweight) untuk <strong>Carousel {n}</strong> dari <strong>{oldVal} Kg</strong> menjadi <strong style=\"color:#2563eb;\">{newVal} Kg</strong>?",
+        confirm_deviation_max_title: "Konfirmasi Upper Limit Deviasi",
+        confirm_deviation_max_desc: "Apakah Anda yakin ingin mengubah batas deviasi Upper Limit (Overweight) untuk <strong>Carousel {n}</strong> dari <strong>{oldVal} Kg</strong> menjadi <strong style=\"color:#2563eb;\">{newVal} Kg</strong>?",
         confirm_interlock_desc: "Apakah Anda yakin ingin mengubah status Underweight Interlock untuk <strong>Carousel {n}</strong> menjadi {status}?",
         confirm_deviation_title: "Konfirmasi Deviasi Minimum",
         confirm_deviation_desc: "Apakah Anda yakin ingin mengubah batas deviasi minimum untuk <strong>Carousel {n}</strong> dari <strong>{oldVal} Kg</strong> menjadi <strong style=\"color:#2563eb;\">{newVal} Kg</strong>?",
@@ -103,6 +112,14 @@ const translations = {
         btn_opcua_connect: "HUBUNGKAN",
         btn_opcua_disconnect: "PUTUSKAN",
         opcua_tags_title: "Daftar Tag Dipantau",
+        btn_export_nodes: "Ekspor",
+        btn_import_nodes: "Impor",
+        confirm_import_nodes: "Impor {count} node dan mengganti seluruh daftar node OPC-UA saat ini?",
+        nodes_exported_success: "Node berhasil diekspor",
+        nodes_imported_success: "{count} node berhasil diimpor",
+        nodes_import_invalid_file: "File JSON node tidak valid",
+        nodes_import_failed: "Gagal mengimpor node",
+        nodes_export_failed: "Konfigurasi node belum tersedia untuk diekspor",
         placeholder_tag_name: "Nama Tag",
         placeholder_scale: "Skala",
         placeholder_desc: "Deskripsi",
@@ -120,8 +137,8 @@ const translations = {
         no_nodes_configured: "Tidak ada node yang dikonfigurasi",
 
         // History View
-        history_title: "Riwayat Penimbangan",
-        history_subtitle: "Log riwayat penimbangan kantong tepung real-time pada seluruh carousel.",
+        history_title: "Riwayat Timbangan",
+        history_subtitle: "Log riwayat timbangan karung real-time pada seluruh carousel.",
         lbl_carousel: "Carousel",
         opt_all: "Semua",
         lbl_refresh_rate: "Kecepatan Refresh",
@@ -244,7 +261,6 @@ const translations = {
         nav_logs: "Logs",
         nav_audit: "Audit Trail",
         nav_logout: "Logout",
-        login_as: "Login as {user}",
         btn_signin: "Sign In",
 
         // Home View / Carousel Cards
@@ -269,7 +285,9 @@ const translations = {
         // Config View
         config_title: "System Configuration",
         config_subtitle: "Underweight interlock tolerances and SQL database server connection settings",
-        interlock_panel_title: "Underweight Interlock Metal Detector",
+        interlock_panel_title: "Weight Limits & Interlock Metal Detector",
+        lower_limit_label: "Lower Limit :",
+        upper_limit_label: "Upper Limit :",
         sql_panel_title: "SQL Server Setting",
         checking: "CHECKING...",
         lbl_server: "Server :",
@@ -289,6 +307,14 @@ const translations = {
         admin_only_deviation: "Only admins can change deviation limit.",
         admin_only_sql: "Only admins can change SQL Server settings.",
         confirm_interlock_title: "Confirm Carousel {n} Interlock",
+        confirm_interlock_under_title: "Confirm Lower Limit Interlock CR{n}",
+        confirm_interlock_under_desc: "Are you sure you want to change Lower Limit (Underweight) Interlock for <strong>Carousel {n}</strong> to {status}?",
+        confirm_interlock_over_title: "Confirm Upper Limit Interlock CR{n}",
+        confirm_interlock_over_desc: "Are you sure you want to change Upper Limit (Overweight) Interlock for <strong>Carousel {n}</strong> to {status}?",
+        confirm_deviation_min_title: "Confirm Lower Limit Deviation",
+        confirm_deviation_min_desc: "Are you sure you want to change Lower Limit deviation for <strong>Carousel {n}</strong> from <strong>{oldVal} Kg</strong> to <strong style=\"color:#2563eb;\">{newVal} Kg</strong>?",
+        confirm_deviation_max_title: "Confirm Upper Limit Deviation",
+        confirm_deviation_max_desc: "Are you sure you want to change Upper Limit deviation for <strong>Carousel {n}</strong> from <strong>{oldVal} Kg</strong> to <strong style=\"color:#2563eb;\">{newVal} Kg</strong>?",
         confirm_interlock_desc: "Are you sure you want to change Underweight Interlock status for <strong>Carousel {n}</strong> to {status}?",
         confirm_deviation_title: "Confirm Minimum Deviation",
         confirm_deviation_desc: "Are you sure you want to change minimum deviation limit for <strong>Carousel {n}</strong> from <strong>{oldVal} Kg</strong> to <strong style=\"color:#2563eb;\">{newVal} Kg</strong>?",
@@ -328,6 +354,14 @@ const translations = {
         btn_opcua_connect: "CONNECT",
         btn_opcua_disconnect: "DISCONNECT",
         opcua_tags_title: "Monitored Nodes",
+        btn_export_nodes: "Export",
+        btn_import_nodes: "Import",
+        confirm_import_nodes: "Import {count} nodes and replace the entire current OPC-UA node list?",
+        nodes_exported_success: "Nodes exported successfully",
+        nodes_imported_success: "{count} nodes imported successfully",
+        nodes_import_invalid_file: "Invalid node JSON file",
+        nodes_import_failed: "Failed to import nodes",
+        nodes_export_failed: "Node configuration is not available to export",
         placeholder_tag_name: "Tag Name",
         placeholder_scale: "Scale",
         placeholder_desc: "Description",
@@ -519,11 +553,11 @@ function applyTranslations() {
         }
     });
 
-    // 6. Update user info label in sidebar
+    // 6. Update username in sidebar
     if (currentUser && currentUser.username) {
         const userDisplay = document.getElementById('current-user-display');
         if (userDisplay) {
-            userDisplay.innerText = t('login_as', { user: currentUser.username });
+            userDisplay.innerText = currentUser.username;
         }
     }
 
@@ -725,7 +759,7 @@ function initApp() {
     updateNavVisibility();
 
     if (currentUser && currentUser.username) {
-        document.getElementById('current-user-display').innerText = t('login_as', { user: currentUser.username });
+        document.getElementById('current-user-display').innerText = currentUser.username;
     }
 
     // Default to offline state before data is received
@@ -1109,42 +1143,80 @@ function renderSettings() {
         saveBtn.style.display = isAdmin ? '' : 'none';
     }
 
-    // Interlocks
+    // Interlocks (Lower Limit & Upper Limit per Carousel)
     const container = document.getElementById('interlock-settings');
     container.innerHTML = '';
 
     for (let i = 1; i <= 5; i++) {
         const key = `carousel${i}`;
-        const isInterlocked = appSettings.interlocks ? appSettings.interlocks[key] : false;
-        const devThreshold = (appSettings.deviationThresholds && appSettings.deviationThresholds[key] !== undefined)
-            ? appSettings.deviationThresholds[key]
-            : 1.0;
+        const isUnderInterlocked = (appSettings.interlocksUnder && appSettings.interlocksUnder[key] !== undefined)
+            ? !!appSettings.interlocksUnder[key]
+            : (appSettings.interlocks ? !!appSettings.interlocks[key] : false);
+
+        const isOverInterlocked = (appSettings.interlocksOver && appSettings.interlocksOver[key] !== undefined)
+            ? !!appSettings.interlocksOver[key]
+            : false;
+
+        const devMin = (appSettings.deviationThresholdsMin && appSettings.deviationThresholdsMin[key] !== undefined)
+            ? appSettings.deviationThresholdsMin[key]
+            : ((appSettings.deviationThresholds && appSettings.deviationThresholds[key] !== undefined)
+                ? appSettings.deviationThresholds[key]
+                : 0.05);
+
+        const devMax = (appSettings.deviationThresholdsMax && appSettings.deviationThresholdsMax[key] !== undefined)
+            ? appSettings.deviationThresholdsMax[key]
+            : 0.05;
 
         const thresholdStyle = isAdmin
-            ? 'width:72px; padding:3px 6px; font-size:0.8rem; border:1px solid var(--border-subtle); border-radius:4px; background:var(--bg-input); color:var(--text-primary);'
-            : 'width:72px; padding:3px 6px; font-size:0.8rem; border:1px solid var(--border-subtle); border-radius:4px; background:var(--bg-input); color:var(--text-muted); cursor:not-allowed; opacity:0.7;';
+            ? 'width:68px; padding:3px 6px; font-size:0.8rem; border:1px solid var(--border-subtle); border-radius:4px; background:var(--bg-input); color:var(--text-primary); text-align:right;'
+            : 'width:68px; padding:3px 6px; font-size:0.8rem; border:1px solid var(--border-subtle); border-radius:4px; background:var(--bg-input); color:var(--text-muted); cursor:not-allowed; opacity:0.7; text-align:right;';
 
         const row = document.createElement('div');
         row.className = 'interlock-row';
+        row.style.cssText = 'display:flex; justify-content:space-between; align-items:flex-start; padding:10px 0; border-bottom:1px solid var(--border-subtle); gap:12px;';
         row.innerHTML = `
-            <span style="font-weight:bold;">${t('carousel_n', { n: i })}</span>
-            <div style="display:flex; align-items:center; gap:10px;">
-                <label style="font-size:0.75rem; white-space:nowrap;">${t('dev_min_label')}</label>
-                <input type="number"
-                       id="dev-threshold-${key}"
-                       value="${devThreshold}"
-                       step="0.01"
-                       min="0"
-                       style="${thresholdStyle}"
-                       onchange="promptUpdateDeviation('${key}', this)"
-                       ${isAdmin ? '' : 'readonly'}>
-                <span style="font-size:0.7rem; color:#888;">Kg</span>
-                <span style="font-size:0.8rem;">${t('normal_label')}</span>
-                <label class="switch">
-                    <input type="checkbox" id="interlock-switch-${key}" onchange="promptToggleInterlock('${key}', this)" ${isInterlocked ? 'checked' : ''} ${isAdmin ? '' : 'disabled'}>
-                    <span class="slider round"></span>
-                </label>
-                <span style="font-size:0.8rem;">${t('interlock_label')}</span>
+            <div style="min-width:85px; padding-top:4px;">
+                <span style="font-weight:bold; font-size:0.95rem;">${t('carousel_n', { n: i })}</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
+                <!-- Lower Limit (Underweight) -->
+                <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
+                    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; min-width:76px; text-align:right;">${t('lower_limit_label') || 'Lower Limit :'}</span>
+                    <input type="number"
+                           id="dev-min-${key}"
+                           value="${devMin}"
+                           step="0.01"
+                           min="0"
+                           style="${thresholdStyle}"
+                           onchange="promptUpdateDeviation('${key}', 'min', this)"
+                           ${isAdmin ? '' : 'readonly'}>
+                    <span style="font-size:0.7rem; color:#888;">Kg</span>
+                    <span style="font-size:0.75rem; color:var(--text-muted); margin-left:4px;">${t('normal_label')}</span>
+                    <label class="switch" style="transform:scale(0.85); margin:0 -2px;">
+                        <input type="checkbox" id="interlock-switch-under-${key}" onchange="promptToggleInterlock('${key}', 'under', this)" ${isUnderInterlocked ? 'checked' : ''} ${isAdmin ? '' : 'disabled'}>
+                        <span class="slider round"></span>
+                    </label>
+                    <span style="font-size:0.75rem; font-weight:600; min-width:48px; color:${isUnderInterlocked ? '#059669' : 'inherit'};">${t('interlock_label')}</span>
+                </div>
+                <!-- Upper Limit (Overweight) -->
+                <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
+                    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; min-width:76px; text-align:right;">${t('upper_limit_label') || 'Upper Limit :'}</span>
+                    <input type="number"
+                           id="dev-max-${key}"
+                           value="${devMax}"
+                           step="0.01"
+                           min="0"
+                           style="${thresholdStyle}"
+                           onchange="promptUpdateDeviation('${key}', 'max', this)"
+                           ${isAdmin ? '' : 'readonly'}>
+                    <span style="font-size:0.7rem; color:#888;">Kg</span>
+                    <span style="font-size:0.75rem; color:var(--text-muted); margin-left:4px;">${t('normal_label')}</span>
+                    <label class="switch" style="transform:scale(0.85); margin:0 -2px;">
+                        <input type="checkbox" id="interlock-switch-over-${key}" onchange="promptToggleInterlock('${key}', 'over', this)" ${isOverInterlocked ? 'checked' : ''} ${isAdmin ? '' : 'disabled'}>
+                        <span class="slider round"></span>
+                    </label>
+                    <span style="font-size:0.75rem; font-weight:600; min-width:48px; color:${isOverInterlocked ? '#059669' : 'inherit'};">${t('interlock_label')}</span>
+                </div>
             </div>
         `;
         container.appendChild(row);
@@ -1252,7 +1324,13 @@ async function submitConfigConfirm() {
     }
 }
 
-function promptToggleInterlock(key, checkboxEl) {
+function promptToggleInterlock(key, type, checkboxEl) {
+    // Fallback if called without type
+    if (typeof type === 'object' && !checkboxEl) {
+        checkboxEl = type;
+        type = 'under';
+    }
+
     if (!currentUser || !currentUser.roles || !currentUser.roles.includes('ROLE_ADMIN')) {
         alert(t("admin_only_interlock"));
         checkboxEl.checked = !checkboxEl.checked;
@@ -1260,14 +1338,20 @@ function promptToggleInterlock(key, checkboxEl) {
     }
 
     const carouselNum = key.replace('carousel', '');
-    const oldVal = appSettings.interlocks ? !!appSettings.interlocks[key] : false;
+    const isUnder = type === 'under';
+    const settingsMap = isUnder ? (appSettings.interlocksUnder || appSettings.interlocks || {}) : (appSettings.interlocksOver || {});
+    const oldVal = !!settingsMap[key];
     const newVal = checkboxEl.checked;
 
     if (oldVal === newVal) return;
 
-    const title = t("confirm_interlock_title", { n: carouselNum });
+    const title = isUnder
+        ? (t("confirm_interlock_under_title", { n: carouselNum }) || `Konfirmasi Interlock Lower Limit CR${carouselNum}`)
+        : (t("confirm_interlock_over_title", { n: carouselNum }) || `Konfirmasi Interlock Upper Limit CR${carouselNum}`);
     const targetStatus = newVal ? `<strong style="color:#059669;">${t('status_on')}</strong>` : `<strong style="color:#dc2626;">${t('status_off')}</strong>`;
-    const desc = t("confirm_interlock_desc", { n: carouselNum, status: targetStatus });
+    const desc = isUnder
+        ? (t("confirm_interlock_under_desc", { n: carouselNum, status: targetStatus }) || `Ubah status Lower Limit Interlock CR${carouselNum} menjadi ${targetStatus}?`)
+        : (t("confirm_interlock_over_desc", { n: carouselNum, status: targetStatus }) || `Ubah status Upper Limit Interlock CR${carouselNum} menjadi ${targetStatus}?`);
 
     openConfigConfirmModal(
         title,
@@ -1277,26 +1361,46 @@ function promptToggleInterlock(key, checkboxEl) {
         },
         async (password) => {
             const clone = JSON.parse(JSON.stringify(appSettings));
+            if (!clone.interlocksUnder) clone.interlocksUnder = {};
+            if (!clone.interlocksOver) clone.interlocksOver = {};
             if (!clone.interlocks) clone.interlocks = {};
-            clone.interlocks[key] = newVal;
+
+            if (isUnder) {
+                clone.interlocksUnder[key] = newVal;
+            } else {
+                clone.interlocksOver[key] = newVal;
+            }
+            // Keep legacy interlocks synchronized (true if either is active)
+            clone.interlocks[key] = !!(clone.interlocksUnder[key] || clone.interlocksOver[key]);
+
             return await doExecuteSaveSettings(clone, password);
         }
     );
 }
 
-function promptUpdateDeviation(key, inputEl) {
+function promptUpdateDeviation(key, type, inputEl) {
+    // Fallback if called without type
+    if (typeof type === 'object' && !inputEl) {
+        inputEl = type;
+        type = 'min';
+    }
+
     if (!currentUser || !currentUser.roles || !currentUser.roles.includes('ROLE_ADMIN')) {
         alert(t("admin_only_deviation"));
-        const prev = (appSettings.deviationThresholds && appSettings.deviationThresholds[key] !== undefined)
-            ? appSettings.deviationThresholds[key] : 1.0;
+        const prev = type === 'min'
+            ? ((appSettings.deviationThresholdsMin && appSettings.deviationThresholdsMin[key] !== undefined)
+                ? appSettings.deviationThresholdsMin[key] : (appSettings.deviationThresholds?.[key] ?? 0.05))
+            : (appSettings.deviationThresholdsMax?.[key] ?? 0.05);
         inputEl.value = prev;
         return;
     }
 
     const carouselNum = key.replace('carousel', '');
-    const oldVal = (appSettings.deviationThresholds && appSettings.deviationThresholds[key] !== undefined)
-        ? parseFloat(appSettings.deviationThresholds[key])
-        : 1.0;
+    const isMin = type === 'min';
+    const settingsMap = isMin
+        ? (appSettings.deviationThresholdsMin || appSettings.deviationThresholds || {})
+        : (appSettings.deviationThresholdsMax || {});
+    const oldVal = (settingsMap[key] !== undefined) ? parseFloat(settingsMap[key]) : 0.05;
     const newVal = parseFloat(inputEl.value);
 
     if (!Number.isFinite(newVal) || newVal < 0) {
@@ -1306,8 +1410,12 @@ function promptUpdateDeviation(key, inputEl) {
 
     if (oldVal === newVal) return;
 
-    const title = t("confirm_deviation_title");
-    const desc = t("confirm_deviation_desc", { n: carouselNum, oldVal, newVal });
+    const title = isMin
+        ? (t("confirm_deviation_min_title", { n: carouselNum }) || `Konfirmasi Lower Limit Deviasi CR${carouselNum}`)
+        : (t("confirm_deviation_max_title", { n: carouselNum }) || `Konfirmasi Upper Limit Deviasi CR${carouselNum}`);
+    const desc = isMin
+        ? (t("confirm_deviation_min_desc", { n: carouselNum, oldVal, newVal }) || `Ubah deviasi Lower Limit CR${carouselNum} dari ${oldVal} Kg menjadi ${newVal} Kg?`)
+        : (t("confirm_deviation_max_desc", { n: carouselNum, oldVal, newVal }) || `Ubah deviasi Upper Limit CR${carouselNum} dari ${oldVal} Kg menjadi ${newVal} Kg?`);
 
     openConfigConfirmModal(
         title,
@@ -1317,8 +1425,17 @@ function promptUpdateDeviation(key, inputEl) {
         },
         async (password) => {
             const clone = JSON.parse(JSON.stringify(appSettings));
+            if (!clone.deviationThresholdsMin) clone.deviationThresholdsMin = {};
+            if (!clone.deviationThresholdsMax) clone.deviationThresholdsMax = {};
             if (!clone.deviationThresholds) clone.deviationThresholds = {};
-            clone.deviationThresholds[key] = parseFloat(newVal.toFixed(4));
+
+            if (isMin) {
+                clone.deviationThresholdsMin[key] = parseFloat(newVal.toFixed(4));
+                clone.deviationThresholds[key] = parseFloat(newVal.toFixed(4));
+            } else {
+                clone.deviationThresholdsMax[key] = parseFloat(newVal.toFixed(4));
+            }
+
             return await doExecuteSaveSettings(clone, password);
         }
     );
@@ -1718,8 +1835,23 @@ function renderCarousels(carousels) {
             isInterlocked = carousel.interlock !== undefined ? !!carousel.interlock : !!carousel.data.interlock;
         }
 
-        const mdStatusText = isInterlocked ? 'Active' : 'Bypassed';
-        const mdStatusClass = isInterlocked ? 'md-status-normal' : 'md-status-bypassed';
+        let isUnder = false;
+        let isOver = false;
+        if (appSettings) {
+            isUnder = !!(appSettings.interlocksUnder && appSettings.interlocksUnder[key] !== undefined ? appSettings.interlocksUnder[key] : (appSettings.interlocks && appSettings.interlocks[key]));
+            isOver = !!(appSettings.interlocksOver && appSettings.interlocksOver[key]);
+        }
+        let mdStatusText = 'Bypassed';
+        if (isUnder && isOver) {
+            mdStatusText = 'Active (Under + Over)';
+        } else if (isUnder) {
+            mdStatusText = 'Active (Under)';
+        } else if (isOver) {
+            mdStatusText = 'Active (Over)';
+        } else if (isInterlocked) {
+            mdStatusText = 'Active';
+        }
+        const mdStatusClass = (isUnder || isOver || isInterlocked) ? 'md-status-normal' : 'md-status-bypassed';
 
         if (carousel && carousel.data && carousel.data.productId) {
             const d = carousel.data;
@@ -2225,6 +2357,74 @@ async function addOpcUaNode() {
         }
     } catch (e) {
         showOpcUaToast('Add error', 'error');
+    }
+}
+
+function exportOpcUaNodes() {
+    if (!opcuaConfig || !Array.isArray(opcuaConfig.nodes)) {
+        showOpcUaToast(t('nodes_export_failed'), 'error');
+        return;
+    }
+    const nodes = opcuaConfig.nodes;
+    const exportData = {
+        format: 'scada-opcua-nodes',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        nodes
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `opcua-nodes-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showOpcUaToast(t('nodes_exported_success'), 'success');
+}
+
+async function importOpcUaNodes(fileInput) {
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) return;
+
+    try {
+        let imported;
+        try {
+            imported = JSON.parse(await file.text());
+        } catch {
+            showOpcUaToast(t('nodes_import_invalid_file'), 'error');
+            return;
+        }
+
+        const nodes = Array.isArray(imported) ? imported : imported && imported.nodes;
+        if (!Array.isArray(nodes)) {
+            showOpcUaToast(t('nodes_import_invalid_file'), 'error');
+            return;
+        }
+        if (!confirm(t('confirm_import_nodes', { count: nodes.length }))) return;
+
+        const token = currentUser.accessToken;
+        const res = await fetch('/api/opcua/config/nodes/import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-access-token': token },
+            body: JSON.stringify({ nodes })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+            showOpcUaToast(data.error || t('nodes_import_failed'), 'error');
+            return;
+        }
+
+        opcuaConfig.nodes = data.nodes;
+        opcuaLiveValues = {};
+        renderOpcUaNodes();
+        showOpcUaToast(t('nodes_imported_success', { count: data.nodes.length }), 'success');
+    } catch (err) {
+        console.error('OPC-UA node import failed:', err);
+        showOpcUaToast(t('nodes_import_failed'), 'error');
+    } finally {
+        fileInput.value = '';
     }
 }
 

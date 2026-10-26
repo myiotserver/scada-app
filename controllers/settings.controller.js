@@ -71,14 +71,64 @@ exports.updateSettings = async (req, res) => {
         if (newSettings.deviationThresholds) {
             mergedSettings.deviationThresholds = { ...(oldSettings.deviationThresholds || {}), ...newSettings.deviationThresholds };
         }
+        if (newSettings.interlocksUnder) {
+            mergedSettings.interlocksUnder = { ...(oldSettings.interlocksUnder || {}), ...newSettings.interlocksUnder };
+        }
+        if (newSettings.interlocksOver) {
+            mergedSettings.interlocksOver = { ...(oldSettings.interlocksOver || {}), ...newSettings.interlocksOver };
+        }
+        if (newSettings.deviationThresholdsMin) {
+            mergedSettings.deviationThresholdsMin = { ...(oldSettings.deviationThresholdsMin || {}), ...newSettings.deviationThresholdsMin };
+        }
+        if (newSettings.deviationThresholdsMax) {
+            mergedSettings.deviationThresholdsMax = { ...(oldSettings.deviationThresholdsMax || {}), ...newSettings.deviationThresholdsMax };
+        }
 
         fs.writeFileSync(settingsPath, JSON.stringify(mergedSettings, null, 4));
 
         // Audit Trail: Detect specific changes
         let loggedSpecific = false;
 
-        // 1. Interlock changes
-        if (newSettings.interlocks && oldSettings.interlocks) {
+        // 1a. Lower Limit Interlock changes
+        if (newSettings.interlocksUnder && oldSettings.interlocksUnder) {
+            for (let i = 1; i <= 5; i++) {
+                const key = `carousel${i}`;
+                const oldVal = !!oldSettings.interlocksUnder[key];
+                const newVal = !!newSettings.interlocksUnder[key];
+                if (oldVal !== newVal) {
+                    loggedSpecific = true;
+                    auditLogger.log({
+                        req,
+                        action: "INTERLOCK_TOGGLE",
+                        category: "SETTINGS",
+                        target: `CR${i}`,
+                        details: `Lower Limit Interlock diubah dari ${oldVal ? "ON" : "OFF"} ke ${newVal ? "ON" : "OFF"} (Dikonfirmasi dengan password)`
+                    });
+                }
+            }
+        }
+
+        // 1b. Upper Limit Interlock changes
+        if (newSettings.interlocksOver && oldSettings.interlocksOver) {
+            for (let i = 1; i <= 5; i++) {
+                const key = `carousel${i}`;
+                const oldVal = !!oldSettings.interlocksOver[key];
+                const newVal = !!newSettings.interlocksOver[key];
+                if (oldVal !== newVal) {
+                    loggedSpecific = true;
+                    auditLogger.log({
+                        req,
+                        action: "INTERLOCK_TOGGLE",
+                        category: "SETTINGS",
+                        target: `CR${i}`,
+                        details: `Upper Limit Interlock diubah dari ${oldVal ? "ON" : "OFF"} ke ${newVal ? "ON" : "OFF"} (Dikonfirmasi dengan password)`
+                    });
+                }
+            }
+        }
+
+        // 1c. Legacy Interlock changes
+        if (!loggedSpecific && newSettings.interlocks && oldSettings.interlocks) {
             for (let i = 1; i <= 5; i++) {
                 const key = `carousel${i}`;
                 const oldVal = !!oldSettings.interlocks[key];
@@ -90,14 +140,52 @@ exports.updateSettings = async (req, res) => {
                         action: "INTERLOCK_TOGGLE",
                         category: "SETTINGS",
                         target: `CR${i}`,
-                        details: `Underweight Interlock diubah dari ${oldVal ? "ON" : "OFF"} ke ${newVal ? "ON" : "OFF"} (Dikonfirmasi dengan password)`
+                        details: `Interlock diubah dari ${oldVal ? "ON" : "OFF"} ke ${newVal ? "ON" : "OFF"} (Dikonfirmasi dengan password)`
                     });
                 }
             }
         }
 
-        // 2. Deviation Threshold changes
-        if (newSettings.deviationThresholds && oldSettings.deviationThresholds) {
+        // 2a. Lower Limit Deviation changes
+        if (newSettings.deviationThresholdsMin && oldSettings.deviationThresholdsMin) {
+            for (let i = 1; i <= 5; i++) {
+                const key = `carousel${i}`;
+                const oldVal = oldSettings.deviationThresholdsMin[key];
+                const newVal = newSettings.deviationThresholdsMin[key];
+                if (oldVal !== undefined && newVal !== undefined && parseFloat(oldVal) !== parseFloat(newVal)) {
+                    loggedSpecific = true;
+                    auditLogger.log({
+                        req,
+                        action: "DEVIATION_UPDATE",
+                        category: "SETTINGS",
+                        target: `CR${i}`,
+                        details: `Lower Limit deviasi diubah dari ${oldVal} Kg ke ${newVal} Kg (Dikonfirmasi dengan password)`
+                    });
+                }
+            }
+        }
+
+        // 2b. Upper Limit Deviation changes
+        if (newSettings.deviationThresholdsMax && oldSettings.deviationThresholdsMax) {
+            for (let i = 1; i <= 5; i++) {
+                const key = `carousel${i}`;
+                const oldVal = oldSettings.deviationThresholdsMax[key];
+                const newVal = newSettings.deviationThresholdsMax[key];
+                if (oldVal !== undefined && newVal !== undefined && parseFloat(oldVal) !== parseFloat(newVal)) {
+                    loggedSpecific = true;
+                    auditLogger.log({
+                        req,
+                        action: "DEVIATION_UPDATE",
+                        category: "SETTINGS",
+                        target: `CR${i}`,
+                        details: `Upper Limit deviasi diubah dari ${oldVal} Kg ke ${newVal} Kg (Dikonfirmasi dengan password)`
+                    });
+                }
+            }
+        }
+
+        // 2c. Legacy Deviation Threshold changes
+        if (!loggedSpecific && newSettings.deviationThresholds && oldSettings.deviationThresholds) {
             for (let i = 1; i <= 5; i++) {
                 const key = `carousel${i}`;
                 const oldVal = oldSettings.deviationThresholds[key];

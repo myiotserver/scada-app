@@ -21,5 +21,33 @@
         "carousel4": 0.05,
         "carousel5": 0.05
     },
-    "sql_port": 1433
+    "sql_port": 1433,
+    "interlocksUnder": {
+        "carousel1": true,
+        "carousel2": true,
+        "carousel3": true,
+        "carousel4": true,
+        "carousel5": true
+    },
+    "interlocksOver": {
+        "carousel1": true,
+        "carousel2": true,
+        "carousel3": true,
+        "carousel4": true,
+        "carousel5": true
+    },
+    "deviationThresholdsMin": {
+        "carousel1": 0.05,
+        "carousel2": 0.05,
+        "carousel3": 0.05,
+        "carousel4": 0.05,
+        "carousel5": 0.05
+    },
+    "deviationThresholdsMax": {
+        "carousel1": 0.05,
+        "carousel2": 0.05,
+        "carousel3": 0.05,
+        "carousel4": 0.05,
+        "carousel5": 0.05
+    }
 }
