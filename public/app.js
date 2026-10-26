@@ -9,7 +9,7 @@ const translations = {
     id: {
         // General & Header
         sriboga_tagline: "PIONEER IN FLOUR INNOVATION",
-        header_title: "DASHBOARD PENIMBANGAN",
+        header_title: "DASHBOARD TIMBANGAN",
         theme_toggle_title: "Ganti tema tampilan",
         nav_home: "Beranda",
         nav_config: "Konfigurasi",
@@ -127,8 +127,8 @@ const translations = {
         no_nodes_configured: "Tidak ada node yang dikonfigurasi",
 
         // History View
-        history_title: "Riwayat Penimbangan",
-        history_subtitle: "Log riwayat penimbangan kantong tepung real-time pada seluruh carousel.",
+        history_title: "Riwayat Timbangan",
+        history_subtitle: "Log riwayat timbangan karung real-time pada seluruh carousel.",
         lbl_carousel: "Carousel",
         opt_all: "Semua",
         lbl_refresh_rate: "Kecepatan Refresh",
