@@ -1168,20 +1168,20 @@ function renderSettings() {
             : 0.05;
 
         const thresholdStyle = isAdmin
-            ? 'width:68px; padding:3px 6px; font-size:0.8rem; border:1px solid var(--border-subtle); border-radius:4px; background:var(--bg-input); color:var(--text-primary); text-align:right;'
-            : 'width:68px; padding:3px 6px; font-size:0.8rem; border:1px solid var(--border-subtle); border-radius:4px; background:var(--bg-input); color:var(--text-muted); cursor:not-allowed; opacity:0.7; text-align:right;';
+            ? 'width:68px; height:26px; box-sizing:border-box; padding:2px 6px; font-size:0.8rem; border:1px solid var(--border-subtle); border-radius:4px; background:var(--bg-input); color:var(--text-primary); text-align:right; vertical-align:middle;'
+            : 'width:68px; height:26px; box-sizing:border-box; padding:2px 6px; font-size:0.8rem; border:1px solid var(--border-subtle); border-radius:4px; background:var(--bg-input); color:var(--text-muted); cursor:not-allowed; opacity:0.7; text-align:right; vertical-align:middle;';
 
         const row = document.createElement('div');
         row.className = 'interlock-row';
-        row.style.cssText = 'display:flex; justify-content:space-between; align-items:flex-start; padding:10px 0; border-bottom:1px solid var(--border-subtle); gap:12px;';
+        row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--border-subtle); gap:16px;';
         row.innerHTML = `
-            <div style="min-width:85px; padding-top:4px;">
-                <span style="font-weight:bold; font-size:0.95rem;">${t('carousel_n', { n: i })}</span>
+            <div style="min-width:95px; display:flex; align-items:center;">
+                <span style="font-weight:bold; font-size:0.95rem; line-height:1.2;">${t('carousel_n', { n: i })}</span>
             </div>
-            <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
+            <div style="display:flex; flex-direction:column; gap:8px; flex:1;">
                 <!-- Lower Limit (Underweight) -->
-                <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
-                    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; min-width:138px; text-align:right;">${t('lower_limit_label') || 'Threshold Lower Limit :'}</span>
+                <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px;">
+                    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; min-width:138px; text-align:right; display:inline-flex; align-items:center; justify-content:flex-end; height:26px; line-height:1;">${t('lower_limit_label') || 'Threshold Lower Limit :'}</span>
                     <input type="number"
                            id="dev-min-${key}"
                            value="${devMin}"
@@ -1190,17 +1190,19 @@ function renderSettings() {
                            style="${thresholdStyle}"
                            onchange="promptUpdateDeviation('${key}', 'min', this)"
                            ${isAdmin ? '' : 'readonly'}>
-                    <span style="font-size:0.7rem; color:#888;">Kg</span>
-                    <span style="font-size:0.75rem; color:var(--text-muted); margin-left:4px;">${t('normal_label')}</span>
-                    <label class="switch" style="transform:scale(0.85); margin:0 -2px;">
-                        <input type="checkbox" id="interlock-switch-under-${key}" onchange="promptToggleInterlock('${key}', 'under', this)" ${isUnderInterlocked ? 'checked' : ''} ${isAdmin ? '' : 'disabled'}>
-                        <span class="slider round"></span>
-                    </label>
-                    <span style="font-size:0.75rem; font-weight:600; min-width:48px; color:${isUnderInterlocked ? '#059669' : 'inherit'};">${t('interlock_label')}</span>
+                    <span style="font-size:0.7rem; color:#888; display:inline-flex; align-items:center; height:26px; line-height:1;">Kg</span>
+                    <span style="font-size:0.75rem; color:var(--text-muted); margin-left:4px; display:inline-flex; align-items:center; height:26px; line-height:1;">${t('normal_label')}</span>
+                    <div style="display:inline-flex; align-items:center; height:26px;">
+                        <label class="switch" style="transform:scale(0.82); transform-origin:center; margin:0 -2px;">
+                            <input type="checkbox" id="interlock-switch-under-${key}" onchange="promptToggleInterlock('${key}', 'under', this)" ${isUnderInterlocked ? 'checked' : ''} ${isAdmin ? '' : 'disabled'}>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <span style="font-size:0.75rem; font-weight:600; min-width:50px; display:inline-flex; align-items:center; height:26px; line-height:1; color:${isUnderInterlocked ? '#059669' : 'inherit'};">${t('interlock_label')}</span>
                 </div>
                 <!-- Upper Limit (Overweight) -->
-                <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
-                    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; min-width:138px; text-align:right;">${t('upper_limit_label') || 'Threshold Upper Limit :'}</span>
+                <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px;">
+                    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; min-width:138px; text-align:right; display:inline-flex; align-items:center; justify-content:flex-end; height:26px; line-height:1;">${t('upper_limit_label') || 'Threshold Upper Limit :'}</span>
                     <input type="number"
                            id="dev-max-${key}"
                            value="${devMax}"
@@ -1209,13 +1211,15 @@ function renderSettings() {
                            style="${thresholdStyle}"
                            onchange="promptUpdateDeviation('${key}', 'max', this)"
                            ${isAdmin ? '' : 'readonly'}>
-                    <span style="font-size:0.7rem; color:#888;">Kg</span>
-                    <span style="font-size:0.75rem; color:var(--text-muted); margin-left:4px;">${t('normal_label')}</span>
-                    <label class="switch" style="transform:scale(0.85); margin:0 -2px;">
-                        <input type="checkbox" id="interlock-switch-over-${key}" onchange="promptToggleInterlock('${key}', 'over', this)" ${isOverInterlocked ? 'checked' : ''} ${isAdmin ? '' : 'disabled'}>
-                        <span class="slider round"></span>
-                    </label>
-                    <span style="font-size:0.75rem; font-weight:600; min-width:48px; color:${isOverInterlocked ? '#059669' : 'inherit'};">${t('interlock_label')}</span>
+                    <span style="font-size:0.7rem; color:#888; display:inline-flex; align-items:center; height:26px; line-height:1;">Kg</span>
+                    <span style="font-size:0.75rem; color:var(--text-muted); margin-left:4px; display:inline-flex; align-items:center; height:26px; line-height:1;">${t('normal_label')}</span>
+                    <div style="display:inline-flex; align-items:center; height:26px;">
+                        <label class="switch" style="transform:scale(0.82); transform-origin:center; margin:0 -2px;">
+                            <input type="checkbox" id="interlock-switch-over-${key}" onchange="promptToggleInterlock('${key}', 'over', this)" ${isOverInterlocked ? 'checked' : ''} ${isAdmin ? '' : 'disabled'}>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <span style="font-size:0.75rem; font-weight:600; min-width:50px; display:inline-flex; align-items:center; height:26px; line-height:1; color:${isOverInterlocked ? '#059669' : 'inherit'};">${t('interlock_label')}</span>
                 </div>
             </div>
         `;
