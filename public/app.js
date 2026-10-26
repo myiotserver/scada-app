@@ -44,8 +44,8 @@ const translations = {
         config_title: "Konfigurasi Sistem",
         config_subtitle: "Pengaturan interlock underweight dan koneksi server database SQL",
         interlock_panel_title: "Batas Deviasi & Interlock Metal Detector",
-        lower_limit_label: "Lower Limit :",
-        upper_limit_label: "Upper Limit :",
+        lower_limit_label: "Threshold Lower Limit :",
+        upper_limit_label: "Threshold Upper Limit :",
         sql_panel_title: "Pengaturan SQL Server",
         checking: "MEMERIKSA...",
         lbl_server: "Server :",
@@ -65,13 +65,13 @@ const translations = {
         admin_only_deviation: "Hanya admin yang dapat mengubah batas deviasi.",
         admin_only_sql: "Hanya admin yang dapat mengubah pengaturan SQL Server.",
         confirm_interlock_title: "Konfirmasi Interlock Carousel {n}",
-        confirm_interlock_under_title: "Konfirmasi Interlock Batas Bawah CR{n}",
+        confirm_interlock_under_title: "Konfirmasi Interlock Threshold Lower Limit CR{n}",
         confirm_interlock_under_desc: "Apakah Anda yakin ingin mengubah status Interlock Batas Bawah (Underweight) untuk <strong>Carousel {n}</strong> menjadi {status}?",
-        confirm_interlock_over_title: "Konfirmasi Interlock Batas Atas CR{n}",
+        confirm_interlock_over_title: "Konfirmasi Interlock Threshold Upper Limit CR{n}",
         confirm_interlock_over_desc: "Apakah Anda yakin ingin mengubah status Interlock Batas Atas (Overweight) untuk <strong>Carousel {n}</strong> menjadi {status}?",
-        confirm_deviation_min_title: "Konfirmasi Lower Limit Deviasi",
+        confirm_deviation_min_title: "Konfirmasi Threshold Lower Limit",
         confirm_deviation_min_desc: "Apakah Anda yakin ingin mengubah batas deviasi Lower Limit (Underweight) untuk <strong>Carousel {n}</strong> dari <strong>{oldVal} Kg</strong> menjadi <strong style=\"color:#2563eb;\">{newVal} Kg</strong>?",
-        confirm_deviation_max_title: "Konfirmasi Upper Limit Deviasi",
+        confirm_deviation_max_title: "Konfirmasi Threshold Upper Limit",
         confirm_deviation_max_desc: "Apakah Anda yakin ingin mengubah batas deviasi Upper Limit (Overweight) untuk <strong>Carousel {n}</strong> dari <strong>{oldVal} Kg</strong> menjadi <strong style=\"color:#2563eb;\">{newVal} Kg</strong>?",
         confirm_interlock_desc: "Apakah Anda yakin ingin mengubah status Underweight Interlock untuk <strong>Carousel {n}</strong> menjadi {status}?",
         confirm_deviation_title: "Konfirmasi Deviasi Minimum",
@@ -286,8 +286,8 @@ const translations = {
         config_title: "System Configuration",
         config_subtitle: "Underweight interlock tolerances and SQL database server connection settings",
         interlock_panel_title: "Weight Limits & Interlock Metal Detector",
-        lower_limit_label: "Lower Limit :",
-        upper_limit_label: "Upper Limit :",
+        lower_limit_label: "Threshold Lower Limit :",
+        upper_limit_label: "Threshold Upper Limit :",
         sql_panel_title: "SQL Server Setting",
         checking: "CHECKING...",
         lbl_server: "Server :",
@@ -1181,7 +1181,7 @@ function renderSettings() {
             <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
                 <!-- Lower Limit (Underweight) -->
                 <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
-                    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; min-width:76px; text-align:right;">${t('lower_limit_label') || 'Lower Limit :'}</span>
+                    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; min-width:138px; text-align:right;">${t('lower_limit_label') || 'Threshold Lower Limit :'}</span>
                     <input type="number"
                            id="dev-min-${key}"
                            value="${devMin}"
@@ -1200,7 +1200,7 @@ function renderSettings() {
                 </div>
                 <!-- Upper Limit (Overweight) -->
                 <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
-                    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; min-width:76px; text-align:right;">${t('upper_limit_label') || 'Upper Limit :'}</span>
+                    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600; min-width:138px; text-align:right;">${t('upper_limit_label') || 'Threshold Upper Limit :'}</span>
                     <input type="number"
                            id="dev-max-${key}"
                            value="${devMax}"
