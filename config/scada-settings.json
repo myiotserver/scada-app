@@ -30,7 +30,7 @@
         "carousel5": true
     },
     "interlocksOver": {
-        "carousel1": true,
+        "carousel1": false,
         "carousel2": true,
         "carousel3": true,
         "carousel4": true,
