@@ -457,6 +457,96 @@
             "signalType": "PRODUCT_SENSOR",
             "scale": 1,
             "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel1 OPC.Siemens Carousel1.INTERLOCK_MD_MAX",
+            "name": "Interlock MD CR1 Max",
+            "description": "Stop MD if overweight",
+            "machineId": 1,
+            "signalType": "INTERLOCK_MAX",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel2 OPC.Siemens Carousel2.INTERLOCK_MD_MAX",
+            "name": "Interlock MD CR2 Max",
+            "description": "Stop MD if Overweight",
+            "machineId": 2,
+            "signalType": "INTERLOCK_MAX",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel3 OPC.Siemens Carousel3.INTERLOCK_MD_MAX",
+            "name": "Interlock MD CR3 Max",
+            "description": "Stop MD if overweight",
+            "machineId": 3,
+            "signalType": "INTERLOCK_MAX",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel4 OPC.Siemens Carousel4.INTERLOCK_MD_MAX",
+            "name": "Interlock MD CR4 Max",
+            "description": "Stop MD if overweight",
+            "machineId": 4,
+            "signalType": "INTERLOCK_MAX",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel5 OPC.Siemens Carousel5.INTERLOCK_MD_MAX",
+            "name": "Interlock MD CR5 Max",
+            "description": "Stop MD if overweight",
+            "machineId": 5,
+            "signalType": "INTERLOCK_MAX",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel1 OPC.Siemens Carousel1.THRESHOLD_MAX",
+            "name": "Threshold Max CR1",
+            "description": "Threshold max overweight",
+            "machineId": 1,
+            "signalType": "THRESHOLD_MAX",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel2 OPC.Siemens Carousel2.THRESHOLD_MAX",
+            "name": "Threshold Max CR2",
+            "description": "Threshold max overweight",
+            "machineId": 2,
+            "signalType": "THRESHOLD_MAX",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel3 OPC.Siemens Carousel3.THRESHOLD_MAX",
+            "name": "Threshold Max CR3",
+            "description": "Threshold max overweight",
+            "machineId": 3,
+            "signalType": "THRESHOLD_MAX",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel4 OPC.Siemens Carousel4.THRESHOLD_MAX",
+            "name": "Threshold Max CR4",
+            "description": "Threshold max overweight",
+            "machineId": 4,
+            "signalType": "THRESHOLD_MAX",
+            "scale": 1,
+            "enabled": true
+        },
+        {
+            "nodeId": "ns=2;s=Carousel5 OPC.Siemens Carousel5.THRESHOLD_MAX",
+            "name": "Threshold Max CR5",
+            "description": "Threshold max overweight",
+            "machineId": 5,
+            "signalType": "THRESHOLD_MAX",
+            "scale": 1,
+            "enabled": true
         }
     ]
 }
