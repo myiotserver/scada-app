@@ -134,8 +134,9 @@ class OpcUaManager {
 
             const signalType = (next.signalType || '').toString().trim().toUpperCase();
             if (signalType) {
-                if (next.signalType !== signalType) changed = true;
-                next.signalType = signalType;
+                const normalizedSignalType = signalType === 'CAROUSEL_INTERLOCK' ? 'INTERLOCK_MIN' : signalType;
+                if (next.signalType !== normalizedSignalType) changed = true;
+                next.signalType = normalizedSignalType;
             } else {
                 const inferredSignalType = this._inferSignalType(next);
                 if (inferredSignalType) {
@@ -847,7 +848,7 @@ class OpcUaManager {
      *
      * @param {string} signalType - e.g. 'TOLERANCE_MIN', 'TOLERANCE_MAX', 'DEVIATION_TOLERANCE_MIN'
      * @param {number|null} machineId - 1-5 to filter by carousel, or null for global nodes
-     * @param {number} value - the numeric value to write
+     * @param {number|boolean} value - the value to write
      * @returns {Promise<Array<{nodeId: string, name: string, success?: boolean, error?: string}>>}
      */
     async writeToNodesBySignalType(signalType, machineId, value) {
@@ -870,9 +871,12 @@ class OpcUaManager {
 
         const results = [];
         for (const node of nodes) {
-            const isMachineRun = String(signalType).toUpperCase() === 'MACHINE_RUN';
+            const normalizedSignalType = String(signalType).toUpperCase();
+            const isMachineRun = normalizedSignalType === 'MACHINE_RUN';
+            const isBooleanInterlock = ['INTERLOCK_MIN', 'INTERLOCK_MAX'].includes(normalizedSignalType);
+            const isBooleanSignal = isMachineRun || isBooleanInterlock;
             const isTolerance = ['TOLERANCE_MIN', 'TOLERANCE_MAX', 'DEVIATION_TOLERANCE_MIN', 'DEVIATION_TOLERANCE_MAX', 'THRESHOLD_MIN', 'THRESHOLD_MAX']
-                .includes(String(signalType).toUpperCase());
+                .includes(normalizedSignalType);
             const scale = Number(node.scale);
             const rawValue = isTolerance && Number.isFinite(scale) && scale > 0
                 ? Number((Number(value) / scale).toFixed(10))
@@ -881,7 +885,8 @@ class OpcUaManager {
             // Use the same Variant type currently exposed by the PLC node.
             // In particular, Siemens tags are frequently Int16/UInt16 rather
             // than Double, which otherwise yields BadTypeMismatch.
-            let result = await this.writeNode(node.nodeId, isMachineRun ? value === 1 : rawValue);
+            const writeValue = isMachineRun ? value === 1 : isBooleanInterlock ? Boolean(value) : rawValue;
+            let result = await this.writeNode(node.nodeId, writeValue, isBooleanInterlock ? 'Boolean' : undefined);
             if (isMachineRun && !result.success) {
                 // Preserve the numeric fallback for servers that do not expose
                 // a readable current value before accepting a write.
@@ -893,8 +898,8 @@ class OpcUaManager {
             // request; it does NOT guarantee the PLC tag actually changed.
             // Re-read the node and compare against what we intended to write.
             if (result.success) {
-                const expectedOnWire = isMachineRun ? (value === 1) : rawValue;
-                const verification = await this._verifyWrite(node.nodeId, expectedOnWire, isMachineRun);
+                const expectedOnWire = isBooleanSignal ? writeValue : rawValue;
+                const verification = await this._verifyWrite(node.nodeId, expectedOnWire, isBooleanSignal);
                 result.verified = verification.verified;
                 result.actualValue = verification.actualValue;
                 if (!verification.verified) {

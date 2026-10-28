@@ -319,7 +319,7 @@
             "name": "Interlock MD CR1",
             "description": "Stop MD if underweight",
             "machineId": 1,
-            "signalType": "CAROUSEL_INTERLOCK",
+            "signalType": "INTERLOCK_MIN",
             "scale": 1,
             "enabled": true
         },
@@ -328,7 +328,7 @@
             "name": "Interlock MD CR",
             "description": "Stop MD if underrweight",
             "machineId": 2,
-            "signalType": "CAROUSEL_INTERLOCK",
+            "signalType": "INTERLOCK_MIN",
             "scale": 1,
             "enabled": true
         },
@@ -337,7 +337,7 @@
             "name": "Interlock MD CR3",
             "description": "Stop MD if underweight",
             "machineId": 3,
-            "signalType": "CAROUSEL_INTERLOCK",
+            "signalType": "INTERLOCK_MIN",
             "scale": 1,
             "enabled": true
         },
@@ -346,7 +346,7 @@
             "name": "Interlock MD CR4",
             "description": "Stop MD if underweight",
             "machineId": 4,
-            "signalType": "CAROUSEL_INTERLOCK",
+            "signalType": "INTERLOCK_MIN",
             "scale": 1,
             "enabled": true
         },
@@ -355,7 +355,7 @@
             "name": "Interlock MD CR5",
             "description": "Stop MD if underweight",
             "machineId": 5,
-            "signalType": "CAROUSEL_INTERLOCK",
+            "signalType": "INTERLOCK_MIN",
             "scale": 1,
             "enabled": true
         },

@@ -335,9 +335,8 @@ const toleranceSyncInterval = setInterval(() => {
 }, TOLERANCE_SYNC_INTERVAL_MS);
 
 /**
- * Write the interlock (metal detector) toggle state to the OPC CAROUSEL_INTERLOCK
- * node for a given carousel. SCADA is the source of truth (dashboard toggle),
- * value 1 = interlock enabled, 0 = disabled.
+ * Write the lower- and upper-limit interlock states to their Boolean OPC nodes.
+ * SCADA is the source of truth (dashboard toggles).
  */
 function updateInterlockStatus(carouselId) {
     const interlocks = appSettings.interlocks || {};
@@ -356,8 +355,10 @@ function updateInterlockStatus(carouselId) {
             carousels[carouselId].data.interlockOver = over;
         }
     }
-    opcUaManager.writeToNodesBySignalType('CAROUSEL_INTERLOCK', carouselId, enabled ? 1 : 0)
-        .catch(err => logger.error('OPC', `CR${carouselId} CAROUSEL_INTERLOCK OPC write failed: ${err.message}`));
+    Promise.all([
+        opcUaManager.writeToNodesBySignalType('INTERLOCK_MIN', carouselId, under),
+        opcUaManager.writeToNodesBySignalType('INTERLOCK_MAX', carouselId, over)
+    ]).catch(err => logger.error('OPC', `CR${carouselId} interlock OPC write failed: ${err.message}`));
 }
 
 function syncInterlockStatuses() {
@@ -951,16 +952,20 @@ opcUaManager.subscribe('scada-controller', (event, data) => {
             }
         }
 
-        // CAROUSEL_INTERLOCK: SCADA is the source of truth (dashboard toggle).
-        // If the PLC reports a different value, reconcile it back to the expected state.
-        if (node && signalType === 'CAROUSEL_INTERLOCK' && node.machineId) {
+        // Interlock outputs are sourced from the dashboard settings.
+        if (node && ['INTERLOCK_MIN', 'INTERLOCK_MAX'].includes(signalType) && node.machineId) {
             const carouselId = node.machineId;
             if (carousels[carouselId]) {
+                const key = `carousel${carouselId}`;
                 const interlocks = appSettings.interlocks || {};
-                const expectedValue = !!interlocks[`carousel${carouselId}`];
+                const interlocksUnder = appSettings.interlocksUnder || {};
+                const interlocksOver = appSettings.interlocksOver || {};
+                const expectedValue = signalType === 'INTERLOCK_MIN'
+                    ? !!(interlocksUnder[key] !== undefined ? interlocksUnder[key] : interlocks[key])
+                    : !!interlocksOver[key];
                 const newValue = isTruthySignal(data.value);
                 if (newValue !== expectedValue) {
-                    logger.warn('SCADA', `CR${carouselId} CAROUSEL_INTERLOCK mismatch from PLC (${newValue}); expected ${expectedValue}. Reapplying.`);
+                    logger.warn('SCADA', `CR${carouselId} ${signalType} mismatch from PLC (${newValue}); expected ${expectedValue}. Reapplying.`);
                     updateInterlockStatus(carouselId);
                 }
             }

@@ -1,7 +1,7 @@
 const opcuaManager = require('../utils/opcua.manager');
 
 function requiresMachineId(signalType) {
-    return ['GROSS_WEIGHT', 'PRODUCT_SENSOR', 'CAROUSEL_INTERLOCK', 'GROSS_NORMAL', 'GROSS_UNDER', 'GROSS_OVER', 'MACHINE_RUN', 'ZEROING', 'MD_SWITCH', 'SYSTEM_PAUSED', 'TOLERANCE_MIN', 'TOLERANCE_MAX', 'DEVIATION_TOLERANCE_MIN', 'THRESHOLD_MIN', 'THRESHOLD_MAX', 'DEVIATION_TOLERANCE_MAX'].includes(
+    return ['GROSS_WEIGHT', 'PRODUCT_SENSOR', 'INTERLOCK_MIN', 'INTERLOCK_MAX', 'GROSS_NORMAL', 'GROSS_UNDER', 'GROSS_OVER', 'MACHINE_RUN', 'ZEROING', 'MD_SWITCH', 'SYSTEM_PAUSED', 'TOLERANCE_MIN', 'TOLERANCE_MAX', 'DEVIATION_TOLERANCE_MIN', 'THRESHOLD_MIN', 'THRESHOLD_MAX', 'DEVIATION_TOLERANCE_MAX'].includes(
         (signalType || '').toString().trim().toUpperCase()
     );
 }
@@ -66,7 +66,11 @@ function normalizeImportedNodes(nodes) {
             name: (node.name || '').trim() || nodeId,
             description: (node.description || '').trim(),
             machineId,
-            signalType: typeof node.signalType === 'string' ? node.signalType.trim().toUpperCase() || null : null,
+            signalType: typeof node.signalType === 'string'
+                ? (node.signalType.trim().toUpperCase() === 'CAROUSEL_INTERLOCK'
+                    ? 'INTERLOCK_MIN'
+                    : node.signalType.trim().toUpperCase() || null)
+                : null,
             scale,
             enabled: node.enabled !== false
         };
