@@ -1331,8 +1331,6 @@ exports.getWeightHistory = async (req, res) => {
                     PRODUCT_COUNT,
                     GROSS_WEIGHT,
                     NETT_WEIGHT,
-                    THRESHOLD_MIN,
-                    THRESHOLD_MAX,
                     STATUS
                 FROM ${table}
                 ORDER BY TIMESTAMP DESC
