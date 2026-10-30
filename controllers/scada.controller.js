@@ -532,7 +532,8 @@ async function insertWeightData(carouselId, data) {
             .input('nettWeight', sql.Decimal(18, 2), data.lastNett)
             .input('toleranceMin', sql.Decimal(18, 2), data.toleranceMin)
             .input('toleranceMax', sql.Decimal(18, 2), data.toleranceMax)
-            .input('threshold', sql.Decimal(18, 4), (data.lastGross > data.toleranceMax) ? deviationToleranceMax : deviationToleranceMin)
+            .input('thresholdMin', sql.Decimal(18, 4), deviationToleranceMin)
+            .input('thresholdMax', sql.Decimal(18, 4), deviationToleranceMax)
             .input('baseTarget', sql.Decimal(18, 2), data.target) // Using target as product count/target count placeholder if needed? No, schema has PRODUCT_COUNT and TARGET_COUNT
             // Schema from image: PRODUCT_COUNT, TARGET_COUNT. Let's assume these are current counters or target settings.
             // data.target is likely TARGET_COUNT. PRODUCT_COUNT is likely the current counter.
@@ -549,10 +550,10 @@ async function insertWeightData(carouselId, data) {
                 BEGIN
                     INSERT INTO ${appSettings.table_weight || 'WEIGHT_DATA'} 
                     (TIMESTAMP, PACKING_ORDER, PRODUCT_ID, PRODUCT_NAME, PACKAGING_MATERIAL, CAROUSEL, 
-                     GROSS_WEIGHT, NETT_WEIGHT, TOLERANCE_MIN, TOLERANCE_MAX, THRESHOLD, PRODUCT_COUNT, TARGET_COUNT, STATUS)
+                     GROSS_WEIGHT, NETT_WEIGHT, TOLERANCE_MIN, TOLERANCE_MAX, THRESHOLD_MIN, THRESHOLD_MAX, PRODUCT_COUNT, TARGET_COUNT, STATUS)
                     VALUES 
                     (DATEADD(HOUR, 7, GETUTCDATE()), @packingOrder, @productId, @productName, @packagingMaterial, @carousel, 
-                     @grossWeight, @nettWeight, @toleranceMin, @toleranceMax, @threshold, @productCount, @targetCount, @status)
+                     @grossWeight, @nettWeight, @toleranceMin, @toleranceMax, @thresholdMin, @thresholdMax, @productCount, @targetCount, @status)
                 END
             `);
 
@@ -1330,6 +1331,8 @@ exports.getWeightHistory = async (req, res) => {
                     PRODUCT_COUNT,
                     GROSS_WEIGHT,
                     NETT_WEIGHT,
+                    THRESHOLD_MIN,
+                    THRESHOLD_MAX,
                     STATUS
                 FROM ${table}
                 ORDER BY TIMESTAMP DESC

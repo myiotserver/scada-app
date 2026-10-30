@@ -41,7 +41,7 @@ graph TD
 3. **Settle Delay**: Timer 100ms menunggu berat timbangan stabil.
 4. **Validasi**: Pastikan carousel dalam状态 `RUN` dan gross weight > 1 kg (filter noise).
 5. **Counter Increment**: Counter lokal dinaikkan, dengan flag `_localCounterIs1Based` untuk konvensi 1-based.
-6. **Insert**: Query `IF NOT EXISTS` mencegah duplikasi; data dicatat dengan timezone WIB (UTC+7), termasuk nilai deviasi carousel pada kolom `THRESHOLD`.
+6. **Insert**: Query `IF NOT EXISTS` mencegah duplikasi; data dicatat dengan timezone WIB (UTC+7), termasuk deviasi minimum dan maksimum pada kolom `THRESHOLD_MIN` dan `THRESHOLD_MAX`.
 7. **Hasil**: Berhasil → log + broadcast ke dashboard via WebSocket. Gagal → alert ke UI (debounce 8s).
 
 ## Prerequisites

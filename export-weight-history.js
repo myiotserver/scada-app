@@ -39,7 +39,7 @@ async function exportHistory() {
     const result = await pool.request().query(`
         SELECT TIMESTAMP, PACKING_ORDER, PRODUCT_ID, PRODUCT_NAME, CAROUSEL,
                PRODUCT_COUNT, TARGET_COUNT, GROSS_WEIGHT, NETT_WEIGHT,
-               TOLERANCE_MIN, TOLERANCE_MAX, STATUS
+               TOLERANCE_MIN, TOLERANCE_MAX, THRESHOLD_MIN, THRESHOLD_MAX, STATUS
         FROM [${table}]
         ORDER BY CAROUSEL, PACKING_ORDER, PRODUCT_COUNT, TIMESTAMP
     `);
@@ -83,6 +83,8 @@ async function exportHistory() {
                 nettKg: round2(row.NETT_WEIGHT),
                 toleranceMin: Number(row.TOLERANCE_MIN),
                 toleranceMax: Number(row.TOLERANCE_MAX),
+                thresholdMin: Number(row.THRESHOLD_MIN),
+                thresholdMax: Number(row.THRESHOLD_MAX),
                 status: row.STATUS,
                 gapFromPreviousSec: gapMs != null ? round2(gapMs / 1000) : null,
                 gapFromPreviousMs: gapMs
