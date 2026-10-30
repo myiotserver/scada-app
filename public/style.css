@@ -716,7 +716,7 @@ main {
 .card-header .carousel-number {
     font-size: 0.65rem;
     font-weight: 700;
-    color: var(--accent-blue);
+    color: var(--text-primary);
     text-transform: uppercase;
     letter-spacing: 2px;
 }
@@ -925,7 +925,7 @@ main {
 .update-btn {
     background: rgba(0, 212, 170, 0.1);
     border: 1px solid rgba(0, 212, 170, 0.2);
-    color: var(--accent-primary);
+    color: var(--text-primary);
     padding: 6px 20px;
     border-radius: var(--radius-sm);
     font-size: 0.7rem;
