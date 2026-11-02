@@ -668,7 +668,7 @@ function scheduleZeroingCapture(carouselId) {
 
 /**
  * Write tolerance values from the database to OPC nodes so the PLC can read them.
- * Writes TOLERANCE_MIN, TOLERANCE_MAX, and DEVIATION_TOLERANCE_MIN for a given carousel.
+ * Writes TOLERANCE_MIN/MAX and THRESHOLD_MIN/MAX for a given carousel.
  * Skips the write if values haven't changed since the last successful write.
  *
  * Each write is followed by a read-back verification inside
@@ -677,8 +677,8 @@ function scheduleZeroingCapture(carouselId) {
  * so the local cache is NOT updated. This guarantees the next periodic sync
  * (every 5s) or reconnect will retry the write until it is confirmed on the PLC.
  *
- * DEVIATION_TOLERANCE_MIN uses the manual threshold from appSettings.deviationThresholds
- * if configured, otherwise falls back to (toleranceMax - toleranceMin) / 2.
+ * THRESHOLD_MIN/MAX use the configured lower/upper deviation thresholds
+ * through the threshold helpers, including their legacy-settings fallbacks.
  */
 async function writeTolerancesToOpc(carouselId, data, force = false) {
     try {
@@ -721,7 +721,6 @@ async function writeTolerancesToOpc(carouselId, data, force = false) {
             : deviationToleranceMin;
 
         if (force || prev.deviationMin !== devMinVal) {
-            await opcUaManager.writeToNodesBySignalType('DEVIATION_TOLERANCE_MIN', carouselId, devMinVal);
             const resMin = await opcUaManager.writeToNodesBySignalType('THRESHOLD_MIN', carouselId, devMinVal);
             if (resMin.length > 0 && resMin.every(item => item.success)) {
                 prev.deviationMin = devMinVal;
@@ -733,7 +732,6 @@ async function writeTolerancesToOpc(carouselId, data, force = false) {
         }
 
         if (force || prev.deviationMax !== devMaxVal) {
-            await opcUaManager.writeToNodesBySignalType('DEVIATION_TOLERANCE_MAX', carouselId, devMaxVal);
             const resMax = await opcUaManager.writeToNodesBySignalType('THRESHOLD_MAX', carouselId, devMaxVal);
             if (resMax.length > 0 && resMax.every(item => item.success)) {
                 prev.deviationMax = devMaxVal;
