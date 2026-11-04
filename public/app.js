@@ -39,6 +39,10 @@ const translations = {
         card_btn_update: "Perbarui Data",
         card_waiting_order: "Menunggu Order Kemasan",
         card_md_status: "Interlock",
+        card_interlock_under: "Underweight",
+        card_interlock_over: "Overweight",
+        status_interlock_active: "Aktif",
+        status_interlock_bypassed: "Bypass",
 
         // Config View
         config_title: "Konfigurasi Sistem",
@@ -281,6 +285,10 @@ const translations = {
         card_btn_update: "Update Data",
         card_waiting_order: "Waiting for Packing Order",
         card_md_status: "Interlock",
+        card_interlock_under: "Underweight",
+        card_interlock_over: "Overweight",
+        status_interlock_active: "Active",
+        status_interlock_bypassed: "Bypassed",
 
         // Config View
         config_title: "System Configuration",
@@ -1845,17 +1853,29 @@ function renderCarousels(carousels) {
             isUnder = !!(appSettings.interlocksUnder && appSettings.interlocksUnder[key] !== undefined ? appSettings.interlocksUnder[key] : (appSettings.interlocks && appSettings.interlocks[key]));
             isOver = !!(appSettings.interlocksOver && appSettings.interlocksOver[key]);
         }
-        let mdStatusText = 'Bypassed';
-        if (isUnder && isOver) {
-            mdStatusText = 'Active (Under + Over)';
-        } else if (isUnder) {
-            mdStatusText = 'Active (Under)';
-        } else if (isOver) {
-            mdStatusText = 'Active (Over)';
-        } else if (isInterlocked) {
-            mdStatusText = 'Active';
-        }
-        const mdStatusClass = (isUnder || isOver || isInterlocked) ? 'md-status-normal' : 'md-status-bypassed';
+        const isLegacyInterlockActive = isInterlocked && !isUnder && !isOver;
+        const underIsActive = isUnder || isLegacyInterlockActive;
+        const underStatusClass = underIsActive ? 'md-status-normal' : 'md-status-bypassed';
+        const overStatusClass = isOver ? 'md-status-normal' : 'md-status-bypassed';
+        const underStatusText = t(underIsActive ? 'status_interlock_active' : 'status_interlock_bypassed');
+        const overStatusText = t(isOver ? 'status_interlock_active' : 'status_interlock_bypassed');
+        const interlockStatusMarkup = `
+            <table class="interlock-status-table">
+                <thead>
+                    <tr><th colspan="2">${t('card_md_status')}</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th scope="col">${t('card_interlock_under')}</th>
+                        <th scope="col">${t('card_interlock_over')}</th>
+                    </tr>
+                    <tr>
+                        <td class="${underStatusClass}">${underStatusText}</td>
+                        <td class="${overStatusClass}">${overStatusText}</td>
+                    </tr>
+                </tbody>
+            </table>
+        `;
 
         if (carousel && carousel.data && carousel.data.productId) {
             const d = carousel.data;
@@ -1921,10 +1941,7 @@ function renderCarousels(carousels) {
                             <span class="info-label">${t('card_pack_weight')}</span>
                             <span class="info-value">${(parseFloat(d.packWeight) || 0).toFixed(2)} Kg</span>
                         </div>
-                        <div class="info-row">
-                            <span class="info-label">${t('card_md_status')}</span>
-                            <span class="info-value ${mdStatusClass}">${mdStatusText}</span>
-                        </div>
+                        ${interlockStatusMarkup}
                     </div>
 
                     <div class="weight-section">
@@ -1974,10 +1991,7 @@ function renderCarousels(carousels) {
                     <i class='bx bx-time-five' style="font-size: 2.2rem; color: var(--accent-warning); opacity: 0.85; margin-bottom: 8px;"></i>
                     <span style="font-size:1rem; font-weight:600; color:var(--text-secondary);">${t('carousel_n', { n: i })}</span>
                     <span style="font-weight:700; color:var(--accent-warning); letter-spacing:1px; margin-top:5px; margin-bottom:6px;">${t('card_waiting_order')}</span>
-                    <div style="font-size: 0.78rem; display: flex; gap: 6px; align-items: center; margin-bottom: 12px;">
-                        <span style="color: var(--text-muted); text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.5px;">${t('card_md_status')}:</span>
-                        <span class="${mdStatusClass}">${mdStatusText}</span>
-                    </div>
+                    ${interlockStatusMarkup}
                     <div class="weight-section" style="width: 100%; padding: 0 14px;">
                         <div class="weight-label">${t('card_gross_weight')}</div>
                         <div class="weight-display bg-warning">0.00 Kg</div>

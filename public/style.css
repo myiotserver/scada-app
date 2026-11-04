@@ -750,6 +750,44 @@ main {
     border-bottom: none;
 }
 
+.interlock-status-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    text-align: center;
+}
+
+.interlock-status-table th,
+.interlock-status-table td {
+    padding: 5px 4px;
+    border: 1px solid var(--border-subtle);
+}
+
+.interlock-status-table thead th {
+    color: var(--text-muted);
+    background: var(--bg-input);
+    font-size: 0.62rem;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+}
+
+.interlock-status-table tbody th {
+    color: var(--text-muted);
+    font-family: var(--font-main);
+    font-size: 0.6rem;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+.interlock-status-table tbody td {
+    font-family: var(--font-digital);
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
 .info-label {
     font-size: 0.65rem;
     color: var(--text-muted);
@@ -960,6 +998,21 @@ main {
 .empty-state span {
     font-size: 0.75rem;
     font-style: italic;
+}
+
+.empty-state .interlock-status-table {
+    width: min(88%, 240px);
+    margin-bottom: 12px;
+}
+
+.empty-state .interlock-status-table th,
+.empty-state .interlock-status-table td {
+    font-size: 0.65rem;
+    font-style: normal;
+}
+
+.empty-state .interlock-status-table tbody td {
+    font-size: 0.75rem;
 }
 
 /* Card Loading Overlay */

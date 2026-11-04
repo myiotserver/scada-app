@@ -30,7 +30,7 @@
         "carousel5": true
     },
     "interlocksOver": {
-        "carousel1": false,
+        "carousel1": true,
         "carousel2": false,
         "carousel3": false,
         "carousel4": false,
@@ -44,7 +44,7 @@
         "carousel5": 0.05
     },
     "deviationThresholdsMax": {
-        "carousel1": 0.05,
+        "carousel1": 0.15,
         "carousel2": 0.05,
         "carousel3": 0.05,
         "carousel4": 0.05,
